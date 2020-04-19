@@ -5,6 +5,7 @@ The `ipx800` integration allows you to get information from [GCE Eco-Devices](ht
 ### Requirement
 [pypix800 python package](https://github.com/Aohzan/pypx800)
 
+### Description
 You can control by setting the component parameter for each device:
 * `relay` as switch and light
 * `virtual output` as switch and binarysensor
