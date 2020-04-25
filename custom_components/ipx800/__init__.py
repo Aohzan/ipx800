@@ -253,7 +253,7 @@ class IpxDevice(Entity):
         self._unit_of_measurement = self.config.get(CONF_UNIT_OF_MEASUREMENT) or None
         self._transition = self.config.get(CONF_TRANSITION) or None
         self._icon = self.config.get(CONF_ICON) or None
-        self._should_poll = self.config.get(CONF_SHOULD_POLL) or False
+        self._should_poll = self.config.get(CONF_SHOULD_POLL) or True
         self._state = None
 
         self._supported_flags = 0
