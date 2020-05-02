@@ -108,7 +108,7 @@ class Ipx800Controller:
             str(config[CONF_PORT]),
             config[CONF_API_KEY],
             config[CONF_USERNAME],
-            config[CONF_PASSWORD],
+            config[CONF_PASSWORD]
         )
         # devices config from user
         self._devices_config = config[CONF_DEVICES_CONFIG]

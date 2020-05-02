@@ -146,8 +146,8 @@ class XDimmerLight(IpxDevice, Light):
         if ATTR_TRANSITION in kwargs:
             self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
         if ATTR_BRIGHTNESS in kwargs:
-            self._brightness = scaleto100(kwargs.get(ATTR_BRIGHTNESS, 255))
-            self.xdimmer.set_level(self._brightness, self._transition)
+            self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+            self.xdimmer.set_level(scaleto100(self._brightness), self._transition)
         else:
             self.xdimmer.on(self._transition)
         self._state = True
@@ -188,8 +188,8 @@ class XPWMLight(IpxDevice, Light):
         if ATTR_TRANSITION in kwargs:
             self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
         if ATTR_BRIGHTNESS in kwargs:
-            self._brightness = scaleto100(kwargs.get(ATTR_BRIGHTNESS, 255))
-            self.xpwm.set_level(self._brightness, self._transition)
+            self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+            self.xpwm.set_level(scaleto100(self._brightness), self._transition)
         else:
             self.xpwm.on(self._transition)
         self._state = True
@@ -255,15 +255,15 @@ class XPWMRGBLight(IpxDevice, Light):
             self._brightness = kwargs.get(ATTR_BRIGHTNESS)
             if self._state:
                 self.xpwm_rgb_r.set_level(
-                    scaleto100(self.xpwm_rgb_r.level * (self._brightness / 255)),
+                    scaleto100(self.xpwm_rgb_r.level * self._brightness / 255),
                     self._transition,
                 )
                 self.xpwm_rgb_g.set_level(
-                    scaleto100(self.xpwm_rgb_g.level * (self._brightness / 255)),
+                    scaleto100(self.xpwm_rgb_g.level * self._brightness / 255),
                     self._transition,
                 )
                 self.xpwm_rgb_b.set_level(
-                    scaleto100(self.xpwm_rgb_b.level * (self._brightness / 255)),
+                    scaleto100(self.xpwm_rgb_b.level * self._brightness / 255),
                     self._transition,
                 )
             else:
@@ -304,7 +304,7 @@ class XPWMRGBLight(IpxDevice, Light):
         level_b = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[2]}"])
         self._state = level_r > 0 or level_b > 0 or level_g > 0
         self._rgb_color = [level_r, level_g, level_b]
-        self._brightness = max(level_b, level_g, level_r)
+        self._brightness = 0.2126*level_r + 0.7152*level_g + 0.0722*level_b
 
 
 class XPWMRGBWLight(IpxDevice, Light):
@@ -370,19 +370,19 @@ class XPWMRGBWLight(IpxDevice, Light):
             self._brightness = kwargs.get(ATTR_BRIGHTNESS)
             if self._state:
                 self.xpwm_rgbw_r.set_level(
-                    scaleto100(self.xpwm_rgbw_r.level * (self._brightness / 255)),
+                    scaleto100(self.xpwm_rgbw_r.level * self._brightness / 255),
                     self._transition,
                 )
                 self.xpwm_rgbw_g.set_level(
-                    scaleto100(self.xpwm_rgbw_g.level * (self._brightness / 255)),
+                    scaleto100(self.xpwm_rgbw_g.level * self._brightness / 255),
                     self._transition,
                 )
                 self.xpwm_rgbw_b.set_level(
-                    scaleto100(self.xpwm_rgbw_b.level * (self._brightness / 255)),
+                    scaleto100(self.xpwm_rgbw_b.level * self._brightness / 255),
                     self._transition,
                 )
                 self.xpwm_rgbw_w.set_level(
-                    scaleto100(self.xpwm_rgbw_w.level * (self._brightness / 255)),
+                    scaleto100(self.xpwm_rgbw_w.level * self._brightness / 255),
                     self._transition,
                 )
             else:
@@ -416,4 +416,4 @@ class XPWMRGBWLight(IpxDevice, Light):
         self._state = level_r > 0 or level_b > 0 or level_g > 0 or level_w > 0
         self._white_value = level_w
         self._rgb_color = [level_r, level_g, level_b]
-        self._brightness = max(level_b, level_g, level_r, level_w)
+        self._brightness = max((0.2126*level_r + 0.7152*level_g + 0.0722*level_b),level_w)
