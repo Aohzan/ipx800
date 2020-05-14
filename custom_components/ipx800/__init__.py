@@ -54,7 +54,7 @@ DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
     {
         vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_DEVICE_COMPONENT): cv.string,
-        vol.Optional(CONF_SHOULD_POLL): cv.boolean,
+        vol.Optional(CONF_SHOULD_POLL, default=True): cv.boolean,
         vol.Optional(CONF_RELAY): cv.positive_int,
         vol.Optional(CONF_XPWM): cv.positive_int,
         vol.Optional(CONF_XPWM_RGB): cv.ensure_list,
@@ -108,7 +108,7 @@ class Ipx800Controller:
             str(config[CONF_PORT]),
             config[CONF_API_KEY],
             config[CONF_USERNAME],
-            config[CONF_PASSWORD]
+            config[CONF_PASSWORD],
         )
         # devices config from user
         self._devices_config = config[CONF_DEVICES_CONFIG]
@@ -253,13 +253,15 @@ class IpxDevice(Entity):
         self._unit_of_measurement = self.config.get(CONF_UNIT_OF_MEASUREMENT) or None
         self._transition = self.config.get(CONF_TRANSITION) or None
         self._icon = self.config.get(CONF_ICON) or None
-        self._should_poll = self.config.get(CONF_SHOULD_POLL) or True
+        self._should_poll = self.config.get(CONF_SHOULD_POLL)
         self._state = None
 
         self._supported_flags = 0
         self._uid = (
             f"{self.controller.name}.{self.config.get('device_class')}.{ipx_device.get('name')}"
         ).lower()
+
+        _LOGGER.debug("Init new device : %s", self)
 
     @property
     def should_poll(self):
