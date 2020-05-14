@@ -261,7 +261,8 @@ class IpxDevice(Entity):
             f"{self.controller.name}.{self.config.get('device_class')}.{ipx_device.get('name')}"
         ).lower()
 
-        _LOGGER.debug("Init new device : %s", self)
+        _LOGGER.debug("-- Init new device :")
+        _LOGGER.debug(self)
 
     @property
     def should_poll(self):
