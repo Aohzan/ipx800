@@ -168,21 +168,6 @@ class Ipx800Controller:
                     "Error to handle device %s: %s.", device_config[CONF_NAME], error
                 )
 
-    def api_transmit(self, command):
-        """
-            Transmit API request command
-            command: must be like 'ipx800/VO1=on'
-        """
-        _LOGGER.debug(
-            "===> Receive API request command %s for gateway %s.", command, self.name
-        )
-        device_type = command[command.index("ipx800/") + 7 : command.index("=")]
-        value = bool(command[command.index("=") + 1] in "on", 1, True, "true")
-        self._update_device(device_type, value)
-
-    def update_device(self, device_type, value):
-        """ Update state of device """
-
 
 def setup(hass, config):
     """Set up the IPX800 Component."""
@@ -261,8 +246,10 @@ class IpxDevice(Entity):
             f"{self.controller.name}.{self.config.get('device_class')}.{ipx_device.get('name')}"
         ).lower()
 
-        _LOGGER.debug("-- Init new device :")
-        _LOGGER.debug(self)
+    @property
+    def entity_registry_enabled_default(self):
+        """Return true to avoid errors from first update since IPX800 Api is not always reliable"""
+        return True
 
     @property
     def should_poll(self):
