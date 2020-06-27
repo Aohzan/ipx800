@@ -247,11 +247,6 @@ class IpxDevice(Entity):
         ).lower()
 
     @property
-    def entity_registry_enabled_default(self):
-        """Return true to avoid errors from first update since IPX800 Api is not always reliable"""
-        return True
-
-    @property
     def should_poll(self):
         return self._should_poll
 
