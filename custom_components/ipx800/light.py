@@ -304,7 +304,7 @@ class XPWMRGBLight(IpxDevice, LightEntity):
         level_b = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[2]}"])
         self._state = level_r > 0 or level_b > 0 or level_g > 0
         self._rgb_color = [level_r, level_g, level_b]
-        self._brightness = 0.2126*level_r + 0.7152*level_g + 0.0722*level_b
+        self._brightness = 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
 
 
 class XPWMRGBWLight(IpxDevice, LightEntity):
@@ -416,4 +416,8 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
         self._state = level_r > 0 or level_b > 0 or level_g > 0 or level_w > 0
         self._white_value = level_w
         self._rgb_color = [level_r, level_g, level_b]
-        self._brightness = max((0.2126*level_r + 0.7152*level_g + 0.0722*level_b),level_w)
+        # if any or RGB is on, brightness is them level, otherwise, brightness is white value
+        if level_r > 0 or level_b > 0 or level_g > 0:
+            self._brightness = 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
+        else:
+            self._brightness = level_w
