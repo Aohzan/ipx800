@@ -3,7 +3,7 @@ import logging
 
 from homeassistant.components.light import (
     DOMAIN,
-    Light,
+    LightEntity,
     ATTR_BRIGHTNESS,
     ATTR_TRANSITION,
     ATTR_WHITE_VALUE,
@@ -92,7 +92,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     )
 
 
-class RelayLight(IpxDevice, Light):
+class RelayLight(IpxDevice, LightEntity):
     """Representation of a IPX Light through relay."""
 
     def __init__(self, ipx_device):
@@ -124,7 +124,7 @@ class RelayLight(IpxDevice, Light):
         self._state = self.relay.status
 
 
-class XDimmerLight(IpxDevice, Light):
+class XDimmerLight(IpxDevice, LightEntity):
     """Representation of a IPX Light through X-DIMMER."""
 
     def __init__(self, ipx_device):
@@ -166,7 +166,7 @@ class XDimmerLight(IpxDevice, Light):
         self._brightness = scaleto255(self.xdimmer.level)
 
 
-class XPWMLight(IpxDevice, Light):
+class XPWMLight(IpxDevice, LightEntity):
     """Representation of a IPX Light through X-PWM single channel."""
 
     def __init__(self, ipx_device):
@@ -208,7 +208,7 @@ class XPWMLight(IpxDevice, Light):
         self._brightness = scaleto255(self.xpwm.level)
 
 
-class XPWMRGBLight(IpxDevice, Light):
+class XPWMRGBLight(IpxDevice, LightEntity):
     """Representation of a RGB Light through 3 X-PWM channel."""
 
     def __init__(self, ipx_device):
@@ -307,7 +307,7 @@ class XPWMRGBLight(IpxDevice, Light):
         self._brightness = 0.2126*level_r + 0.7152*level_g + 0.0722*level_b
 
 
-class XPWMRGBWLight(IpxDevice, Light):
+class XPWMRGBWLight(IpxDevice, LightEntity):
     """Representation of a IPX Light through X-PWM single channel."""
 
     def __init__(self, ipx_device):

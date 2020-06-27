@@ -1,7 +1,10 @@
 """Support for IPX800 lights."""
 import logging
 
-from homeassistant.components.switch import DOMAIN, SwitchDevice
+from homeassistant.components.switch import (
+    DOMAIN,
+    SwitchEntity,
+)
 
 from . import IPX800_DEVICES, IpxDevice
 
@@ -27,7 +30,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     )
 
 
-class RelaySwitch(IpxDevice, SwitchDevice):
+class RelaySwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Switch through relay."""
 
     def __init__(self, ipx_device):
@@ -58,7 +61,7 @@ class RelaySwitch(IpxDevice, SwitchDevice):
         self._state = self.relay.status
 
 
-class VirtualOutSwitch(IpxDevice, SwitchDevice):
+class VirtualOutSwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Virtual Out."""
 
     def __init__(self, ipx_device):
@@ -85,7 +88,7 @@ class VirtualOutSwitch(IpxDevice, SwitchDevice):
         self._state = self.virtualout.status
 
 
-class VirtualInSwitch(IpxDevice, SwitchDevice):
+class VirtualInSwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Virtual In."""
 
     def __init__(self, ipx_device):
