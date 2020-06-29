@@ -124,7 +124,7 @@ class RelayLight(IpxDevice, LightEntity):
         """Update the IPX800 device status."""
         try:
             self._state = self.relay.status
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady
 
@@ -170,7 +170,7 @@ class XDimmerLight(IpxDevice, LightEntity):
         try:
             self._state = self.xdimmer.status
             self._brightness = scaleto255(self.xdimmer.level)
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady
 
@@ -216,7 +216,7 @@ class XPWMLight(IpxDevice, LightEntity):
         try:
             self._state = self.xpwm.status
             self._brightness = scaleto255(self.xpwm.level)
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady
 
@@ -319,7 +319,7 @@ class XPWMRGBLight(IpxDevice, LightEntity):
             self._state = level_r > 0 or level_b > 0 or level_g > 0
             self._rgb_color = [level_r, level_g, level_b]
             self._brightness = 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady
 
@@ -441,6 +441,6 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
                 )
             else:
                 self._brightness = level_w
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady

@@ -62,7 +62,7 @@ class VirtualOutBinarySensor(IpxDevice, Entity):
     def update(self):
         try:
             self._state = self.virtualout.status
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady
 
@@ -90,6 +90,6 @@ class DigitalInBinarySensor(IpxDevice, Entity):
     def update(self):
         try:
             self._state = self.digitalin.value
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady

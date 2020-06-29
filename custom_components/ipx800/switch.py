@@ -82,7 +82,7 @@ class RelaySwitch(IpxDevice, SwitchEntity):
         """Update the IPX800 device status."""
         try:
             self._state = self.relay.status
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady
 
@@ -113,7 +113,7 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
     def update(self):
         try:
             self._state = self.virtualout.status
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady
 
@@ -144,6 +144,6 @@ class VirtualInSwitch(IpxDevice, SwitchEntity):
     def update(self):
         try:
             self._state = self.virtualin.status
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady

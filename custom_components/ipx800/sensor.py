@@ -49,6 +49,6 @@ class AnalogInSensor(IpxDevice, Entity):
     def update(self):
         try:
             self._state = float(self.analogin.value)
-        except:
+        except KeyError:
             _LOGGER.warning("Update of %s failed.", self._name)
             raise ConfigEntryNotReady
