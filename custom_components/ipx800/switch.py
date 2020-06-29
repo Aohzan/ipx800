@@ -1,6 +1,7 @@
 """Support for IPX800 lights."""
 import logging
 
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.components.switch import (
     DOMAIN,
     SwitchEntity,
@@ -15,18 +16,39 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the IPX800 switches."""
 
     add_entities(
-        [RelaySwitch(device)
-         for device in (item for item in hass.data[IPX800_DEVICES]["switch"] if item.get('config').get('relay'))], True
+        [
+            RelaySwitch(device)
+            for device in (
+                item
+                for item in hass.data[IPX800_DEVICES]["switch"]
+                if item.get("config").get("relay")
+            )
+        ],
+        True,
     )
 
     add_entities(
-        [VirtualOutSwitch(device)
-         for device in (item for item in hass.data[IPX800_DEVICES]["switch"] if item.get('config').get('virtualout'))], True
+        [
+            VirtualOutSwitch(device)
+            for device in (
+                item
+                for item in hass.data[IPX800_DEVICES]["switch"]
+                if item.get("config").get("virtualout")
+            )
+        ],
+        True,
     )
 
     add_entities(
-        [VirtualInSwitch(device)
-         for device in (item for item in hass.data[IPX800_DEVICES]["switch"] if item.get('config').get('virtualin'))], True
+        [
+            VirtualInSwitch(device)
+            for device in (
+                item
+                for item in hass.data[IPX800_DEVICES]["switch"]
+                if item.get("config").get("virtualin")
+            )
+        ],
+        True,
     )
 
 
@@ -58,7 +80,11 @@ class RelaySwitch(IpxDevice, SwitchEntity):
 
     def update(self):
         """Update the IPX800 device status."""
-        self._state = self.relay.status
+        try:
+            self._state = self.relay.status
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady
 
 
 class VirtualOutSwitch(IpxDevice, SwitchEntity):
@@ -85,7 +111,11 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
         self.virtualout.toggle()
 
     def update(self):
-        self._state = self.virtualout.status
+        try:
+            self._state = self.virtualout.status
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady
 
 
 class VirtualInSwitch(IpxDevice, SwitchEntity):
@@ -112,4 +142,8 @@ class VirtualInSwitch(IpxDevice, SwitchEntity):
         self.virtualin.toggle()
 
     def update(self):
-        self._state = self.virtualin.status
+        try:
+            self._state = self.virtualin.status
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady

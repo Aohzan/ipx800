@@ -1,6 +1,7 @@
 """Support for IPX800 lights."""
 import logging
 
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.components.light import (
     DOMAIN,
     LightEntity,
@@ -121,7 +122,11 @@ class RelayLight(IpxDevice, LightEntity):
 
     def update(self):
         """Update the IPX800 device status."""
-        self._state = self.relay.status
+        try:
+            self._state = self.relay.status
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady
 
 
 class XDimmerLight(IpxDevice, LightEntity):
@@ -162,8 +167,12 @@ class XDimmerLight(IpxDevice, LightEntity):
         self.xdimmer.toggle()
 
     def update(self):
-        self._state = self.xdimmer.status
-        self._brightness = scaleto255(self.xdimmer.level)
+        try:
+            self._state = self.xdimmer.status
+            self._brightness = scaleto255(self.xdimmer.level)
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady
 
 
 class XPWMLight(IpxDevice, LightEntity):
@@ -204,8 +213,12 @@ class XPWMLight(IpxDevice, LightEntity):
         self.xpwm.toggle()
 
     def update(self):
-        self._state = self.xpwm.status
-        self._brightness = scaleto255(self.xpwm.level)
+        try:
+            self._state = self.xpwm.status
+            self._brightness = scaleto255(self.xpwm.level)
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady
 
 
 class XPWMRGBLight(IpxDevice, LightEntity):
@@ -297,14 +310,18 @@ class XPWMRGBLight(IpxDevice, LightEntity):
         self.xpwm_rgb_b.toggle(self._transition)
 
     def update(self):
-        # one query to get all levels
-        levels = self.xpwm_rgb_r.level_all_channels
-        level_r = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[0]}"])
-        level_g = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[1]}"])
-        level_b = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[2]}"])
-        self._state = level_r > 0 or level_b > 0 or level_g > 0
-        self._rgb_color = [level_r, level_g, level_b]
-        self._brightness = 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
+        try:
+            # one query to get all levels
+            levels = self.xpwm_rgb_r.level_all_channels
+            level_r = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[0]}"])
+            level_g = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[1]}"])
+            level_b = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[2]}"])
+            self._state = level_r > 0 or level_b > 0 or level_g > 0
+            self._rgb_color = [level_r, level_g, level_b]
+            self._brightness = 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady
 
 
 class XPWMRGBWLight(IpxDevice, LightEntity):
@@ -407,17 +424,23 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
         self.xpwm_rgbw_w.toggle()
 
     def update(self):
-        # one query to get all levels
-        levels = self.xpwm_rgbw_w.level_all_channels
-        level_r = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[0]}"])
-        level_g = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[1]}"])
-        level_b = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[2]}"])
-        level_w = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[3]}"])
-        self._state = level_r > 0 or level_b > 0 or level_g > 0 or level_w > 0
-        self._white_value = level_w
-        self._rgb_color = [level_r, level_g, level_b]
-        # if any or RGB is on, brightness is them level, otherwise, brightness is white value
-        if level_r > 0 or level_b > 0 or level_g > 0:
-            self._brightness = 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
-        else:
-            self._brightness = level_w
+        try:
+            # one query to get all levels
+            levels = self.xpwm_rgbw_w.level_all_channels
+            level_r = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[0]}"])
+            level_g = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[1]}"])
+            level_b = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[2]}"])
+            level_w = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[3]}"])
+            self._state = level_r > 0 or level_b > 0 or level_g > 0 or level_w > 0
+            self._white_value = level_w
+            self._rgb_color = [level_r, level_g, level_b]
+            # if any or RGB is on, brightness is them level, otherwise, brightness is white value
+            if level_r > 0 or level_b > 0 or level_g > 0:
+                self._brightness = (
+                    0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
+                )
+            else:
+                self._brightness = level_w
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady

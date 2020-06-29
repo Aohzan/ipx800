@@ -1,6 +1,7 @@
 """Support for IPX800 sensors."""
 import logging
 
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.components.sensor import DOMAIN
 from homeassistant.helpers.entity import Entity
 from homeassistant.const import STATE_OFF, STATE_ON
@@ -59,7 +60,11 @@ class VirtualOutBinarySensor(IpxDevice, Entity):
         return STATE_ON if self.is_on else STATE_OFF
 
     def update(self):
-        self._state = self.virtualout.status
+        try:
+            self._state = self.virtualout.status
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady
 
 
 class DigitalInBinarySensor(IpxDevice, Entity):
@@ -83,4 +88,8 @@ class DigitalInBinarySensor(IpxDevice, Entity):
         return STATE_ON if self.is_on else STATE_OFF
 
     def update(self):
-        self._state = self.digitalin.value
+        try:
+            self._state = self.digitalin.value
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady

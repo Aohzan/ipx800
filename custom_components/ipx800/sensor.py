@@ -1,6 +1,7 @@
 """Support for IPX800 sensors."""
 import logging
 
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.components.sensor import DOMAIN
 from homeassistant.helpers.entity import Entity
 
@@ -46,4 +47,8 @@ class AnalogInSensor(IpxDevice, Entity):
         return self._state
 
     def update(self):
-        self._state = float(self.analogin.value)
+        try:
+            self._state = float(self.analogin.value)
+        except:
+            _LOGGER.warning("Update of %s failed.", self._name)
+            raise ConfigEntryNotReady
