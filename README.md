@@ -1,21 +1,30 @@
 # ipx800 component for Home Assistant
-This a *custom component* for [Home Assistant](https://www.home-assistant.io/). 
+
+This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
 The `ipx800` integration allows you to get information from [GCE Eco-Devices](http://gce-electronics.com/).
 
-### Requirement
+## Installation
+
+Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant.
+Add the `ipx800` entry in your `configuration.yml` (see example below)
+
+## Requirement
+
 [pypix800 python package](https://github.com/Aohzan/pypx800)
 
-### Description
+## Description
+
 You can control by setting the component parameter for each device:
-* `relay` as switch and light
-* `virtual output` as switch and binarysensor
-* `virtual in` as switch
-* `digital in` as binarysensor
-* `analog` in as sensor
-* `xdimmer` as light
-* `xpwm` as light
-* `xpwm rgb` as light (use 3 xpwm channels)
-* `xpwm rgbw` as light (use 4 xpwm channels)
+
+- `relay` as switch and light
+- `virtual output` as switch and binarysensor
+- `virtual in` as switch
+- `digital in` as binarysensor
+- `analog` in as sensor
+- `xdimmer` as light
+- `xpwm` as light
+- `xpwm rgb` as light (use 3 xpwm channels)
+- `xpwm rgbw` as light (use 4 xpwm channels)
 
 Currently, an API call is done by device, so the IPX800 can receive a lot of request, set `should_poll` to false when it's possible.
 
@@ -24,7 +33,8 @@ In `URL ON` and `URL_OFF` set `/api/ipx800/entity_id/state`:
 
 ![PUSH configuration example](ipx800_push_configuration_example.png)
 
-### Example
+## Example
+
 ```yaml
 # Example configuration.yaml entry
 ipx800:
@@ -82,7 +92,8 @@ ipx800:
           unit_of_measurement: "lx"
 ```
 
-### List of configuration parameters
+## List of configuration parameters
+
 ```yaml
 {% configuration %}
 host:
@@ -108,13 +119,13 @@ password:
   required: false
   type: string
 devices_config:
-  component: 
+  component:
     description: device type
     required: true
     type: string
     values: "switch", "light", "sensor" or "binary_sensor"
   name:
-    description: friendly name of the device     
+    description: friendly name of the device
     required: true
     type: string
   device_class:
