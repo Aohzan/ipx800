@@ -1,8 +1,8 @@
 {
   "domain": "ipx800",
-  "name": "ipx800",
+  "name": "GCE IPX800",
   "documentation": "https://www.home-assistant.io/integrations/ipx800",
-  "requirements": ["pypx800==0.5"],
+  "requirements": ["pypx800==1.0"],
   "dependencies": [],
   "codeowners": ["@Mati24"]
 }
