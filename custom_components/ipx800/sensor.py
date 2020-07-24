@@ -2,28 +2,29 @@
 import logging
 
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.components.sensor import DOMAIN
 from homeassistant.helpers.entity import Entity
 
-from . import IPX800_DEVICES, IpxDevice
+from pypx800 import *
+from .device import *
+from .const import *
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IPX800 sensors."""
 
-    add_entities(
-        [
-            AnalogInSensor(device)
-            for device in (
-                item
-                for item in hass.data[IPX800_DEVICES]["sensor"]
-                if item.get("config").get("analogin")
-            )
-        ],
-        True,
-    )
+    # add_entities(
+    #     [
+    #         AnalogInSensor(device)
+    #         for device in (
+    #             item
+    #             for item in hass.data[IPX800_DEVICES]["sensor"]
+    #             if item.get("config").get("analogin")
+    #         )
+    #     ],
+    #     True,
+    # )
 
 
 class AnalogInSensor(IpxDevice, Entity):

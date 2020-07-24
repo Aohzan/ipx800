@@ -2,41 +2,42 @@
 import logging
 
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.components.sensor import DOMAIN
 from homeassistant.helpers.entity import Entity
 from homeassistant.const import STATE_OFF, STATE_ON
 
-from . import IPX800_DEVICES, IpxDevice
+from pypx800 import *
+from .device import *
+from .const import *
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IPX800 binary_sensors."""
 
-    add_entities(
-        [
-            VirtualOutBinarySensor(device)
-            for device in (
-                item
-                for item in hass.data[IPX800_DEVICES]["binary_sensor"]
-                if item.get("config").get("virtualout")
-            )
-        ],
-        True,
-    )
+    # add_entities(
+    #     [
+    #         VirtualOutBinarySensor(device)
+    #         for device in (
+    #             item
+    #             for item in hass.data[IPX800_DEVICES]["binary_sensor"]
+    #             if item.get("config").get("virtualout")
+    #         )
+    #     ],
+    #     True,
+    # )
 
-    add_entities(
-        [
-            DigitalInBinarySensor(device)
-            for device in (
-                item
-                for item in hass.data[IPX800_DEVICES]["binary_sensor"]
-                if item.get("config").get("digitalin")
-            )
-        ],
-        True,
-    )
+    # add_entities(
+    #     [
+    #         DigitalInBinarySensor(device)
+    #         for device in (
+    #             item
+    #             for item in hass.data[IPX800_DEVICES]["binary_sensor"]
+    #             if item.get("config").get("digitalin")
+    #         )
+    #     ],
+    #     True,
+    # )
 
 
 class VirtualOutBinarySensor(IpxDevice, Entity):
