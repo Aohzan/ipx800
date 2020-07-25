@@ -153,73 +153,79 @@ class IpxController:
         for device_config in self._devices_config:
             device = {}
             _LOGGER.debug("Read device name: %s", device_config.get(CONF_NAME))
-            # try:
-            """Check if component is supported"""
-            if device_config[CONF_COMPONENT] not in CONF_COMPONENT_ALLOWED:
-                _LOGGER.error(
-                    "Device %s skipped: %s %s not correct or supported.",
+            try:
+                """Check if component is supported"""
+                if device_config[CONF_COMPONENT] not in CONF_COMPONENT_ALLOWED:
+                    _LOGGER.error(
+                        "Device %s skipped: %s %s not correct or supported.",
+                        device_config[CONF_NAME],
+                        CONF_COMPONENT,
+                        device_config[CONF_COMPONENT],
+                    )
+                    continue
+
+                """Check if type is supported"""
+                if device_config[CONF_TYPE] not in CONF_TYPE_ALLOWED:
+                    _LOGGER.error(
+                        "Device %s skipped: %s %s not correct or supported.",
+                        device_config[CONF_NAME],
+                        CONF_TYPE,
+                        device_config[CONF_TYPE],
+                    )
+                    continue
+
+                """Check if X4VR have extension id set"""
+                if (
+                    device_config[CONF_TYPE] == TYPE_X4VR
+                    and CONF_EXT_ID not in device_config
+                ):
+                    _LOGGER.error(
+                        "Device %s skipped: %s must have %s set.",
+                        device_config[CONF_NAME],
+                        TYPE_X4VR,
+                        CONF_EXT_ID,
+                    )
+                    continue
+
+                """Check if RGB/RBW have ids set"""
+                if (
+                    device_config[CONF_TYPE] == TYPE_XPWM_RGB
+                    or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
+                    and CONF_IDS not in device_config
+                ):
+                    _LOGGER.error(
+                        "Device %s skipped: RGB/RGBW must have %s set.",
+                        device_config[CONF_NAME],
+                        CONF_IDS,
+                    )
+                    continue
+
+                """Check if other device types have id set"""
+                if (
+                    device_config[CONF_TYPE] != TYPE_XPWM_RGB
+                    and device_config[CONF_TYPE] != TYPE_XPWM_RGBW
+                    and CONF_ID not in device_config
+                ):
+                    _LOGGER.error(
+                        "Device %s skipped: must have %s set.",
+                        device_config[CONF_NAME],
+                        CONF_ID,
+                    )
+                    continue
+
+                device["config"] = device_config
+                device["controller"] = self
+                self.devices.append(device)
+                _LOGGER.info(
+                    "Device %s added (component: %s).",
                     device_config[CONF_NAME],
-                    CONF_COMPONENT,
                     device_config[CONF_COMPONENT],
                 )
-                continue
-
-            """Check if type is supported"""
-            if device_config[CONF_TYPE] not in CONF_TYPE_ALLOWED:
+            except:
                 _LOGGER.error(
-                    "Device %s skipped: %s %s not correct or supported.",
-                    device_config[CONF_NAME],
-                    CONF_TYPE,
-                    device_config[CONF_TYPE],
+                    "Error to handle device %s. Please check its config",
+                    device_config.get(CONF_NAME),
                 )
-                continue
-
-            """Check if X4VR have extension id set"""
-            if (
-                device_config[CONF_TYPE] == TYPE_X4VR
-                and CONF_EXT_ID not in device_config
-            ):
-                _LOGGER.error(
-                    "Device %s skipped: %s must have %s set.",
-                    device_config[CONF_NAME],
-                    TYPE_X4VR,
-                    CONF_EXT_ID,
-                )
-                continue
-
-            """Check if RGB/RBW have ids set"""
-            if (
-                device_config[CONF_TYPE] == TYPE_XPWM_RGB
-                or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
-                and CONF_IDS not in device_config
-            ):
-                _LOGGER.error(
-                    "Device %s skipped: RGB/RGBW must have %s set.",
-                    device_config[CONF_NAME],
-                    CONF_IDS,
-                )
-                continue
-            elif CONF_ID not in device_config:
-                _LOGGER.error(
-                    "Device %s skipped: must have %s set.",
-                    device_config[CONF_NAME],
-                    CONF_ID,
-                )
-                continue
-
-            device["config"] = device_config
-            device["controller"] = self
-            self.devices.append(device)
-            _LOGGER.info(
-                "Device %s added (component: %s).",
-                device_config[CONF_NAME],
-                device_config[CONF_COMPONENT],
-            )
-            # except:
-            #     _LOGGER.error(
-            #         "Error to handle device %s. Please check its config",
-            #         device_config.get(CONF_NAME),
-            #     )
 
 
 class IpxRequestView(HomeAssistantView):
@@ -251,7 +257,9 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Get all states from API."""
+        data = {}
         try:
-            return self.ipx.global_get()
+            data = self.ipx.global_get()
+            return data
         except:
-            _LOGGER.warning("IPX800 global get failed")
+            _LOGGER.warning("IPX800 global get failed, data received: %s", data)
