@@ -33,7 +33,8 @@ In `URL ON` and `URL_OFF` set `/api/ipx800/entity_id/state`:
 ```yaml
 # Example configuration.yaml entry
 ipx800:
-  - host: "192.168.1.240"
+  - name: IPX00
+    host: "192.168.1.240"
     api_key: "apikey"
     username: user
     password: password
@@ -93,6 +94,10 @@ ipx800:
 
 ```yaml
 {% configuration %}
+name:
+  description: Name of the IPX800.
+  required: true
+  type: name
 host:
   description: Hostname or IP address of the IPX800.
   required: true
