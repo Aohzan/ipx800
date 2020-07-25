@@ -13,6 +13,7 @@ from aiohttp import web
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
+
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.components.http.const import KEY_REAL_IP
 
@@ -22,6 +23,7 @@ from homeassistant.helpers import discovery
 from homeassistant.const import (
     CONF_HOST,
     CONF_PORT,
+    CONF_SCAN_INTERVAL,
     CONF_API_KEY,
     CONF_USERNAME,
     CONF_PASSWORD,
@@ -39,10 +41,11 @@ DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
         vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_COMPONENT): cv.string,
         vol.Required(CONF_TYPE): cv.string,
-        vol.Required(CONF_ID): cv.positive_int,
+        vol.Optional(CONF_ID): cv.positive_int,
+        vol.Optional(CONF_IDS): cv.ensure_list,
         vol.Optional(CONF_EXT_ID): cv.positive_int,
         vol.Optional(CONF_ICON): cv.icon,
-        vol.Optional(CONF_TRANSITION, default=DEFAULT_TRANSITION): cv.small_float,
+        vol.Optional(CONF_TRANSITION, default=DEFAULT_TRANSITION): vol.Coerce(float),
         vol.Optional(CONF_DEVICE_CLASS): cv.string,
         vol.Optional(CONF_UNIT_OF_MEASUREMENT): cv.string,
     }
@@ -53,6 +56,7 @@ GATEWAY_CONFIG = vol.Schema(
         vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_HOST): cv.string,
         vol.Optional(CONF_PORT, default=80): cv.port,
+        vol.Optional(CONF_SCAN_INTERVAL, default=5): cv.positive_int,
         vol.Required(CONF_API_KEY): cv.string,
         vol.Optional(CONF_USERNAME): cv.string,
         vol.Optional(CONF_PASSWORD): cv.string,
@@ -87,9 +91,6 @@ async def async_setup(hass, config):
                 )
 
                 await controller.coordinator.async_refresh()
-
-                # if not controller.coordinator.last_update_success:
-                #     raise ConfigEntryNotReady
 
                 hass.data[DOMAIN][controller.name] = controller
                 controller.read_devices()
@@ -136,7 +137,9 @@ class IpxController:
         )
 
         self.coordinator = IpxDataUpdateCoordinator(
-            hass=hass, ipx=self.ipx, update_interval=timedelta(seconds=5)
+            hass=hass,
+            ipx=self.ipx,
+            update_interval=timedelta(seconds=config.get(CONF_SCAN_INTERVAL)),
         )
 
         # devices config from user
@@ -184,6 +187,26 @@ class IpxController:
                 )
                 continue
 
+            """Check if RGB/RBW have ids set"""
+            if (
+                device_config[CONF_TYPE] == TYPE_XPWM_RGB
+                or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
+                and CONF_IDS not in device_config
+            ):
+                _LOGGER.error(
+                    "Device %s skipped: RGB/RGBW must have %s set.",
+                    device_config[CONF_NAME],
+                    CONF_IDS,
+                )
+                continue
+            elif CONF_ID not in device_config:
+                _LOGGER.error(
+                    "Device %s skipped: must have %s set.",
+                    device_config[CONF_NAME],
+                    CONF_ID,
+                )
+                continue
+
             device["config"] = device_config
             device["controller"] = self
             self.devices.append(device)
@@ -227,10 +250,8 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=update_interval)
 
     async def _async_update_data(self):
-        """Update data via library."""
-        return self.ipx.global_get()
-        # with async_timeout.timeout(10):
-        #     try:
-        #         return await self.ipx.global_get()
-        #     except:
-        #         raise UpdateFailed()
+        """Get all states from API."""
+        try:
+            return self.ipx.global_get()
+        except:
+            _LOGGER.warning("IPX800 global get failed")

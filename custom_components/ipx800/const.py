@@ -7,6 +7,7 @@ CONF_DEVICES = "devices"
 
 CONF_COMPONENT = "component"
 CONF_ID = "id"
+CONF_IDS = "ids"
 CONF_EXT_ID = "ext_id"
 CONF_TRANSITION = "transition"
 CONF_TYPE = "type"

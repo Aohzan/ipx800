@@ -1,23 +1,27 @@
 # ipx800 component for Home Assistant
-This a *custom component* for [Home Assistant](https://www.home-assistant.io/). 
+
+This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
 The `ipx800` integration allows you to get information from [GCE Eco-Devices](http://gce-electronics.com/).
 
 ### Requirement
+
 [pypix800 python package](https://github.com/Aohzan/pypx800)
 
 ### Description
-You can control by setting the component parameter for each device:
-* `relay` as switch and light
-* `virtual output` as switch and binarysensor
-* `virtual in` as switch
-* `digital in` as binarysensor
-* `analog` in as sensor
-* `xdimmer` as light
-* `xpwm` as light
-* `xpwm rgb` as light (use 3 xpwm channels)
-* `xpwm rgbw` as light (use 4 xpwm channels)
 
-Currently, an API call is done by device, so the IPX800 can receive a lot of request, set `should_poll` to false when it's possible.
+You can control by setting the type of the device:
+
+- `relay` as switch and light
+- `virtual output` as switch and binarysensor
+- `virtual in` as switch
+- `digital in` as binarysensor
+- `analog` in as sensor
+- `xdimmer` as light
+- `xpwm` as light
+- `xpwm_rgb` as light (use 3 xpwm channels)
+- `xpwm_rgbw` as light (use 4 xpwm channels)
+- `x4vr` as cover
+- `xthl` as sensors
 
 You can update value of a device by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
 In `URL ON` and `URL_OFF` set `/api/ipx800/entity_id/state`:
@@ -25,64 +29,68 @@ In `URL ON` and `URL_OFF` set `/api/ipx800/entity_id/state`:
 ![PUSH configuration example](ipx800_push_configuration_example.png)
 
 ### Example
+
 ```yaml
 # Example configuration.yaml entry
 ipx800:
-  gateways:
-    - host: "192.168.1.240"
-      api_key: "apikey"
-      username: user
-      password: password
-      scan_interval: 90
-      devices_config:
-        switch_porte_garage:
-          component: switch
-          name: Porte Garage
-          icon: mdi:car
-          relay: 1
-          should_poll: false
-        lumiere_terrasse:
-          component: light
-          name: "Lumière Terrasse"
-          relay: 11
-        spots_salle_de_bains:
-          component: light
-          name: "Spots Salle de Bains"
-          xpwm: 8
-          transition: 1.5
-        led_salon:
-          component: light
-          name: "Bandeau de LED Salon"
-          xpwm_rgbw: [9, 10, 11, 12]
-          transition: 2
-        switch_ipx800_automatique:
-          component: switch
-          name: IPX800 Mode Automatique
-          icon: mdi:pause-circle
-          virtualin: 1
-          should_poll: false
-        switch_presence_cuisine:
-          component: binary_sensor
-          device_class: motion
-          name: Présence Cuisine
-          virtualout: 1
-          should_poll: false
-        sensor_sonnette:
-          component: binary_sensor
-          name: Sonnette
-          icon: mdi:bell-circle-outline
-          digitalin: 1
-          should_poll: false
-        sensor_luminosite_cuisine:
-          component: sensor
-          device_class: illuminance
-          name: Luminosité Cuisine
-          icon: mdi:white-balance-sunny
-          analogin: 1
-          unit_of_measurement: "lx"
+  - host: "192.168.1.240"
+    api_key: "apikey"
+    username: user
+    password: password
+    scan_interval: 10
+    devices:
+      - name: Chaudière
+        icon: mdi:water-boiler
+        type: "relay"
+        component: "switch"
+        id: 3
+      - name: Lumière Garage
+        type: relay
+        component: light
+        id: 9
+      - name: Lumière Salle à Manger
+        type: xdimmer
+        component: light
+        id: 1
+      - component: light
+        name: Spots Cuisine
+        type: xpwm
+        id: 1
+      - component: light
+        name: "Bandeau de LED Salon"
+        type: xpwm_rgbw
+        ids: [9, 10, 11, 12]
+        transition: 1.5
+      - component: binary_sensor
+        device_class: motion
+        name: Présence Cuisine
+        type: virtualout
+        id: 1
+      - component: binary_sensor
+        name: Sonnette
+        type: digitalin
+        icon: mdi:bell-circle-outline
+        id: 1
+      - component: sensor
+        device_class: illuminance
+        name: Luminosité Cuisine
+        icon: mdi:white-balance-sunny
+        type: analogin
+        id: 1
+        unit_of_measurement: "lx"
+      - component: sensor
+        name: Capteur Rez-de-Chaussée
+        type: xthl
+        id: 1
+      - component: cover
+        name: Volet Salon
+        type: x4vr
+        ext_id: 1
+        id: 1
 ```
 
 ### List of configuration parameters
+
 ```yaml
 {% configuration %}
 host:
@@ -107,18 +115,18 @@ password:
   description: User's password (for X-PWM control only)
   required: false
   type: string
-devices_config:
-  component: 
+devices:
+  component:
     description: device type
     required: true
     type: string
-    values: "switch", "light", "sensor" or "binary_sensor"
+    values: "switch", "light", "cover", "sensor" or "binary_sensor"
   name:
-    description: friendly name of the device     
+    description: friendly name of the device
     required: true
     type: string
   device_class:
-    description: custom device_class for sensor only, see Home Assistant
+    description: custom device_class for binary_sensor and sensor only, see Home Assistant
     required: false
     type: string
   unit_of_measurement:
@@ -134,47 +142,23 @@ devices_config:
     description: custom icon
     required: false
     type: string
-  should_poll:
-    description: set to false if you don't need that this entity is updated, usefull to reduce api call numbers
-    required: false
-    default: true
-    type: boolean
   # Type to control/Get value, only one otherwise the device will not be added
-  relay:
-    description: relay id of IPX800 (1-8) or X-8R (9+)
+  type:
+    description: type of input/output on the IPX800 or an extension.
+    required: true
+    type: string
+    values: "relay", "analogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr"
+  id:
+    description: id of type output, required for all except xpwm_rgb and xpwm_rgbw type
     required: false
     type: int
-  analogin:
-    description: analog input number of IPX800 (1-4)
+  ext_id:
+    description: id of X-4VR extension, required only for x4vr type
     required: false
     type: int
-  digitalin:
-    description: digital input number of IPX800 (1-8), X-8D and X-24D (9+)
+  ids:
+    description: ids of channel for xpwm_rgb or xpwm_rgbw type
     required: false
-    type: int
-  virtualin:
-    description: virtual input number of IPX800
-    required: false
-    type: int
-  virtualout:
-    description: virtual output number of IPX800
-    required: false
-    type: int
-  xdimmer:
-    description: relay id of X-Dimmer
-    required: false
-    type: int
-  xpwm:
-    description: channel id of X-PWM
-    required: false
-    type: int
-  xpwm_rgb:
-    description: 3 channels id of X-PWM to get a RGB light
-    required: false
-    type: array of int
-  xpwm_rgbw:
-    description: 4 channels id of X-PWM to get a RGBW light
-    required: false
-    type: array of int
+    type: list of int
 {% endconfiguration %}
 ```

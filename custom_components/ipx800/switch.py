@@ -1,4 +1,4 @@
-"""Support for IPX800 lights."""
+"""Support for IPX800 switches."""
 import logging
 
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -25,30 +25,29 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         True,
     )
 
+    async_add_entities(
+        [
+            VirtualOutSwitch(device)
+            for device in (
+                item
+                for item in discovery_info
+                if item.get("config").get(CONF_TYPE) == TYPE_VIRTUALOUT
+            )
+        ],
+        True,
+    )
 
-    # add_entities(
-    #     [
-    #         VirtualOutSwitch(device)
-    #         for device in (
-    #             item
-    #             for item in hass.data[IPX800_DEVICES]["switch"]
-    #             if item.get("config").get("virtualout")
-    #         )
-    #     ],
-    #     True,
-    # )
-
-    # add_entities(
-    #     [
-    #         VirtualInSwitch(device)
-    #         for device in (
-    #             item
-    #             for item in hass.data[IPX800_DEVICES]["switch"]
-    #             if item.get("config").get("virtualin")
-    #         )
-    #     ],
-    #     True,
-    # )
+    async_add_entities(
+        [
+            VirtualInSwitch(device)
+            for device in (
+                item
+                for item in discovery_info
+                if item.get("config").get(CONF_TYPE) == TYPE_VIRTUALIN
+            )
+        ],
+        True,
+    )
 
 
 class RelaySwitch(IpxDevice, SwitchEntity):
@@ -64,11 +63,11 @@ class RelaySwitch(IpxDevice, SwitchEntity):
         """Return true if the IPX800 device is on."""
         return self.coordinator.data[f"R{self._id}"] == 1
 
-    def turn_on(self):
+    def turn_on(self, **kwargs):
         """Turn on the IPX800 device."""
         self.control.on()
 
-    def turn_off(self):
+    def turn_off(self, **kwargs):
         """Turn off the IPX800 device."""
         self.control.off()
 
@@ -79,29 +78,24 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
     def __init__(self, ipx_device):
         """Initialize the IPX device."""
         super().__init__(ipx_device)
-        self.virtualout = self.controller.ipx.virtualout[self.config.get("virtualout")]
+        self.control = VO(self.controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
-        return self._state
+        """Return true if the IPX800 device is on."""
+        return self.coordinator.data[f"R{self._id}"] == 1
 
-    def turn_on(self):
-        self.virtualout.on()
-        self._state = True
+    def turn_on(self, **kwargs):
+        """Turn on the IPX800 device."""
+        self.control.on()
 
-    def turn_off(self):
-        self.virtualout.off()
-        self._state = False
+    def turn_off(self, **kwargs):
+        """Turn off the IPX800 device."""
+        self.control.off()
 
-    def toggle(self):
-        self.virtualout.toggle()
-
-    def update(self):
-        try:
-            self._state = self.virtualout.status
-        except KeyError:
-            _LOGGER.warning("Update of %s failed.", self._name)
-            raise ConfigEntryNotReady
+    def toggle(self, **kwargs):
+        """Toggle the IPX800 device."""
+        self.control.toggle()
 
 
 class VirtualInSwitch(IpxDevice, SwitchEntity):
@@ -110,26 +104,21 @@ class VirtualInSwitch(IpxDevice, SwitchEntity):
     def __init__(self, ipx_device):
         """Initialize the IPX device."""
         super().__init__(ipx_device)
-        self.virtualin = self.controller.ipx.virtualin[self.config.get("virtualin")]
+        self.control = VI(self.controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
-        return self._state
+        """Return true if the IPX800 device is on."""
+        return self.coordinator.data[f"VI{self._id}"] == 1
 
-    def turn_on(self):
-        self.virtualin.on()
-        self._state = True
+    def turn_on(self, **kwargs):
+        """Turn on the IPX800 device."""
+        self.control.on()
 
-    def turn_off(self):
-        self.virtualin.off()
-        self._state = False
+    def turn_off(self, **kwargs):
+        """Turn off the IPX800 device."""
+        self.control.off()
 
-    def toggle(self):
-        self.virtualin.toggle()
-
-    def update(self):
-        try:
-            self._state = self.virtualin.status
-        except KeyError:
-            _LOGGER.warning("Update of %s failed.", self._name)
-            raise ConfigEntryNotReady
+    def toggle(self, **kwargs):
+        """Toggle the IPX800 device."""
+        self.control.toggle()

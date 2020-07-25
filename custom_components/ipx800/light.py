@@ -116,7 +116,7 @@ class RelayLight(IpxDevice, LightEntity):
         self.control.on()
         await self.coordinator.async_request_refresh()
 
-    def turn_on(self):
+    def turn_on(self, **kwargs):
         """Turn on the IPX800 device."""
         self.control.on()
 
@@ -124,7 +124,7 @@ class RelayLight(IpxDevice, LightEntity):
         self.control.off()
         await self.coordinator.async_request_refresh()
 
-    def turn_off(self):
+    def turn_off(self, **kwargs):
         """Turn off the IPX800 device."""
         self.control.off()
 
@@ -137,7 +137,7 @@ class XDimmerLight(IpxDevice, LightEntity):
         self.control = XDimmer(self.controller.ipx, self._id)
 
         self._brightness = None
-        self._supported_flags |= SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
+        self._supported_features |= SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
 
     @property
     def is_on(self) -> bool:
@@ -145,7 +145,7 @@ class XDimmerLight(IpxDevice, LightEntity):
 
     @property
     def brightness(self) -> int:
-        return self.coordinator.data[f"G{self._id}"]["Valeur"]
+        return scaleto255(self.coordinator.data[f"G{self._id}"]["Valeur"])
 
     def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
@@ -155,13 +155,11 @@ class XDimmerLight(IpxDevice, LightEntity):
             self.control.set_level(scaleto100(self._brightness), self._transition)
         else:
             self.control.on(self._transition)
-        self._state = True
 
     def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
         self.control.off(self._transition)
-        self.is_on = False
 
 
 class XPWMLight(IpxDevice, LightEntity):
@@ -172,7 +170,7 @@ class XPWMLight(IpxDevice, LightEntity):
         self.control = XPWM(self.controller.ipx, self._id)
 
         self._brightness = None
-        self._supported_flags |= SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
+        self._supported_features |= SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
 
     @property
     def is_on(self) -> bool:
@@ -180,7 +178,7 @@ class XPWMLight(IpxDevice, LightEntity):
 
     @property
     def brightness(self) -> int:
-        return self.coordinator.data[f"PWM{self._id}"]
+        return scaleto255(self.coordinator.data[f"PWM{self._id}"])
 
     def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
@@ -198,7 +196,7 @@ class XPWMLight(IpxDevice, LightEntity):
 
 
 class XPWMRGBLight(IpxDevice, LightEntity):
-    """Representation of a RGB Light through 3 X-PWM channel."""
+    """Representation of a RGB light through 3 X-PWM channels."""
 
     def __init__(self, ipx_device):
         """Initialize the IPX device."""
@@ -208,25 +206,31 @@ class XPWMRGBLight(IpxDevice, LightEntity):
         self.xpwm_rgb_b = XPWM(self.controller.ipx, self._ids[2])
 
         self._brightness = None
-        self._hs_color = None
         self._rgb_color = None
-        self._supported_flags |= SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION | SUPPORT_COLOR
+        self._supported_features |= (
+            SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION | SUPPORT_COLOR
+        )
 
     @property
     def is_on(self) -> bool:
-        return self._state
+        level_r = scaleto255(self.coordinator.data[f"PWM{self._ids[0]}"])
+        level_g = scaleto255(self.coordinator.data[f"PWM{self._ids[1]}"])
+        level_b = scaleto255(self.coordinator.data[f"PWM{self._ids[2]}"])
+        return level_r > 0 or level_b > 0 or level_g > 0
 
     @property
     def brightness(self):
-        return self._brightness
+        level_r = scaleto255(self.coordinator.data[f"PWM{self._ids[0]}"])
+        level_g = scaleto255(self.coordinator.data[f"PWM{self._ids[1]}"])
+        level_b = scaleto255(self.coordinator.data[f"PWM{self._ids[2]}"])
+        return 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
 
     @property
     def rgb_color(self):
-        return self._rgb_color
-
-    @property
-    def hs_color(self):
-        return self._hs_color
+        level_r = scaleto255(self.coordinator.data[f"PWM{self._ids[0]}"])
+        level_g = scaleto255(self.coordinator.data[f"PWM{self._ids[1]}"])
+        level_b = scaleto255(self.coordinator.data[f"PWM{self._ids[2]}"])
+        return [level_r, level_g, level_b]
 
     def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
@@ -270,52 +274,29 @@ class XPWMRGBLight(IpxDevice, LightEntity):
             self.xpwm_rgb_g.on(self._transition)
             self.xpwm_rgb_b.on(self._transition)
 
-        self._state = True
-
     def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
         self.xpwm_rgb_r.off(self._transition)
         self.xpwm_rgb_g.off(self._transition)
         self.xpwm_rgb_b.off(self._transition)
-        self._state = False
-
-    def toggle(self):
-        self.xpwm_rgb_r.toggle(self._transition)
-        self.xpwm_rgb_g.toggle(self._transition)
-        self.xpwm_rgb_b.toggle(self._transition)
-
-    def update(self):
-        try:
-            # one query to get all levels
-            levels = self.xpwm_rgb_r.level_all_channels
-            level_r = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[0]}"])
-            level_g = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[1]}"])
-            level_b = scaleto255(levels[f"PWM{self.config.get('xpwm_rgb')[2]}"])
-            self._state = level_r > 0 or level_b > 0 or level_g > 0
-            self._rgb_color = [level_r, level_g, level_b]
-            self._brightness = 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
-        except KeyError:
-            _LOGGER.warning("Update of %s failed.", self._name)
-            raise ConfigEntryNotReady
 
 
 class XPWMRGBWLight(IpxDevice, LightEntity):
-    """Representation of a IPX Light through X-PWM single channel."""
+    """Representation of a RGBW light through 4 X-PWM channels."""
 
     def __init__(self, ipx_device):
         """Initialize the IPX device."""
         super().__init__(ipx_device)
-        self.xpwm_rgbw_r = self.controller.ipx.xpwm[self.config.get("xpwm_rgbw")[0]]
-        self.xpwm_rgbw_g = self.controller.ipx.xpwm[self.config.get("xpwm_rgbw")[1]]
-        self.xpwm_rgbw_b = self.controller.ipx.xpwm[self.config.get("xpwm_rgbw")[2]]
-        self.xpwm_rgbw_w = self.controller.ipx.xpwm[self.config.get("xpwm_rgbw")[3]]
+        self.xpwm_rgbw_r = XPWM(self.controller.ipx, self._ids[0])
+        self.xpwm_rgbw_g = XPWM(self.controller.ipx, self._ids[1])
+        self.xpwm_rgbw_b = XPWM(self.controller.ipx, self._ids[2])
+        self.xpwm_rgbw_b = XPWM(self.controller.ipx, self._ids[3])
 
         self._brightness = None
-        self._hs_color = None
         self._rgb_color = None
         self._white_value = None
-        self._supported_flags |= (
+        self._supported_features |= (
             SUPPORT_BRIGHTNESS
             | SUPPORT_TRANSITION
             | SUPPORT_COLOR
@@ -324,23 +305,34 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
 
     @property
     def is_on(self) -> bool:
-        return self._state
+        level_r = scaleto255(self.coordinator.data[f"PWM{self._ids[0]}"])
+        level_g = scaleto255(self.coordinator.data[f"PWM{self._ids[1]}"])
+        level_b = scaleto255(self.coordinator.data[f"PWM{self._ids[2]}"])
+        level_w = scaleto255(self.coordinator.data[f"PWM{self._ids[3]}"])
+        return level_r > 0 or level_b > 0 or level_g > 0 or level_w > 0
 
     @property
     def brightness(self):
+        level_r = scaleto255(self.coordinator.data[f"PWM{self._ids[0]}"])
+        level_g = scaleto255(self.coordinator.data[f"PWM{self._ids[1]}"])
+        level_b = scaleto255(self.coordinator.data[f"PWM{self._ids[2]}"])
+        level_w = scaleto255(self.coordinator.data[f"PWM{self._ids[3]}"])
+        if level_r > 0 or level_b > 0 or level_g > 0:
+            self._brightness = 0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
+        else:
+            self._brightness = level_w
         return self._brightness
 
     @property
     def rgb_color(self):
-        return self._rgb_color
-
-    @property
-    def hs_color(self):
-        return self._hs_color
+        level_r = scaleto255(self.coordinator.data[f"PWM{self._ids[0]}"])
+        level_g = scaleto255(self.coordinator.data[f"PWM{self._ids[1]}"])
+        level_b = scaleto255(self.coordinator.data[f"PWM{self._ids[2]}"])
+        return [level_r, level_g, level_b]
 
     @property
     def white_value(self):
-        return self._white_value
+        return scaleto255(self.coordinator.data[f"PWM{self._ids[3]}"])
 
     def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
@@ -385,8 +377,6 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
         else:
             self.xpwm_rgbw_w.on(self._transition)
 
-        self._state = True
-
     def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
@@ -394,29 +384,3 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
         self.xpwm_rgbw_g.off(self._transition)
         self.xpwm_rgbw_b.off(self._transition)
         self.xpwm_rgbw_w.off(self._transition)
-        self._state = False
-
-    def toggle(self):
-        self.xpwm_rgbw_w.toggle()
-
-    def update(self):
-        try:
-            # one query to get all levels
-            levels = self.xpwm_rgbw_w.level_all_channels
-            level_r = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[0]}"])
-            level_g = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[1]}"])
-            level_b = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[2]}"])
-            level_w = scaleto255(levels[f"PWM{self.config.get('xpwm_rgbw')[3]}"])
-            self._state = level_r > 0 or level_b > 0 or level_g > 0 or level_w > 0
-            self._white_value = level_w
-            self._rgb_color = [level_r, level_g, level_b]
-            # if any or RGB is on, brightness is them level, otherwise, brightness is white value
-            if level_r > 0 or level_b > 0 or level_g > 0:
-                self._brightness = (
-                    0.2126 * level_r + 0.7152 * level_g + 0.0722 * level_b
-                )
-            else:
-                self._brightness = level_w
-        except KeyError:
-            _LOGGER.warning("Update of %s failed.", self._name)
-            raise ConfigEntryNotReady

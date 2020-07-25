@@ -1,1 +1,0 @@
-docker run -d --name="home-assistant" -v ~/Github/Aohzan/ipx800/configuration.yaml:/config/configuration.yaml:ro -v ~/Github/Aohzan/ipx800/custom_components/ipx800:/config/custom_components/ipx800:ro -v /etc/localtime:/etc/localtime:ro --net=host homeassistant/home-assistant:stable
