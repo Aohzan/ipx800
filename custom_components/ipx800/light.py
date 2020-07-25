@@ -291,7 +291,7 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
         self.xpwm_rgbw_r = XPWM(self.controller.ipx, self._ids[0])
         self.xpwm_rgbw_g = XPWM(self.controller.ipx, self._ids[1])
         self.xpwm_rgbw_b = XPWM(self.controller.ipx, self._ids[2])
-        self.xpwm_rgbw_b = XPWM(self.controller.ipx, self._ids[3])
+        self.xpwm_rgbw_w = XPWM(self.controller.ipx, self._ids[3])
 
         self._brightness = None
         self._rgb_color = None
