@@ -39,9 +39,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     ):
         async_add_entities(
             [
-                XTHLSensor(device, DEVICE_CLASS_TEMPERATURE, "TEMP", "Temperature"),
-                XTHLSensor(device, DEVICE_CLASS_HUMIDITY, "HUM", "Humidity"),
-                XTHLSensor(device, DEVICE_CLASS_ILLUMINANCE, "LUM", "Luminance"),
+                XTHLSensor(device, DEVICE_CLASS_TEMPERATURE, "°C", "TEMP", "Temperature"),
+                XTHLSensor(device, DEVICE_CLASS_HUMIDITY, "%", "HUM", "Humidity"),
+                XTHLSensor(device, DEVICE_CLASS_ILLUMINANCE, "lx", "LUM", "Luminance"),
             ],
             True,
         )
@@ -70,15 +70,20 @@ class AnalogInSensor(IpxDevice, Entity):
 class XTHLSensor(IpxDevice, Entity):
     """Representation of a X-THL sensor."""
 
-    def __init__(self, ipx_device, device_class, req_type, name_suffix):
+    def __init__(self, ipx_device, device_class, unit_of_measurement, req_type, name_suffix):
         """Initialize the IPX device."""
         super().__init__(ipx_device, name_suffix)
         self._device_class = device_class
+        self._unit_of_measurement = unit_of_measurement 
         self._req_type = req_type
 
     @property
     def device_class(self):
         return self._device_class
+
+    @property
+    def unit_of_measurement(self):
+        return self._unit_of_measurement
 
     @property
     def state(self) -> str:

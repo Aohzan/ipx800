@@ -24,49 +24,53 @@ ipx800:
     api_key: ezMYdvdsCpGiEda4w4Mp55SraTy
     username: user
     password: xJc3i9eradWVrL
-    # scan_interval: 5
+    scan_interval: 10
     devices:
-      - name: "Lumière Bureau"
-        type: "relay"
-        component: "light"
-        id: 15
-      - name: "Carillon"
-        icon: mdi:bell
+      - name: Chaudière
+        icon: mdi:water-boiler
         type: "relay"
         component: "switch"
-        id: 5
-      - name: "Lumière Chevet Matthieu"
-        type: "xdimmer"
-        component: "light"
-        id: 4
-      - component: light
-        name: "Spots Couloir"
-        type: xpwm
-        id: 6
-        transition: 0.8
-      - component: switch
-        name: IPX800 Mode Automatique
-        icon: mdi:play-circle-outline
-        type: virtualin
+        id: 3
+      - name: Lumière Garage
+        type: relay
+        component: light
+        id: 9
+      - name: Lumière Salle à Manger
+        type: xdimmer
+        component: light
         id: 1
+      - component: light
+        name: Spots Cuisine
+        type: xpwm
+        id: 1
+      - component: light
+        name: "Bandeau de LED Salon"
+        type: xpwm_rgbw
+        ids: [9, 10, 11, 12]
+        transition: 1.5
       - component: binary_sensor
         device_class: motion
-        name: Présence Couloir
+        name: Présence Cuisine
         type: virtualout
-        id: 6
+        id: 1
       - component: binary_sensor
-        name: Etat Porte Garage
+        name: Sonnette
         type: digitalin
-        id: 2
+        icon: mdi:bell-circle-outline
+        id: 1
       - component: sensor
         device_class: illuminance
-        name: Luminosité Salle de Bains
+        name: Luminosité Cuisine
         icon: mdi:white-balance-sunny
         type: analogin
-        id: 2
+        id: 1
         unit_of_measurement: "lx"
       - component: sensor
-        name: Capteur Salle à Manger
+        name: Capteur Rez-de-Chaussée
         type: xthl
         id: 1
-        
+      - component: cover
+        name: Volet Salon
+        type: x4vr
+        ext_id: 1
+        id: 1
