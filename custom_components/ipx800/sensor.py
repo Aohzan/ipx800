@@ -79,7 +79,7 @@ class XTHLSensor(IpxDevice, Entity):
         super().__init__(ipx_device, name_suffix)
         self._device_class = device_class
         """Allow overriding of temperatur unit if specified in the xthl conf"""
-        if not self._unit_of_measurement and device_class == DEVICE_CLASS_TEMPERATURE:
+        if not (self._unit_of_measurement and device_class == DEVICE_CLASS_TEMPERATURE):
             self._unit_of_measurement = unit_of_measurement
         self._req_type = req_type
 
