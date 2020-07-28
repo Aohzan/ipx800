@@ -1,23 +1,29 @@
 """Support for the ipx800."""
 from collections import defaultdict
+from datetime import timedelta
 import asyncio
+import async_timeout
 import logging
 
-from pypx800 import IPX800 as pypx800
+from pypx800 import *
+
+from .const import *
 
 from aiohttp import web
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
+
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.components.http.const import KEY_REAL_IP
-from homeassistant.helpers.entity import Entity
 
-# from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import discovery
 from homeassistant.const import (
     CONF_HOST,
     CONF_PORT,
+    CONF_SCAN_INTERVAL,
     CONF_API_KEY,
     CONF_USERNAME,
     CONF_PASSWORD,
@@ -30,42 +36,16 @@ from homeassistant.const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-CONF_GATEWAYS = "gateways"
-CONF_DEVICES_CONFIG = "devices_config"
-CONF_DEVICE_COMPONENT = "component"
-CONF_RELAY = "relay"
-CONF_XPWM = "xpwm"
-CONF_XPWM_RGB = "xpwm_rgb"
-CONF_XPWM_RGBW = "xpwm_rgbw"
-CONF_XDIMMER = "xdimmer"
-CONF_VIRTUALOUT = "virtualout"
-CONF_VIRTUALIN = "virtualin"
-CONF_ANALOGIN = "analogin"
-CONF_DIGITALIN = "digitalin"
-CONF_TRANSITION = "transition"
-CONF_SHOULD_POLL = "should_poll"
-DEFAULT_TRANSITION = 0.5
-DOMAIN = "ipx800"
-IPX800_CONTROLLERS = "ipx800_controllers"
-IPX800_DEVICES = "ipx800_devices"
-IPX800_COMPONENTS = ["light", "switch", "sensor", "binary_sensor"]
-
 DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
     {
         vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_DEVICE_COMPONENT): cv.string,
-        vol.Optional(CONF_SHOULD_POLL): cv.boolean,
-        vol.Optional(CONF_RELAY): cv.positive_int,
-        vol.Optional(CONF_XPWM): cv.positive_int,
-        vol.Optional(CONF_XPWM_RGB): cv.ensure_list,
-        vol.Optional(CONF_XPWM_RGBW): cv.ensure_list,
-        vol.Optional(CONF_XDIMMER): cv.positive_int,
-        vol.Optional(CONF_VIRTUALOUT): cv.positive_int,
-        vol.Optional(CONF_VIRTUALIN): cv.positive_int,
-        vol.Optional(CONF_ANALOGIN): cv.positive_int,
-        vol.Optional(CONF_DIGITALIN): cv.positive_int,
+        vol.Required(CONF_COMPONENT): cv.string,
+        vol.Required(CONF_TYPE): cv.string,
+        vol.Optional(CONF_ID): cv.positive_int,
+        vol.Optional(CONF_IDS): cv.ensure_list,
+        vol.Optional(CONF_EXT_ID): cv.positive_int,
         vol.Optional(CONF_ICON): cv.icon,
-        vol.Optional(CONF_TRANSITION): cv.positive_int,
+        vol.Optional(CONF_TRANSITION, default=DEFAULT_TRANSITION): vol.Coerce(float),
         vol.Optional(CONF_DEVICE_CLASS): cv.string,
         vol.Optional(CONF_UNIT_OF_MEASUREMENT): cv.string,
     }
@@ -73,151 +53,179 @@ DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
 
 GATEWAY_CONFIG = vol.Schema(
     {
+        vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_HOST): cv.string,
         vol.Optional(CONF_PORT, default=80): cv.port,
+        vol.Optional(CONF_SCAN_INTERVAL, default=5): cv.positive_int,
         vol.Required(CONF_API_KEY): cv.string,
         vol.Optional(CONF_USERNAME): cv.string,
         vol.Optional(CONF_PASSWORD): cv.string,
-        vol.Optional(CONF_DEVICES_CONFIG, default={}): vol.Schema(
-            {cv.string: DEVICE_CONFIG_SCHEMA_ENTRY}
+        vol.Optional(CONF_DEVICES, default=[]): vol.All(
+            cv.ensure_list, [DEVICE_CONFIG_SCHEMA_ENTRY]
         ),
     },
     extra=vol.ALLOW_EXTRA,
 )
 
 CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {vol.Required(CONF_GATEWAYS): vol.All(cv.ensure_list, [GATEWAY_CONFIG])}
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
+    {DOMAIN: vol.All(cv.ensure_list, [GATEWAY_CONFIG])}, extra=vol.ALLOW_EXTRA,
 )
 
 
-class Ipx800Controller:
+async def async_setup(hass, config):
+    """Set up the IPX800 Component."""
+    hass.data.setdefault(DOMAIN, {})
+
+    # Provide an endpoint for the IPX to call to push states
+    hass.http.register_view(IpxRequestView)
+
+    if DOMAIN in config:
+        for gateway in config[DOMAIN]:
+            _LOGGER.debug("## Init IPX800 %s", gateway.get(CONF_NAME, "pas de nom"))
+            # Init new gateway
+            controller = IpxController(hass, gateway)
+
+            if controller.ipx.ping():
+                _LOGGER.info(
+                    "Successfully connected to the gateway %s.", controller.name
+                )
+
+                await controller.coordinator.async_refresh()
+
+                hass.data[DOMAIN][controller.name] = controller
+                controller.read_devices()
+
+                for component in CONF_COMPONENT_ALLOWED:
+                    _LOGGER.debug("Load component %s.", component)
+
+                    discovery.load_platform(
+                        hass,
+                        component,
+                        DOMAIN,
+                        list(
+                            filter(
+                                lambda item: item.get("config").get(CONF_COMPONENT)
+                                == component,
+                                controller.devices,
+                            )
+                        ),
+                        config,
+                    )
+            else:
+                _LOGGER.error(
+                    "Can't connect to the gateway %s, please check host, port and api_key.",
+                    controller.name,
+                )
+
+    return True
+
+
+class IpxController:
     """Initiate ipx800 Controller Class."""
 
-    def __init__(self, config):
+    def __init__(self, hass, config):
         """Initialize the ipx800 controller."""
-        self.name = config[CONF_HOST]
+        self.name = config[CONF_NAME]
         _LOGGER.debug("Initialize the gateway %s.", self.name)
 
-        self.ipx = pypx800(
+        self.ipx = IPX800(
             config[CONF_HOST],
             str(config[CONF_PORT]),
             config[CONF_API_KEY],
             config[CONF_USERNAME],
             config[CONF_PASSWORD],
         )
-        # devices config from user
-        self._devices_config = config[CONF_DEVICES_CONFIG]
-        # devices by type after verifications
-        self.ipx_devices = defaultdict(list)
 
-    def _read_devices(self):
+        self.coordinator = IpxDataUpdateCoordinator(
+            hass=hass,
+            ipx=self.ipx,
+            update_interval=timedelta(seconds=config.get(CONF_SCAN_INTERVAL)),
+        )
+
+        # devices config from user
+        self._devices_config = config.get(CONF_DEVICES, [])
+        # devices by type after verifications
+        self.devices = []
+
+    def read_devices(self):
         """Read and process the device list."""
-        self.fibaro_devices = defaultdict(list)
         _LOGGER.debug("Read and process devices configuration")
-        for device in self._devices_config:
+        for device_config in self._devices_config:
+            device = {}
+            _LOGGER.debug("Read device name: %s", device_config.get(CONF_NAME))
             try:
-                device_config = self._devices_config.get(device, {})
-                if device_config[CONF_DEVICE_COMPONENT] not in IPX800_COMPONENTS:
+                """Check if component is supported"""
+                if device_config[CONF_COMPONENT] not in CONF_COMPONENT_ALLOWED:
                     _LOGGER.error(
-                        "Device %s skipped: component %s not correct or supported.",
+                        "Device %s skipped: %s %s not correct or supported.",
                         device_config[CONF_NAME],
-                        device_config[CONF_DEVICE_COMPONENT],
+                        CONF_COMPONENT,
+                        device_config[CONF_COMPONENT],
                     )
                     continue
-                if (
-                    sum(
-                        [
-                            CONF_RELAY in device_config,
-                            CONF_XDIMMER in device_config,
-                            CONF_XPWM in device_config,
-                            CONF_XPWM_RGB in device_config,
-                            CONF_XPWM_RGBW in device_config,
-                            CONF_VIRTUALOUT in device_config,
-                            CONF_VIRTUALIN in device_config,
-                            CONF_ANALOGIN in device_config,
-                            CONF_DIGITALIN in device_config,
-                        ]
+
+                """Check if type is supported"""
+                if device_config[CONF_TYPE] not in CONF_TYPE_ALLOWED:
+                    _LOGGER.error(
+                        "Device %s skipped: %s %s not correct or supported.",
+                        device_config[CONF_NAME],
+                        CONF_TYPE,
+                        device_config[CONF_TYPE],
                     )
-                    != 1
+                    continue
+
+                """Check if X4VR have extension id set"""
+                if (
+                    device_config[CONF_TYPE] == TYPE_X4VR
+                    and CONF_EXT_ID not in device_config
                 ):
                     _LOGGER.error(
-                        "Device %s skipped: only type of command must be set: relay, xdimmer, xpwm, vi, vo....",
+                        "Device %s skipped: %s must have %s set.",
                         device_config[CONF_NAME],
+                        TYPE_X4VR,
+                        CONF_EXT_ID,
                     )
                     continue
-                # Build device to add to hass
-                ipx_device = {}
-                ipx_device["name"] = device
-                ipx_device["controller"] = self
-                ipx_device["config"] = device_config
-                self.ipx_devices[device_config[CONF_DEVICE_COMPONENT]].append(
-                    ipx_device
-                )
+
+                """Check if RGB/RBW have ids set"""
+                if (
+                    device_config[CONF_TYPE] == TYPE_XPWM_RGB
+                    or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
+                    and CONF_IDS not in device_config
+                ):
+                    _LOGGER.error(
+                        "Device %s skipped: RGB/RGBW must have %s set.",
+                        device_config[CONF_NAME],
+                        CONF_IDS,
+                    )
+                    continue
+
+                """Check if other device types have id set"""
+                if (
+                    device_config[CONF_TYPE] != TYPE_XPWM_RGB
+                    and device_config[CONF_TYPE] != TYPE_XPWM_RGBW
+                    and CONF_ID not in device_config
+                ):
+                    _LOGGER.error(
+                        "Device %s skipped: must have %s set.",
+                        device_config[CONF_NAME],
+                        CONF_ID,
+                    )
+                    continue
+
+                device["config"] = device_config
+                device["controller"] = self
+                self.devices.append(device)
                 _LOGGER.info(
-                    "Device %s added (device component: %s).",
+                    "Device %s added (component: %s).",
                     device_config[CONF_NAME],
-                    device_config[CONF_DEVICE_COMPONENT],
+                    device_config[CONF_COMPONENT],
                 )
-            except (KeyError, ValueError) as error:
+            except:
                 _LOGGER.error(
-                    "Error to handle device %s: %s.", device_config[CONF_NAME], error
+                    "Error to handle device %s. Please check its config",
+                    device_config.get(CONF_NAME),
                 )
-
-    def api_transmit(self, command):
-        """
-            Transmit API request command
-            command: must be like 'ipx800/VO1=on'
-        """
-        _LOGGER.debug(
-            "===> Receive API request command %s for gateway %s.", command, self.name
-        )
-        device_type = command[command.index("ipx800/") + 7 : command.index("=")]
-        value = bool(command[command.index("=") + 1] in "on", 1, True, "true")
-        self._update_device(device_type, value)
-
-    def update_device(self, device_type, value):
-        """ Update state of device """
-
-
-def setup(hass, config):
-    """Set up the IPX800 Component."""
-    hass.data[IPX800_CONTROLLERS] = {}
-    hass.data[IPX800_DEVICES] = {}
-
-    # Provide an endpoint for the IPX to call to trigger events
-    hass.http.register_view(IpxRequestView)
-
-    for component in IPX800_COMPONENTS:
-        hass.data[IPX800_DEVICES][component] = []
-
-    for gateway in config[DOMAIN][CONF_GATEWAYS]:
-        controller = Ipx800Controller(gateway)
-        if controller.ipx.ping():
-            _LOGGER.info("Successfully connected to the gateway %s.", controller.name)
-            controller._read_devices()
-            hass.data[IPX800_CONTROLLERS][controller.name] = controller
-            for component in IPX800_COMPONENTS:
-                hass.data[IPX800_DEVICES][component].extend(
-                    controller.ipx_devices[component]
-                )
-        else:
-            _LOGGER.error(
-                "Can't connect to the gateway %s, please check host, port and api_key.",
-                controller.name,
-            )
-
-    if hass.data[IPX800_CONTROLLERS]:
-        for component in IPX800_COMPONENTS:
-            _LOGGER.debug("Load component %s.", component)
-            discovery.load_platform(hass, component, DOMAIN, {}, config)
-        return True
-    else:
-        return False
 
 
 class IpxRequestView(HomeAssistantView):
@@ -239,58 +247,19 @@ class IpxRequestView(HomeAssistantView):
             _LOGGER.warning("Entity not found.")
 
 
-class IpxDevice(Entity):
-    """Representation of a IPX800 device entity."""
+class IpxDataUpdateCoordinator(DataUpdateCoordinator):
+    """Define an object to hold ipx data."""
 
-    def __init__(self, ipx_device):
-        """Initialize the device."""
-        # self.coordinator = coordinator
-        self.config = ipx_device.get("config")
-        self.controller = ipx_device.get("controller")
-        self._name = self.config.get(CONF_NAME)
+    def __init__(self, hass, ipx, update_interval):
+        """Initialize."""
+        self.ipx = ipx
+        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=update_interval)
 
-        self._device_class = self.config.get(CONF_DEVICE_CLASS) or None
-        self._unit_of_measurement = self.config.get(CONF_UNIT_OF_MEASUREMENT) or None
-        self._transition = self.config.get(CONF_TRANSITION) or None
-        self._icon = self.config.get(CONF_ICON) or None
-        self._should_poll = self.config.get(CONF_SHOULD_POLL) or True
-        self._state = None
-
-        self._supported_flags = 0
-        self._uid = (
-            f"{self.controller.name}.{self.config.get('device_class')}.{ipx_device.get('name')}"
-        ).lower()
-
-    @property
-    def should_poll(self):
-        return self._should_poll
-
-    @property
-    def name(self):
-        """Return the display name of this light."""
-        return self._name
-
-    @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self._name,
-            "manufacturer": "GCE",
-            "model": "IPX800v4",
-            "via_device": (DOMAIN, self.controller.name),
-        }
-
-    @property
-    def icon(self):
-        """Icon to use in the frontend, if any."""
-        return self._icon
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID."""
-        return self._uid
-
-    @property
-    def supported_features(self):
-        """Flag supported features."""
-        return self._supported_flags
+    async def _async_update_data(self):
+        """Get all states from API."""
+        data = {}
+        try:
+            data = self.ipx.global_get()
+            return data
+        except:
+            _LOGGER.warning("IPX800 global get failed, data received: %s", data)

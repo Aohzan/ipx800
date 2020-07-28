@@ -1,8 +1,8 @@
 {
   "domain": "ipx800",
-  "name": "ipx800",
+  "name": "IPX800",
   "documentation": "https://www.home-assistant.io/integrations/ipx800",
-  "requirements": ["pypx800"],
+  "requirements": ["pypx800==1.0"],
   "dependencies": [],
   "codeowners": ["@Mati24"]
 }
