@@ -81,11 +81,11 @@ async def async_setup(hass, config):
 
     if DOMAIN in config:
         for gateway in config[DOMAIN]:
-            _LOGGER.debug("## Init IPX800 %s", gateway.get(CONF_NAME, "pas de nom"))
-            # Init new gateway
             controller = IpxController(hass, gateway)
 
-            if controller.ipx.ping():
+            ping = await hass.async_add_executor_job(controller.ipx.ping)
+
+            if ping:
                 _LOGGER.info(
                     "Successfully connected to the gateway %s.", controller.name
                 )
@@ -125,8 +125,9 @@ class IpxController:
 
     def __init__(self, hass, config):
         """Initialize the ipx800 controller."""
+        _LOGGER.debug("New IPX800 initialisation on host: %s", config.get(CONF_HOST))
+
         self.name = config[CONF_NAME]
-        _LOGGER.debug("Initialize the gateway %s.", self.name)
 
         self.ipx = IPX800(
             config[CONF_HOST],
@@ -257,9 +258,4 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Get all states from API."""
-        data = {}
-        try:
-            data = self.ipx.global_get()
-            return data
-        except:
-            _LOGGER.warning("IPX800 global get failed, data received: %s", data)
+        return await self.hass.async_add_executor_job(self.ipx.global_get)
