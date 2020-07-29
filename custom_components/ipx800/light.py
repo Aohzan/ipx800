@@ -149,7 +149,7 @@ class XDimmerLight(IpxDevice, LightEntity):
 
     def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
-            self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
+            self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
             self.control.set_level(scaleto100(self._brightness), self._transition)
@@ -158,7 +158,7 @@ class XDimmerLight(IpxDevice, LightEntity):
 
     def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
-            self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
+            self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         self.control.off(self._transition)
 
 
@@ -182,7 +182,7 @@ class XPWMLight(IpxDevice, LightEntity):
 
     def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
-            self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
+            self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
             self.control.set_level(scaleto100(self._brightness), self._transition)
@@ -191,7 +191,7 @@ class XPWMLight(IpxDevice, LightEntity):
 
     def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
-            self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
+            self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         self.control.off(self._transition)
 
 
@@ -234,7 +234,7 @@ class XPWMRGBLight(IpxDevice, LightEntity):
 
     def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
-            self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
+            self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
 
         if ATTR_RGB_COLOR in kwargs or ATTR_HS_COLOR in kwargs:
             if ATTR_RGB_COLOR in kwargs:
@@ -276,7 +276,7 @@ class XPWMRGBLight(IpxDevice, LightEntity):
 
     def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
-            self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
+            self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         self.xpwm_rgb_r.off(self._transition)
         self.xpwm_rgb_g.off(self._transition)
         self.xpwm_rgb_b.off(self._transition)
@@ -336,7 +336,7 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
 
     def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
-            self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
+            self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
 
         if ATTR_RGB_COLOR in kwargs or ATTR_HS_COLOR in kwargs:
             if ATTR_RGB_COLOR in kwargs:
@@ -379,7 +379,7 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
 
     def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
-            self._transition = kwargs.get(ATTR_TRANSITION, DEFAULT_TRANSITION) * 1000
+            self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         self.xpwm_rgbw_r.off(self._transition)
         self.xpwm_rgbw_g.off(self._transition)
         self.xpwm_rgbw_b.off(self._transition)
