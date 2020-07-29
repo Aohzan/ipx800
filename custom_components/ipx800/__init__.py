@@ -87,7 +87,7 @@ async def async_setup(hass, config):
 
             if ping:
                 _LOGGER.info(
-                    "Successfully connected to the gateway %s.", controller.name
+                    "Successfully connected to the IPX800 %s.", controller.name
                 )
 
                 await controller.coordinator.async_refresh()
@@ -113,7 +113,7 @@ async def async_setup(hass, config):
                     )
             else:
                 _LOGGER.error(
-                    "Can't connect to the gateway %s, please check host, port and api_key.",
+                    "Can't connect to the IPX800 %s, please check host, port and api_key.",
                     controller.name,
                 )
 
