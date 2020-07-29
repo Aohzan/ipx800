@@ -26,7 +26,7 @@ class IpxDevice(Entity):
             self._name += f" {suffix_name}"
         self._device_class = self.config.get(CONF_DEVICE_CLASS) or None
         self._unit_of_measurement = self.config.get(CONF_UNIT_OF_MEASUREMENT) or None
-        self._transition = self.config.get(CONF_TRANSITION) or None
+        self._transition = int(self.config.get(CONF_TRANSITION, DEFAULT_TRANSITION) * 1000)
         self._icon = self.config.get(CONF_ICON) or None
         self._state = None
         self._id = self.config.get(CONF_ID)

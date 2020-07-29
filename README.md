@@ -3,11 +3,16 @@
 This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
 The `ipx800` integration allows you to get information from [GCE Eco-Devices](http://gce-electronics.com/).
 
-### Requirement
+## Installation
+
+Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant.
+Add the `ipx800` entry in your `configuration.yml` (see example below)
+
+## Requirement
 
 [pypix800 python package](https://github.com/Aohzan/pypx800)
 
-### Description
+## Description
 
 You can control by setting the type of the device:
 
@@ -28,7 +33,7 @@ In `URL ON` and `URL_OFF` set `/api/ipx800/entity_id/state`:
 
 ![PUSH configuration example](ipx800_push_configuration_example.png)
 
-### Example
+## Example
 
 ```yaml
 # Example configuration.yaml entry
@@ -90,7 +95,7 @@ ipx800:
         id: 1
 ```
 
-### List of configuration parameters
+## List of configuration parameters
 
 ```yaml
 {% configuration %}
