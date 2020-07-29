@@ -48,11 +48,11 @@ class X4VRCover(IpxDevice, CoverEntity):
 
     @property
     def is_closed(self) -> bool:
-        return self.coordinator.data[f"VR{self._ext_id}-{self._id}"] == 0
+        return int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"]) == 100
 
     @property
     def current_cover_position(self) -> int:
-        return self.coordinator.data[f"VR{self._ext_id}-{self._id}"]
+        return 100 - int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"])
 
     def open_cover(self, **kwargs):
         """Open the cover."""
