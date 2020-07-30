@@ -64,4 +64,4 @@ class X4VRCover(IpxDevice, CoverEntity):
 
     def set_cover_position(self, **kwargs):
         """Move the cover to a specific position."""
-        self.control.set_level(kwargs.get(ATTR_POSITION))
+        self.control.set_level(100-kwargs.get(ATTR_POSITION))
