@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2
+
+- Fix set cover position
+
 ## 1.1
 
 - Fix transition for XDimmer and XPWM lights
