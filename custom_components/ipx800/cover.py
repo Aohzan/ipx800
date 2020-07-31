@@ -39,7 +39,7 @@ class X4VRCover(IpxDevice, CoverEntity):
     def __init__(self, ipx_device):
         """Initialize the IPX device."""
         super().__init__(ipx_device)
-        self.control = VR(self.controller.ipx, self._ext_id, self._id)
+        self.control = X4VR(self.controller.ipx, self._ext_id, self._id)
         self._supported_features |= SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_SET_POSITION
 
     @property

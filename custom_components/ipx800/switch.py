@@ -78,7 +78,7 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
     def __init__(self, ipx_device):
         """Initialize the IPX device."""
         super().__init__(ipx_device)
-        self.control = VO(self.controller.ipx, self._id)
+        self.control = VOutput(self.controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
@@ -104,7 +104,7 @@ class VirtualInSwitch(IpxDevice, SwitchEntity):
     def __init__(self, ipx_device):
         """Initialize the IPX device."""
         super().__init__(ipx_device)
-        self.control = VI(self.controller.ipx, self._id)
+        self.control = VInput(self.controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
