@@ -53,7 +53,6 @@ class AnalogInSensor(IpxDevice, Entity):
     """Representation of a IPX sensor through analog input."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
 
     @property
@@ -75,10 +74,9 @@ class XTHLSensor(IpxDevice, Entity):
     def __init__(
         self, ipx_device, device_class, unit_of_measurement, req_type, name_suffix
     ):
-        """Initialize the IPX device."""
         super().__init__(ipx_device, name_suffix)
         self._device_class = device_class
-        """Allow overriding of temperatur unit if specified in the xthl conf"""
+        """Allow overriding of temperature unit if specified in the xthl conf"""
         if not (self._unit_of_measurement and device_class == DEVICE_CLASS_TEMPERATURE):
             self._unit_of_measurement = unit_of_measurement
         self._req_type = req_type

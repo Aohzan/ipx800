@@ -34,7 +34,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
 
 class X4VRCover(IpxDevice, CoverEntity):
-    """Representation of a IPX Switch through relay."""
+    """Representation of a IPX Cover through X4VR."""
 
     def __init__(self, ipx_device):
         """Initialize the IPX device."""
@@ -63,5 +63,5 @@ class X4VRCover(IpxDevice, CoverEntity):
         self.control.off()
 
     def set_cover_position(self, **kwargs):
-        """Move the cover to a specific position."""
+        """Set the cover to a specific position."""
         self.control.set_level(kwargs.get(ATTR_POSITION))

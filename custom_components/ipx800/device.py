@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class IpxDevice(Entity):
-    """Representation of a IPX800 device entity."""
+    """Representation of a IPX800 generic device entity."""
 
     def __init__(self, ipx_device, suffix_name=""):
         """Initialize the device."""

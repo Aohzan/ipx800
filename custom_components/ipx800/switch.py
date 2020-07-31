@@ -54,21 +54,17 @@ class RelaySwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Switch through relay."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
         self.control = Relay(self.controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
-        """Return true if the IPX800 device is on."""
         return self.coordinator.data[f"R{self._id}"] == 1
 
     def turn_on(self, **kwargs):
-        """Turn on the IPX800 device."""
         self.control.on()
 
     def turn_off(self, **kwargs):
-        """Turn off the IPX800 device."""
         self.control.off()
 
 
@@ -76,25 +72,20 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Virtual Out."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
         self.control = VOutput(self.controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
-        """Return true if the IPX800 device is on."""
         return self.coordinator.data[f"R{self._id}"] == 1
 
     def turn_on(self, **kwargs):
-        """Turn on the IPX800 device."""
         self.control.on()
 
     def turn_off(self, **kwargs):
-        """Turn off the IPX800 device."""
         self.control.off()
 
     def toggle(self, **kwargs):
-        """Toggle the IPX800 device."""
         self.control.toggle()
 
 
@@ -102,23 +93,18 @@ class VirtualInSwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Virtual In."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
         self.control = VInput(self.controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
-        """Return true if the IPX800 device is on."""
         return self.coordinator.data[f"VI{self._id}"] == 1
 
     def turn_on(self, **kwargs):
-        """Turn on the IPX800 device."""
         self.control.on()
 
     def turn_off(self, **kwargs):
-        """Turn off the IPX800 device."""
         self.control.off()
 
     def toggle(self, **kwargs):
-        """Toggle the IPX800 device."""
         self.control.toggle()

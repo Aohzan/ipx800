@@ -3,6 +3,7 @@
 ## 1.3
 
 - Fix pypx800 library classes names
+- Comments 
 
 ## 1.2
 

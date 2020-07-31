@@ -45,7 +45,6 @@ class VirtualOutBinarySensor(IpxDevice, BinarySensorEntity):
     """Representation of a IPX Virtual Out."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
 
     @property
@@ -61,7 +60,6 @@ class DigitalInBinarySensor(IpxDevice, BinarySensorEntity):
     """Representation of a IPX Virtual In."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
 
     @property

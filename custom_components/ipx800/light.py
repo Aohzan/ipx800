@@ -103,34 +103,22 @@ class RelayLight(IpxDevice, LightEntity):
     """Representation of a IPX Light through relay."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
         self.control = Relay(self.controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
-        """Return true if the IPX800 device is on."""
         return self.coordinator.data[f"R{self._id}"] == 1
 
-    async def async_turn_on(self, **kwargs):
-        self.control.on()
-        await self.coordinator.async_request_refresh()
-
     def turn_on(self, **kwargs):
-        """Turn on the IPX800 device."""
         self.control.on()
-
-    async def async_turn_off(self, **kwargs):
-        self.control.off()
-        await self.coordinator.async_request_refresh()
 
     def turn_off(self, **kwargs):
-        """Turn off the IPX800 device."""
         self.control.off()
 
 
 class XDimmerLight(IpxDevice, LightEntity):
-    """Representation of a IPX Light through X-DIMMER."""
+    """Representation of a IPX Light through X-Dimmer."""
 
     def __init__(self, ipx_device):
         super().__init__(ipx_device)
@@ -199,7 +187,6 @@ class XPWMRGBLight(IpxDevice, LightEntity):
     """Representation of a RGB light through 3 X-PWM channels."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
         self.xpwm_rgb_r = XPWM(self.controller.ipx, self._ids[0])
         self.xpwm_rgb_g = XPWM(self.controller.ipx, self._ids[1])
@@ -286,7 +273,6 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
     """Representation of a RGBW light through 4 X-PWM channels."""
 
     def __init__(self, ipx_device):
-        """Initialize the IPX device."""
         super().__init__(ipx_device)
         self.xpwm_rgbw_r = XPWM(self.controller.ipx, self._ids[0])
         self.xpwm_rgbw_g = XPWM(self.controller.ipx, self._ids[1])
