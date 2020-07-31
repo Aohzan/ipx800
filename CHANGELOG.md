@@ -3,7 +3,7 @@
 ## 1.3
 
 - Fix pypx800 library classes names
-- Comments 
+- Comments normalization
 
 ## 1.2
 
