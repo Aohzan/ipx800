@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4
+
+- Round X-THL values
+
 ## 1.3
 
 - Fix pypx800 library classes names

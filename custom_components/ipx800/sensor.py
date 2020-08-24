@@ -91,4 +91,4 @@ class XTHLSensor(IpxDevice, Entity):
 
     @property
     def state(self) -> str:
-        return self.coordinator.data[f"THL{self._id}-{self._req_type}"]
+        return round(self.coordinator.data[f"THL{self._id}-{self._req_type}"],1)
