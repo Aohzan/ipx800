@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5
+
+- Add Stop for cover
+
 ## 1.4
 
 - Round X-THL values

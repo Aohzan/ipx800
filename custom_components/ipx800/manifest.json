@@ -2,7 +2,7 @@
   "domain": "ipx800",
   "name": "IPX800",
   "documentation": "https://github.com/Aohzan/ipx800",
-  "requirements": ["pypx800==1.2"],
+  "requirements": ["pypx800==1.3"],
   "dependencies": [],
   "codeowners": ["@Aohzan"]
 }

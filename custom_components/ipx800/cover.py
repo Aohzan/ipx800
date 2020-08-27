@@ -6,6 +6,7 @@ from homeassistant.components.cover import (
     CoverEntity,
     SUPPORT_OPEN,
     SUPPORT_CLOSE,
+    SUPPORT_STOP,
     SUPPORT_SET_POSITION,
     ATTR_POSITION,
     DEVICE_CLASS_SHUTTER,
@@ -40,7 +41,9 @@ class X4VRCover(IpxDevice, CoverEntity):
         """Initialize the IPX device."""
         super().__init__(ipx_device)
         self.control = X4VR(self.controller.ipx, self._ext_id, self._id)
-        self._supported_features |= SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_SET_POSITION
+        self._supported_features |= (
+            SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+        )
 
     @property
     def device_class(self):
@@ -61,6 +64,10 @@ class X4VRCover(IpxDevice, CoverEntity):
     def close_cover(self, **kwargs):
         """Close cover."""
         self.control.off()
+
+    def stop_cover(self, **kwargs):
+        """Stop the cover."""
+        self.control.stop()
 
     def set_cover_position(self, **kwargs):
         """Set the cover to a specific position."""
