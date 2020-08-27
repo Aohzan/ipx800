@@ -3,6 +3,7 @@
 ## 1.5
 
 - Add Stop for cover
+- Bump pypx800
 
 ## 1.4
 
