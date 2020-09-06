@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6
+
+- Bump pypx800: fix cover id with many extensions
+
 ## 1.5
 
 - Add Stop for cover
