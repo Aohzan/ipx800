@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7
+
+- Fix Python import missing in 0.115
+
 ## 1.6
 
 - Bump pypx800: fix cover id with many extensions
