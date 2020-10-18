@@ -103,7 +103,8 @@ async def async_setup(hass, config):
                         DOMAIN,
                         list(
                             filter(
-                                lambda item: item.get("config").get(CONF_COMPONENT)
+                                lambda item: item.get(
+                                    "config").get(CONF_COMPONENT)
                                 == component,
                                 controller.devices,
                             )
@@ -124,7 +125,8 @@ class IpxController:
 
     def __init__(self, hass, config):
         """Initialize the ipx800 controller."""
-        _LOGGER.debug("New IPX800 initialisation on host: %s", config.get(CONF_HOST))
+        _LOGGER.debug("New IPX800 initialisation on host: %s",
+                      config.get(CONF_HOST))
 
         self.name = config[CONF_NAME]
 
@@ -132,8 +134,8 @@ class IpxController:
             config[CONF_HOST],
             str(config[CONF_PORT]),
             config[CONF_API_KEY],
-            config[CONF_USERNAME],
-            config[CONF_PASSWORD],
+            config.get(CONF_USERNAME),
+            config.get(CONF_PASSWORD),
         )
 
         self.coordinator = IpxDataUpdateCoordinator(
@@ -187,10 +189,11 @@ class IpxController:
                     )
                     continue
 
-                """Check if RGB/RBW have ids set"""
+                """Check if RGB/RBW or FP/RELAY have ids set"""
                 if (
                     device_config[CONF_TYPE] == TYPE_XPWM_RGB
                     or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
+                    or (device_config[CONF_TYPE] == TYPE_RELAY and device_config[CONF_COMPONENT] == "climate")
                     and CONF_IDS not in device_config
                 ):
                     _LOGGER.error(
@@ -204,6 +207,7 @@ class IpxController:
                 if (
                     device_config[CONF_TYPE] != TYPE_XPWM_RGB
                     and device_config[CONF_TYPE] != TYPE_XPWM_RGBW
+                    and not (device_config[CONF_TYPE] == TYPE_RELAY and device_config[CONF_COMPONENT] == "climate")
                     and CONF_ID not in device_config
                 ):
                     _LOGGER.error(

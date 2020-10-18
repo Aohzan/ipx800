@@ -16,7 +16,7 @@ Add the `ipx800` entry in your `configuration.yml` (see example below)
 
 You can control by setting the type of the device:
 
-- `relay` as switch and light
+- `relay` as switch and light or climate (with https://www.gce-electronics.com/fr/nos-produits/314-module-diode-fil-pilote-.html)
 - `virtual output` as switch and binarysensor
 - `virtual in` as switch
 - `digital in` as binarysensor
@@ -27,6 +27,7 @@ You can control by setting the type of the device:
 - `xpwm_rgbw` as light (use 4 xpwm channels)
 - `x4vr` as cover
 - `xthl` as sensors
+- `x4fp` as climate
 
 You can update value of a device by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
 In `URL ON` and `URL_OFF` set `/api/ipx800/entity_id/state`:
@@ -93,6 +94,15 @@ ipx800:
         type: x4vr
         ext_id: 1
         id: 1
+      - component: climate
+        name: Radiateur Salon
+        type: x4fp
+        ext_id: 1
+        id: 1
+      - component: climate
+        name: Radiateur Salle de Bains
+        type: relay
+        ids: [7, 8]
 ```
 
 ## List of configuration parameters
@@ -157,17 +167,17 @@ devices:
     description: type of input/output on the IPX800 or an extension.
     required: true
     type: string
-    values: "relay", "analogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr"
+    values: "relay", "analogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp"
   id:
     description: id of type output, required for all except xpwm_rgb and xpwm_rgbw type
     required: false
     type: int
   ext_id:
-    description: id of X-4VR extension, required only for x4vr type
+    description: id of X-4VR extension, required only for x4vr and x4fp type
     required: false
     type: int
   ids:
-    description: ids of channel for xpwm_rgb or xpwm_rgbw type
+    description: ids of channel for xpwm_rgb, xpwm_rgbw type or relay as climate component
     required: false
     type: list of int
 {% endconfiguration %}
