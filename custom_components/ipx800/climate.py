@@ -65,8 +65,8 @@ class X4FPClimate(IpxDevice, ClimateEntity):
 
     @property
     def temperature_unit(self):
-        """Return the unit of measurement."""
-        return self._unit_of_measurement or TEMP_CELSIUS
+        """Return Celcius indifferently since there is no temperature support."""
+        return TEMP_CELSIUS
 
     @property
     def hvac_modes(self):
@@ -104,7 +104,8 @@ class X4FPClimate(IpxDevice, ClimateEntity):
             4: 'Confort -1',
             5: 'Confort -2'
         }
-        _LOGGER.debug("preset_mode: id %s => %s", state, switcher.get(state, "Inconnu"))
+        _LOGGER.debug("preset_mode: id %s => %s", state,
+                      switcher.get(state, "Inconnu"))
         return switcher.get(state, "Inconnu")
 
     def set_preset_mode(self, preset_mode):
@@ -117,7 +118,8 @@ class X4FPClimate(IpxDevice, ClimateEntity):
             'Confort -1': 4,
             'Confort -2': 5
         }
-        _LOGGER.debug("set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode))
+        _LOGGER.debug("set preset_mode to %s => id %s",
+                      preset_mode, switcher.get(preset_mode))
         self.control.set_mode(switcher.get(preset_mode))
 
     def set_hvac_mode(self, hvac_mode):
@@ -141,11 +143,9 @@ class RelayClimate(IpxDevice, ClimateEntity):
 
         self._supported_features |= SUPPORT_PRESET_MODE
 
-        self._supported_features |= SUPPORT_PRESET_MODE
-
     @property
     def temperature_unit(self):
-        """Return the unit of measurement."""
+        """Return Celcius indifferently since there is no temperature support."""
         return TEMP_CELSIUS
 
     @property
