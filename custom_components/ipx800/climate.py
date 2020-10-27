@@ -66,7 +66,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
     @property
     def temperature_unit(self):
         """Return the unit of measurement."""
-        return TEMP_CELSIUS
+        return self._unit_of_measurement or TEMP_CELSIUS
 
     @property
     def hvac_modes(self):
@@ -104,9 +104,10 @@ class X4FPClimate(IpxDevice, ClimateEntity):
             4: 'Confort -1',
             5: 'Confort -2'
         }
+        _LOGGER.debug("preset_mode: id %s => %s", state, switcher.get(state, "Inconnu"))
         return switcher.get(state, "Inconnu")
 
-    async def async_set_preset_mode(self, preset_mode):
+    def set_preset_mode(self, preset_mode):
         """Set new target preset mode."""
         switcher = {
             'Confort': 0,
@@ -116,9 +117,10 @@ class X4FPClimate(IpxDevice, ClimateEntity):
             'Confort -1': 4,
             'Confort -2': 5
         }
+        _LOGGER.debug("set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode))
         self.control.set_mode(switcher.get(preset_mode))
 
-    async def async_set_hvac_mode(self, hvac_mode):
+    def set_hvac_mode(self, hvac_mode):
         """Set hvac mode."""
         if hvac_mode == HVAC_MODE_HEAT:
             self.control.set_mode(0)
@@ -181,7 +183,7 @@ class RelayClimate(IpxDevice, ClimateEntity):
         }
         return switcher.get((state_minus, state_plus), "Inconnu")
 
-    async def async_set_hvac_mode(self, hvac_mode):
+    def set_hvac_mode(self, hvac_mode):
         """Set hvac mode."""
         if hvac_mode == HVAC_MODE_HEAT:
             self.control_minus.off()
@@ -193,7 +195,7 @@ class RelayClimate(IpxDevice, ClimateEntity):
             _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
             return
 
-    async def async_set_preset_mode(self, preset_mode):
+    def set_preset_mode(self, preset_mode):
         """Set new target preset mode."""
         if preset_mode == "Confort":
             self.control_minus.off()

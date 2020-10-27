@@ -17,10 +17,10 @@ Add the `ipx800` entry in your `configuration.yml` (see example below)
 You can control by setting the type of the device:
 
 - `relay` as switch and light or climate (with https://www.gce-electronics.com/fr/nos-produits/314-module-diode-fil-pilote-.html)
-- `virtual output` as switch and binarysensor
-- `virtual in` as switch
-- `digital in` as binarysensor
-- `analog` in as sensor
+- `virtualout` as switch and binarysensor
+- `virtualin` as switch
+- `digitalin` as binarysensor
+- `analogin` in as sensor
 - `xdimmer` as light
 - `xpwm` as light
 - `xpwm_rgb` as light (use 3 xpwm channels)

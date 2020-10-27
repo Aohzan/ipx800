@@ -1,1 +1,2 @@
-configuration.yaml
+tests/
+*.pyc
