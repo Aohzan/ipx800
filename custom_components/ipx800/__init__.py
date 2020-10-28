@@ -191,9 +191,9 @@ class IpxController:
 
                 """Check if RGB/RBW or FP/RELAY have ids set"""
                 if (
-                    device_config[CONF_TYPE] == TYPE_XPWM_RGB
+                    (device_config[CONF_TYPE] == TYPE_XPWM_RGB
                     or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
-                    or (device_config[CONF_TYPE] == TYPE_RELAY and device_config[CONF_COMPONENT] == "climate")
+                    or (device_config[CONF_TYPE] == TYPE_RELAY and device_config[CONF_COMPONENT] == "climate"))
                     and CONF_IDS not in device_config
                 ):
                     _LOGGER.error(
