@@ -74,13 +74,13 @@ class X4FPClimate(IpxDevice, ClimateEntity):
 
     @property
     def hvac_mode(self):
-        if int(self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]) == 3:
+        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == "Stop":
             return HVAC_MODE_OFF
         return HVAC_MODE_HEAT
 
     @property
     def hvac_action(self):
-        if int(self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]) == 3:
+        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == "Stop":
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_HEAT
 
@@ -95,18 +95,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
 
     @property
     def preset_mode(self):
-        state = int(self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"])
-        switcher = {
-            0: 'Confort',
-            1: 'Eco',
-            2: 'Hors Gel',
-            3: 'Stop',
-            4: 'Confort -1',
-            5: 'Confort -2'
-        }
-        _LOGGER.debug("preset_mode: id %s => %s", state,
-                      switcher.get(state, "Inconnu"))
-        return switcher.get(state, "Inconnu")
+        return self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
 
     def set_preset_mode(self, preset_mode):
         """Set new target preset mode."""
