@@ -23,8 +23,11 @@ TYPE_ANALOGIN = "analogin"
 TYPE_DIGITALIN = "digitalin"
 TYPE_X4VR = "x4vr"
 TYPE_XTHL = "xthl"
+TYPE_X4FP = "x4fp"
 
-CONF_COMPONENT_ALLOWED = ["light", "switch", "sensor", "binary_sensor", "cover"]
+CONF_COMPONENT_ALLOWED = ["light", "switch", "sensor",
+                          "binary_sensor", "cover", "climate"]
+
 CONF_TYPE_ALLOWED = [
     TYPE_RELAY,
     TYPE_XPWM,
@@ -37,4 +40,5 @@ CONF_TYPE_ALLOWED = [
     TYPE_DIGITALIN,
     TYPE_X4VR,
     TYPE_XTHL,
+    TYPE_X4FP,
 ]

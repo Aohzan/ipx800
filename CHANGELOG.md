@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8
+
+- Add X-4FP support
+- Add Fil Pilote through relay support https://www.gce-electronics.com/fr/nos-produits/314-module-diode-fil-pilote-.html
+- Fix user/password as optional parameters
+
 ## 1.7
 
 - Fix Python import missing in 0.115
