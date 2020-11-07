@@ -74,13 +74,13 @@ class X4FPClimate(IpxDevice, ClimateEntity):
 
     @property
     def hvac_mode(self):
-        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == "Stop":
+        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == "Arret":
             return HVAC_MODE_OFF
         return HVAC_MODE_HEAT
 
     @property
     def hvac_action(self):
-        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == "Stop":
+        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == "Arret":
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_HEAT
 
@@ -89,7 +89,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         return ['Confort',
                 'Eco',
                 'Hors Gel',
-                'Stop',
+                'Arret',
                 'Confort -1',
                 'Confort -2']
 
@@ -103,7 +103,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
             'Confort': 0,
             'Eco': 1,
             'Hors Gel': 2,
-            'Stop': 3,
+            'Arret': 3,
             'Confort -1': 4,
             'Confort -2': 5
         }
