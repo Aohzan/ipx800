@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.1
+
+- Remove the wrong climate setup error
+
 ## 1.8
 
 - Add X-4FP support
