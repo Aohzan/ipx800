@@ -1,13 +1,13 @@
 """Support for IPX800 sensors."""
 import logging
 
+from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity import Entity
-from homeassistant.const import STATE_OFF, STATE_ON
-from homeassistant.components.binary_sensor import BinarySensorEntity
-
 from pypx800 import *
-from .device import *
+
+from . import IpxController, IpxDevice
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,14 +15,15 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IPX800 binary_sensors."""
+    controller = hass.data[DOMAIN][discovery_info[CONTROLLER]]
 
     async_add_entities(
         [
-            VirtualOutBinarySensor(device)
+            VirtualOutBinarySensor(device, controller)
             for device in (
                 item
-                for item in discovery_info
-                if item.get("config").get(CONF_TYPE) == TYPE_VIRTUALOUT
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_VIRTUALOUT
             )
         ],
         True,
@@ -30,11 +31,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     async_add_entities(
         [
-            DigitalInBinarySensor(device)
+            DigitalInBinarySensor(device, controller)
             for device in (
                 item
-                for item in discovery_info
-                if item.get("config").get(CONF_TYPE) == TYPE_DIGITALIN
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_DIGITALIN
             )
         ],
         True,
@@ -44,8 +45,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 class VirtualOutBinarySensor(IpxDevice, BinarySensorEntity):
     """Representation of a IPX Virtual Out."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
 
     @property
     def device_class(self):
@@ -59,8 +60,8 @@ class VirtualOutBinarySensor(IpxDevice, BinarySensorEntity):
 class DigitalInBinarySensor(IpxDevice, BinarySensorEntity):
     """Representation of a IPX Virtual In."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
 
     @property
     def device_class(self):

@@ -1,11 +1,11 @@
 """Support for IPX800 switches."""
 import logging
 
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.components.switch import SwitchEntity
-
+from homeassistant.exceptions import ConfigEntryNotReady
 from pypx800 import *
-from .device import *
+
+from . import IpxController, IpxDevice
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -13,13 +13,15 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IPX800 switches."""
+    controller = hass.data[DOMAIN][discovery_info[CONTROLLER]]
+
     async_add_entities(
         [
-            RelaySwitch(device)
+            RelaySwitch(device, controller)
             for device in (
                 item
-                for item in discovery_info
-                if item.get("config").get(CONF_TYPE) == TYPE_RELAY
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_RELAY
             )
         ],
         True,
@@ -27,11 +29,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     async_add_entities(
         [
-            VirtualOutSwitch(device)
+            VirtualOutSwitch(device, controller)
             for device in (
                 item
-                for item in discovery_info
-                if item.get("config").get(CONF_TYPE) == TYPE_VIRTUALOUT
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_VIRTUALOUT
             )
         ],
         True,
@@ -39,11 +41,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     async_add_entities(
         [
-            VirtualInSwitch(device)
+            VirtualInSwitch(device, controller)
             for device in (
                 item
-                for item in discovery_info
-                if item.get("config").get(CONF_TYPE) == TYPE_VIRTUALIN
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_VIRTUALIN
             )
         ],
         True,
@@ -53,9 +55,9 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 class RelaySwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Switch through relay."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
-        self.control = Relay(self.controller.ipx, self._id)
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
+        self.control = Relay(controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
@@ -71,9 +73,9 @@ class RelaySwitch(IpxDevice, SwitchEntity):
 class VirtualOutSwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Virtual Out."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
-        self.control = VOutput(self.controller.ipx, self._id)
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
+        self.control = VOutput(controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
@@ -92,9 +94,9 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
 class VirtualInSwitch(IpxDevice, SwitchEntity):
     """Representation of a IPX Virtual In."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
-        self.control = VInput(self.controller.ipx, self._id)
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
+        self.control = VInput(controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:

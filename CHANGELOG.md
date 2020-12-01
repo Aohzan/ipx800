@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.0
+
+- Rewrite
+
 ## 1.8.1
 
 - Remove the wrong climate setup error

@@ -1,30 +1,19 @@
 """Support for IPX800 lights."""
 import logging
 
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.components.light import (
-    LightEntity,
-    ATTR_BRIGHTNESS,
-    ATTR_TRANSITION,
-    ATTR_WHITE_VALUE,
-    ATTR_RGB_COLOR,
-    ATTR_HS_COLOR,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_TRANSITION,
-    SUPPORT_COLOR,
-    SUPPORT_WHITE_VALUE,
-)
 import homeassistant.util.color as color_util
-
-from homeassistant.const import (
-    CONF_NAME,
-    CONF_ICON,
-    CONF_DEVICE_CLASS,
-    CONF_UNIT_OF_MEASUREMENT,
-)
-
+from homeassistant.components.light import (ATTR_BRIGHTNESS, ATTR_HS_COLOR,
+                                            ATTR_RGB_COLOR, ATTR_TRANSITION,
+                                            ATTR_WHITE_VALUE,
+                                            SUPPORT_BRIGHTNESS, SUPPORT_COLOR,
+                                            SUPPORT_TRANSITION,
+                                            SUPPORT_WHITE_VALUE, LightEntity)
+from homeassistant.const import (CONF_DEVICE_CLASS, CONF_ICON, CONF_NAME,
+                                 CONF_UNIT_OF_MEASUREMENT)
+from homeassistant.exceptions import ConfigEntryNotReady
 from pypx800 import *
-from .device import *
+
+from . import IpxController, IpxDevice
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -40,71 +29,72 @@ def scaleto100(value):
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Set up the IPX800 lights."""
-    if discovery_info is not None:
-        async_add_entities(
-            [
-                RelayLight(device)
-                for device in (
-                    item
-                    for item in discovery_info
-                    if item.get("config").get(CONF_TYPE) == TYPE_RELAY
-                )
-            ],
-            True,
-        )
+    controller = hass.data[DOMAIN][discovery_info[CONTROLLER]]
 
-        async_add_entities(
-            [
-                XDimmerLight(device)
-                for device in (
-                    item
-                    for item in discovery_info
-                    if item.get("config").get(CONF_TYPE) == TYPE_XDIMMER
-                )
-            ],
-            True,
-        )
-        async_add_entities(
-            [
-                XPWMLight(device)
-                for device in (
-                    item
-                    for item in discovery_info
-                    if item.get("config").get(CONF_TYPE) == TYPE_XPWM
-                )
-            ],
-            True,
-        )
-        async_add_entities(
-            [
-                XPWMRGBLight(device)
-                for device in (
-                    item
-                    for item in discovery_info
-                    if item.get("config").get(CONF_TYPE) == TYPE_XPWM_RGB
-                )
-            ],
-            True,
-        )
-        async_add_entities(
-            [
-                XPWMRGBWLight(device)
-                for device in (
-                    item
-                    for item in discovery_info
-                    if item.get("config").get(CONF_TYPE) == TYPE_XPWM_RGBW
-                )
-            ],
-            True,
-        )
+    async_add_entities(
+        [
+            RelayLight(device, controller)
+            for device in (
+                item
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_RELAY
+            )
+        ],
+        True,
+    )
+
+    async_add_entities(
+        [
+            XDimmerLight(device, controller)
+            for device in (
+                item
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_XDIMMER
+            )
+        ],
+        True,
+    )
+    async_add_entities(
+        [
+            XPWMLight(device, controller)
+            for device in (
+                item
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_XPWM
+            )
+        ],
+        True,
+    )
+    async_add_entities(
+        [
+            XPWMRGBLight(device, controller)
+            for device in (
+                item
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_XPWM_RGB
+            )
+        ],
+        True,
+    )
+    async_add_entities(
+        [
+            XPWMRGBWLight(device, controller)
+            for device in (
+                item
+                for item in discovery_info[CONF_DEVICES]
+                if item.get(CONF_TYPE) == TYPE_XPWM_RGBW
+            )
+        ],
+        True,
+    )
 
 
 class RelayLight(IpxDevice, LightEntity):
     """Representation of a IPX Light through relay."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
-        self.control = Relay(self.controller.ipx, self._id)
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
+        self.control = Relay(controller.ipx, self._id)
 
     @property
     def is_on(self) -> bool:
@@ -120,9 +110,9 @@ class RelayLight(IpxDevice, LightEntity):
 class XDimmerLight(IpxDevice, LightEntity):
     """Representation of a IPX Light through X-Dimmer."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
-        self.control = XDimmer(self.controller.ipx, self._id)
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
+        self.control = XDimmer(controller.ipx, self._id)
 
         self._brightness = None
         self._supported_features |= SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
@@ -153,9 +143,9 @@ class XDimmerLight(IpxDevice, LightEntity):
 class XPWMLight(IpxDevice, LightEntity):
     """Representation of a IPX Light through X-PWM single channel."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
-        self.control = XPWM(self.controller.ipx, self._id)
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
+        self.control = XPWM(controller.ipx, self._id)
 
         self._brightness = None
         self._supported_features |= SUPPORT_BRIGHTNESS | SUPPORT_TRANSITION
@@ -186,11 +176,11 @@ class XPWMLight(IpxDevice, LightEntity):
 class XPWMRGBLight(IpxDevice, LightEntity):
     """Representation of a RGB light through 3 X-PWM channels."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
-        self.xpwm_rgb_r = XPWM(self.controller.ipx, self._ids[0])
-        self.xpwm_rgb_g = XPWM(self.controller.ipx, self._ids[1])
-        self.xpwm_rgb_b = XPWM(self.controller.ipx, self._ids[2])
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
+        self.xpwm_rgb_r = XPWM(controller.ipx, self._ids[0])
+        self.xpwm_rgb_g = XPWM(controller.ipx, self._ids[1])
+        self.xpwm_rgb_b = XPWM(controller.ipx, self._ids[2])
 
         self._brightness = None
         self._rgb_color = None
@@ -272,12 +262,12 @@ class XPWMRGBLight(IpxDevice, LightEntity):
 class XPWMRGBWLight(IpxDevice, LightEntity):
     """Representation of a RGBW light through 4 X-PWM channels."""
 
-    def __init__(self, ipx_device):
-        super().__init__(ipx_device)
-        self.xpwm_rgbw_r = XPWM(self.controller.ipx, self._ids[0])
-        self.xpwm_rgbw_g = XPWM(self.controller.ipx, self._ids[1])
-        self.xpwm_rgbw_b = XPWM(self.controller.ipx, self._ids[2])
-        self.xpwm_rgbw_w = XPWM(self.controller.ipx, self._ids[3])
+    def __init__(self, device_config, controller: IpxController):
+        super().__init__(device_config, controller)
+        self.xpwm_rgbw_r = XPWM(controller.ipx, self._ids[0])
+        self.xpwm_rgbw_g = XPWM(controller.ipx, self._ids[1])
+        self.xpwm_rgbw_b = XPWM(controller.ipx, self._ids[2])
+        self.xpwm_rgbw_w = XPWM(controller.ipx, self._ids[3])
 
         self._brightness = None
         self._rgb_color = None

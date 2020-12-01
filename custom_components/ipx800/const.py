@@ -1,6 +1,8 @@
 """Constant for ipx800 integration"""
 DOMAIN = "ipx800"
 
+CONTROLLER = "controller"
+
 DEFAULT_TRANSITION = 0.5
 
 CONF_DEVICES = "devices"
