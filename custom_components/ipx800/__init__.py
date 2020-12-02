@@ -233,12 +233,14 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
 class IpxDevice(CoordinatorEntity):
     """Representation of a IPX800 generic device entity."""
 
-    def __init__(self, device_config, controller: IpxController):
+    def __init__(self, device_config, controller: IpxController, suffix_name=""):
         """Initialize the device."""
         super().__init__(controller.coordinator)
         self.config = device_config
 
         self._name = self.config.get(CONF_NAME)
+        if suffix_name:
+            self._name += f" {suffix_name}"
         self._device_class = self.config.get(CONF_DEVICE_CLASS) or None
         self._unit_of_measurement = self.config.get(
             CONF_UNIT_OF_MEASUREMENT) or None
