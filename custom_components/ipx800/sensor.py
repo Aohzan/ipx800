@@ -1,9 +1,11 @@
 """Support for IPX800 sensors."""
 import logging
 
-from homeassistant.const import (DEVICE_CLASS_HUMIDITY,
-                                 DEVICE_CLASS_ILLUMINANCE,
-                                 DEVICE_CLASS_TEMPERATURE)
+from homeassistant.const import (
+    DEVICE_CLASS_HUMIDITY,
+    DEVICE_CLASS_ILLUMINANCE,
+    DEVICE_CLASS_TEMPERATURE,
+)
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity import Entity
 from pypx800 import *
@@ -30,7 +32,6 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         True,
     )
 
-    """ X-THL sensors """
     for device in (
         item
         for item in discovery_info[CONF_DEVICES]
@@ -38,9 +39,25 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     ):
         async_add_entities(
             [
-                XTHLSensor(device, controller, DEVICE_CLASS_TEMPERATURE, "°C", "TEMP", "Temperature"),
-                XTHLSensor(device, controller, DEVICE_CLASS_HUMIDITY, "%", "HUM", "Humidity"),
-                XTHLSensor(device, controller, DEVICE_CLASS_ILLUMINANCE, "lx", "LUM", "Luminance"),
+                XTHLSensor(
+                    device,
+                    controller,
+                    DEVICE_CLASS_TEMPERATURE,
+                    "°C",
+                    "TEMP",
+                    "Temperature",
+                ),
+                XTHLSensor(
+                    device, controller, DEVICE_CLASS_HUMIDITY, "%", "HUM", "Humidity"
+                ),
+                XTHLSensor(
+                    device,
+                    controller,
+                    DEVICE_CLASS_ILLUMINANCE,
+                    "lx",
+                    "LUM",
+                    "Luminance",
+                ),
             ],
             True,
         )
@@ -69,7 +86,13 @@ class XTHLSensor(IpxDevice, Entity):
     """Representation of a X-THL sensor."""
 
     def __init__(
-        self, device_config, controller: IpxController, device_class, unit_of_measurement, req_type, suffix_name
+        self,
+        device_config,
+        controller: IpxController,
+        device_class,
+        unit_of_measurement,
+        req_type,
+        suffix_name,
     ):
         super().__init__(device_config, controller, suffix_name)
         self._device_class = device_class

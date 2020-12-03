@@ -1,11 +1,15 @@
 """Support for IPX800 cover."""
 import logging
 
-from homeassistant.components.cover import (ATTR_POSITION,
-                                            DEVICE_CLASS_SHUTTER,
-                                            SUPPORT_CLOSE, SUPPORT_OPEN,
-                                            SUPPORT_SET_POSITION, SUPPORT_STOP,
-                                            CoverEntity)
+from homeassistant.components.cover import (
+    ATTR_POSITION,
+    DEVICE_CLASS_SHUTTER,
+    SUPPORT_CLOSE,
+    SUPPORT_OPEN,
+    SUPPORT_SET_POSITION,
+    SUPPORT_STOP,
+    CoverEntity,
+)
 from homeassistant.exceptions import ConfigEntryNotReady
 from pypx800 import *
 

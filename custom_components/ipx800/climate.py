@@ -2,14 +2,17 @@
 import logging
 
 from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import (ATTR_PRESET_MODE,
-                                                    CURRENT_HVAC_HEAT,
-                                                    CURRENT_HVAC_IDLE,
-                                                    CURRENT_HVAC_OFF,
-                                                    HVAC_MODE_HEAT,
-                                                    HVAC_MODE_OFF, PRESET_AWAY,
-                                                    PRESET_NONE,
-                                                    SUPPORT_PRESET_MODE)
+from homeassistant.components.climate.const import (
+    ATTR_PRESET_MODE,
+    CURRENT_HVAC_HEAT,
+    CURRENT_HVAC_IDLE,
+    CURRENT_HVAC_OFF,
+    HVAC_MODE_HEAT,
+    HVAC_MODE_OFF,
+    PRESET_AWAY,
+    PRESET_NONE,
+    SUPPORT_PRESET_MODE,
+)
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity import Entity
@@ -82,12 +85,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
 
     @property
     def preset_modes(self):
-        return ['Confort',
-                'Eco',
-                'Hors Gel',
-                'Arret',
-                'Confort -1',
-                'Confort -2']
+        return ["Confort", "Eco", "Hors Gel", "Arret", "Confort -1", "Confort -2"]
 
     @property
     def preset_mode(self):
@@ -96,15 +94,16 @@ class X4FPClimate(IpxDevice, ClimateEntity):
     def set_preset_mode(self, preset_mode):
         """Set new target preset mode."""
         switcher = {
-            'Confort': 0,
-            'Eco': 1,
-            'Hors Gel': 2,
-            'Arret': 3,
-            'Confort -1': 4,
-            'Confort -2': 5
+            "Confort": 0,
+            "Eco": 1,
+            "Hors Gel": 2,
+            "Arret": 3,
+            "Confort -1": 4,
+            "Confort -2": 5,
         }
         _LOGGER.debug(
-            f"set preset_mode to {preset_mode} => id {switcher.get(preset_mode)}")
+            "set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode)
+        )
         self.control.set_mode(switcher.get(preset_mode))
 
     def set_hvac_mode(self, hvac_mode):
@@ -114,7 +113,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         elif hvac_mode == HVAC_MODE_OFF:
             self.control.set_mode(3)
         else:
-            _LOGGER.error(f"Unrecognized hvac mode: {hvac_mode}")
+            _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
             return
 
 
@@ -139,32 +138,35 @@ class RelayClimate(IpxDevice, ClimateEntity):
 
     @property
     def hvac_mode(self):
-        if int(self.coordinator.data[f"R{self._ids[0]}"]) == 0 and int(self.coordinator.data[f"R{self._ids[1]}"]) == 1:
+        if (
+            int(self.coordinator.data[f"R{self._ids[0]}"]) == 0
+            and int(self.coordinator.data[f"R{self._ids[1]}"]) == 1
+        ):
             return HVAC_MODE_OFF
         return HVAC_MODE_HEAT
 
     @property
     def hvac_action(self):
-        if int(self.coordinator.data[f"R{self._ids[0]}"]) == 0 and int(self.coordinator.data[f"R{self._ids[1]}"]) == 1:
+        if (
+            int(self.coordinator.data[f"R{self._ids[0]}"]) == 0
+            and int(self.coordinator.data[f"R{self._ids[1]}"]) == 1
+        ):
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_HEAT
 
     @property
     def preset_modes(self):
-        return ['Confort',
-                'Eco',
-                'Hors Gel',
-                'Stop']
+        return ["Confort", "Eco", "Hors Gel", "Stop"]
 
     @property
     def preset_mode(self):
         state_minus = int(self.coordinator.data[f"R{self._ids[0]}"])
         state_plus = int(self.coordinator.data[f"R{self._ids[1]}"])
         switcher = {
-            (0, 0): 'Confort',
-            (0, 1): 'Stop',
-            (1, 0): 'Hors Gel',
-            (1, 1): 'Eco'
+            (0, 0): "Confort",
+            (0, 1): "Stop",
+            (1, 0): "Hors Gel",
+            (1, 1): "Eco",
         }
         return switcher.get((state_minus, state_plus), "Inconnu")
 
@@ -177,7 +179,7 @@ class RelayClimate(IpxDevice, ClimateEntity):
             self.control_minus.off()
             self.control_plus.on()
         else:
-            _LOGGER.error(f"Unrecognized hvac mode: {hvac_mode}")
+            _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
             return
 
     def set_preset_mode(self, preset_mode):

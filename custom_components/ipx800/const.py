@@ -1,4 +1,4 @@
-"""Constant for ipx800 integration"""
+"""Constant for the ipx800 integration"""
 DOMAIN = "ipx800"
 
 CONTROLLER = "controller"
@@ -27,8 +27,14 @@ TYPE_X4VR = "x4vr"
 TYPE_XTHL = "xthl"
 TYPE_X4FP = "x4fp"
 
-CONF_COMPONENT_ALLOWED = ["light", "switch", "sensor",
-                          "binary_sensor", "cover", "climate"]
+CONF_COMPONENT_ALLOWED = [
+    "light",
+    "switch",
+    "sensor",
+    "binary_sensor",
+    "cover",
+    "climate",
+]
 
 CONF_TYPE_ALLOWED = [
     TYPE_RELAY,

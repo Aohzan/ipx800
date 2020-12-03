@@ -8,16 +8,26 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
-from homeassistant.const import (CONF_API_KEY, CONF_DEVICE_CLASS, CONF_HOST,
-                                 CONF_ICON, CONF_NAME, CONF_PASSWORD,
-                                 CONF_PORT, CONF_SCAN_INTERVAL,
-                                 CONF_UNIT_OF_MEASUREMENT, CONF_USERNAME,
-                                 HTTP_OK)
+from homeassistant.const import (
+    CONF_API_KEY,
+    CONF_DEVICE_CLASS,
+    CONF_HOST,
+    CONF_ICON,
+    CONF_NAME,
+    CONF_PASSWORD,
+    CONF_PORT,
+    CONF_SCAN_INTERVAL,
+    CONF_UNIT_OF_MEASUREMENT,
+    CONF_USERNAME,
+    HTTP_OK,
+)
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import discovery
-from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
-                                                      DataUpdateCoordinator,
-                                                      UpdateFailed)
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
 from pypx800 import *
 
 from .const import *
@@ -56,7 +66,8 @@ GATEWAY_CONFIG = vol.Schema(
 )
 
 CONFIG_SCHEMA = vol.Schema(
-    {DOMAIN: vol.All(cv.ensure_list, [GATEWAY_CONFIG])}, extra=vol.ALLOW_EXTRA,
+    {DOMAIN: vol.All(cv.ensure_list, [GATEWAY_CONFIG])},
+    extra=vol.ALLOW_EXTRA,
 )
 
 
@@ -77,8 +88,7 @@ async def async_setup(hass, config):
         ping = await hass.async_add_executor_job(controller.ipx.ping)
 
         if ping:
-            _LOGGER.info(
-                f"Successfully connected to the IPX800 {controller.name}.")
+            _LOGGER.debug("Successfully connected to the IPX800 %s.", controller.name)
 
             await controller.coordinator.async_refresh()
 
@@ -86,7 +96,7 @@ async def async_setup(hass, config):
             controller.read_devices()
 
             for component in CONF_COMPONENT_ALLOWED:
-                _LOGGER.debug(f"Load component {component}.")
+                _LOGGER.debug(f"Load component %s.", component)
 
                 discovery.load_platform(
                     hass,
@@ -96,11 +106,10 @@ async def async_setup(hass, config):
                         CONTROLLER: controller.name,
                         CONF_DEVICES: list(
                             filter(
-                                lambda item: item.get(CONF_COMPONENT)
-                                == component,
+                                lambda item: item.get(CONF_COMPONENT) == component,
                                 controller.devices,
                             )
-                        )
+                        ),
                     },
                     config,
                 )
@@ -108,7 +117,9 @@ async def async_setup(hass, config):
             return True
         else:
             _LOGGER.error(
-                f"Can't connect to the IPX800 {controller.name}, please check host, port and api_key.")
+                "Can't connect to the IPX800 %s, please check host, port and api_key.",
+                controller.name,
+            )
 
 
 class IpxController:
@@ -116,8 +127,7 @@ class IpxController:
 
     def __init__(self, hass, config):
         """Initialize the ipx800 controller."""
-        _LOGGER.debug(
-            f"New IPX800 initialisation on host: {config.get(CONF_HOST)}")
+        _LOGGER.debug("New IPX800 initialisation on host %s", config.get(CONF_HOST))
 
         self.name = config[CONF_NAME]
 
@@ -149,13 +159,21 @@ class IpxController:
                 """Check if component is supported"""
                 if device_config[CONF_COMPONENT] not in CONF_COMPONENT_ALLOWED:
                     _LOGGER.error(
-                        f"Device {device_config[CONF_NAME]} skipped: {CONF_COMPONENT} {device_config[CONF_COMPONENT]} not correct or supported.")
+                        "Device %s skipped: %s %s not correct or supported.",
+                        device_config[CONF_NAME],
+                        CONF_COMPONENT,
+                        device_config[CONF_COMPONENT],
+                    )
                     continue
 
                 """Check if type is supported"""
                 if device_config[CONF_TYPE] not in CONF_TYPE_ALLOWED:
                     _LOGGER.error(
-                        f"Device {device_config[CONF_NAME]} skipped: {CONF_TYPE} {device_config[CONF_TYPE]} not correct or supported.")
+                        "Device %s skipped: %s %s not correct or supported.",
+                        device_config[CONF_NAME],
+                        CONF_TYPE,
+                        device_config[CONF_TYPE],
+                    )
                     continue
 
                 """Check if X4VR have extension id set"""
@@ -164,38 +182,58 @@ class IpxController:
                     and CONF_EXT_ID not in device_config
                 ):
                     _LOGGER.error(
-                        f"Device {device_config[CONF_NAME]} skipped: {TYPE_X4VR} must have {CONF_EXT_ID} set.")
+                        "Device %s skipped: %s must have %s set.",
+                        device_config[CONF_NAME],
+                        TYPE_X4VR,
+                        CONF_EXT_ID,
+                    )
                     continue
 
                 """Check if RGB/RBW or FP/RELAY have ids set"""
                 if (
-                    (device_config[CONF_TYPE] == TYPE_XPWM_RGB
-                     or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
-                     or (device_config[CONF_TYPE] == TYPE_RELAY and device_config[CONF_COMPONENT] == "climate"))
-                    and CONF_IDS not in device_config
-                ):
+                    device_config[CONF_TYPE] == TYPE_XPWM_RGB
+                    or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
+                    or (
+                        device_config[CONF_TYPE] == TYPE_RELAY
+                        and device_config[CONF_COMPONENT] == "climate"
+                    )
+                ) and CONF_IDS not in device_config:
                     _LOGGER.error(
-                        f"Device {device_config[CONF_NAME]} skipped: RGB/RGBW must have {CONF_IDS} set.")
+                        "Device %s skipped: RGB/RGBW must have %s set.",
+                        device_config[CONF_NAME],
+                        CONF_IDS,
+                    )
                     continue
 
                 """Check if other device types have id set"""
                 if (
                     device_config[CONF_TYPE] != TYPE_XPWM_RGB
                     and device_config[CONF_TYPE] != TYPE_XPWM_RGBW
-                    and not (device_config[CONF_TYPE] == TYPE_RELAY and device_config[CONF_COMPONENT] == "climate")
+                    and not (
+                        device_config[CONF_TYPE] == TYPE_RELAY
+                        and device_config[CONF_COMPONENT] == "climate"
+                    )
                     and CONF_ID not in device_config
                 ):
                     _LOGGER.error(
-                        f"Device {device_config[CONF_NAME]} skipped: must have {CONF_ID} set.")
+                        "Device %s skipped: must have %s set.",
+                        device_config[CONF_NAME],
+                        CONF_ID,
+                    )
                     continue
 
                 device_config[CONTROLLER] = self.name
                 self.devices.append(device_config)
                 _LOGGER.info(
-                    f"Device {device_config[CONF_NAME]} added (component: {device_config[CONF_COMPONENT]}).")
+                    "Device %s added (component: %s).",
+                    device_config[CONF_NAME],
+                    device_config[CONF_COMPONENT],
+                )
             except:
                 _LOGGER.error(
-                    f"Error to handle device {device_config.get(CONF_NAME)}. Please check its config")
+                    "Error to handle device %s. Please check its config",
+                    device_config.get(CONF_NAME),
+                )
 
 
 class IpxRequestView(HomeAssistantView):
@@ -209,12 +247,12 @@ class IpxRequestView(HomeAssistantView):
         """Respond to requests from the device."""
         hass = request.app["hass"]
         old_state = hass.states.get(entity_id)
-        _LOGGER.debug(f"Update {entity_id} to state {state}.")
+        _LOGGER.debug("Update %s to state %s.", entity_id, state)
         if old_state:
             hass.states.async_set(entity_id, state, old_state.attributes)
             return web.Response(status=HTTP_OK, text="OK")
         else:
-            _LOGGER.warning("Entity not found.")
+            _LOGGER.warning("Entity not found for state updating: %s", entity_id)
 
 
 class IpxDataUpdateCoordinator(DataUpdateCoordinator):
@@ -242,10 +280,10 @@ class IpxDevice(CoordinatorEntity):
         if suffix_name:
             self._name += f" {suffix_name}"
         self._device_class = self.config.get(CONF_DEVICE_CLASS) or None
-        self._unit_of_measurement = self.config.get(
-            CONF_UNIT_OF_MEASUREMENT) or None
-        self._transition = int(self.config.get(
-            CONF_TRANSITION, DEFAULT_TRANSITION) * 1000)
+        self._unit_of_measurement = self.config.get(CONF_UNIT_OF_MEASUREMENT) or None
+        self._transition = int(
+            self.config.get(CONF_TRANSITION, DEFAULT_TRANSITION) * 1000
+        )
         self._icon = self.config.get(CONF_ICON) or None
         self._state = None
         self._id = self.config.get(CONF_ID)

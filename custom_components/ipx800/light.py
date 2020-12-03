@@ -2,14 +2,24 @@
 import logging
 
 import homeassistant.util.color as color_util
-from homeassistant.components.light import (ATTR_BRIGHTNESS, ATTR_HS_COLOR,
-                                            ATTR_RGB_COLOR, ATTR_TRANSITION,
-                                            ATTR_WHITE_VALUE,
-                                            SUPPORT_BRIGHTNESS, SUPPORT_COLOR,
-                                            SUPPORT_TRANSITION,
-                                            SUPPORT_WHITE_VALUE, LightEntity)
-from homeassistant.const import (CONF_DEVICE_CLASS, CONF_ICON, CONF_NAME,
-                                 CONF_UNIT_OF_MEASUREMENT)
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
+    ATTR_HS_COLOR,
+    ATTR_RGB_COLOR,
+    ATTR_TRANSITION,
+    ATTR_WHITE_VALUE,
+    SUPPORT_BRIGHTNESS,
+    SUPPORT_COLOR,
+    SUPPORT_TRANSITION,
+    SUPPORT_WHITE_VALUE,
+    LightEntity,
+)
+from homeassistant.const import (
+    CONF_DEVICE_CLASS,
+    CONF_ICON,
+    CONF_NAME,
+    CONF_UNIT_OF_MEASUREMENT,
+)
 from homeassistant.exceptions import ConfigEntryNotReady
 from pypx800 import *
 
