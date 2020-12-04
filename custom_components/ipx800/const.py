@@ -29,11 +29,11 @@ TYPE_X4FP = "x4fp"
 
 CONF_COMPONENT_ALLOWED = [
     "light",
-    "switch",
-    "sensor",
-    "binary_sensor",
-    "cover",
-    "climate",
+    # "switch",
+    # "sensor",
+    # "binary_sensor",
+    # "cover",
+    # "climate",
 ]
 
 CONF_TYPE_ALLOWED = [

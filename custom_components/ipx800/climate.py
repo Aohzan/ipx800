@@ -14,8 +14,6 @@ from homeassistant.components.climate.const import (
     SUPPORT_PRESET_MODE,
 )
 from homeassistant.const import TEMP_CELSIUS
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.entity import Entity
 from pypx800 import *
 
 from . import IpxController, IpxDevice
@@ -24,18 +22,19 @@ from .const import *
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the IPX800 climate."""
-    controller = hass.data[DOMAIN][discovery_info[CONTROLLER]]
+async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
+    """Set up the IPX800 climates."""
+    controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
+    devices = [
+        d
+        for d in config_entry.data.get(CONF_DEVICES)
+        if d.get(CONF_COMPONENT) == "climate"
+    ]
 
     async_add_entities(
         [
             X4FPClimate(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_X4FP
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_X4FP)
         ],
         True,
     )
@@ -43,11 +42,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     async_add_entities(
         [
             RelayClimate(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_RELAY
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_RELAY)
         ],
         True,
     )

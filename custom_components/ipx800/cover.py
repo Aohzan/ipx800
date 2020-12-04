@@ -10,7 +10,6 @@ from homeassistant.components.cover import (
     SUPPORT_STOP,
     CoverEntity,
 )
-from homeassistant.exceptions import ConfigEntryNotReady
 from pypx800 import *
 
 from . import IpxController, IpxDevice
@@ -19,18 +18,19 @@ from .const import *
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the IPX800 cover."""
-    controller = hass.data[DOMAIN][discovery_info[CONTROLLER]]
+async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
+    """Set up the IPX800 covers."""
+    controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
+    devices = [
+        d
+        for d in config_entry.data.get(CONF_DEVICES)
+        if d.get(CONF_COMPONENT) == "cover"
+    ]
 
     async_add_entities(
         [
             X4VRCover(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_X4VR
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_X4VR)
         ],
         True,
     )

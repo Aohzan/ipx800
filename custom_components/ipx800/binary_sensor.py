@@ -3,7 +3,6 @@ import logging
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.const import STATE_OFF, STATE_ON
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity import Entity
 from pypx800 import *
 
@@ -13,18 +12,19 @@ from .const import *
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Set up the IPX800 binary_sensors."""
-    controller = hass.data[DOMAIN][discovery_info[CONTROLLER]]
+async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
+    """Set up the IPX800 binary sensors."""
+    controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
+    devices = [
+        d
+        for d in config_entry.data.get(CONF_DEVICES)
+        if d.get(CONF_COMPONENT) == "binary_sensor"
+    ]
 
     async_add_entities(
         [
             VirtualOutBinarySensor(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_VIRTUALOUT
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_VIRTUALOUT)
         ],
         True,
     )
@@ -32,11 +32,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     async_add_entities(
         [
             DigitalInBinarySensor(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_DIGITALIN
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_DIGITALIN)
         ],
         True,
     )

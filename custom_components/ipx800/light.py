@@ -20,7 +20,6 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_UNIT_OF_MEASUREMENT,
 )
-from homeassistant.exceptions import ConfigEntryNotReady
 from pypx800 import *
 
 from . import IpxController, IpxDevice
@@ -37,18 +36,19 @@ def scaleto100(value):
     return max(0, min(100, round((value * 100.0) / 255.0)))
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
     """Set up the IPX800 lights."""
-    controller = hass.data[DOMAIN][discovery_info[CONTROLLER]]
+    controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
+    devices = [
+        d
+        for d in config_entry.data.get(CONF_DEVICES)
+        if d.get(CONF_COMPONENT) == "light"
+    ]
 
     async_add_entities(
         [
             RelayLight(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_RELAY
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_RELAY)
         ],
         True,
     )
@@ -56,44 +56,28 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     async_add_entities(
         [
             XDimmerLight(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_XDIMMER
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_XDIMMER)
         ],
         True,
     )
     async_add_entities(
         [
             XPWMLight(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_XPWM
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_XPWM)
         ],
         True,
     )
     async_add_entities(
         [
             XPWMRGBLight(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_XPWM_RGB
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_XPWM_RGB)
         ],
         True,
     )
     async_add_entities(
         [
             XPWMRGBWLight(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_XPWM_RGBW
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_XPWM_RGBW)
         ],
         True,
     )
@@ -135,19 +119,35 @@ class XDimmerLight(IpxDevice, LightEntity):
     def brightness(self) -> int:
         return scaleto255(self.coordinator.data[f"G{self._id}"]["Valeur"])
 
-    def turn_on(self, **kwargs):
+    # def turn_on(self, **kwargs):
+    #     if ATTR_TRANSITION in kwargs:
+    #         self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
+    #     if ATTR_BRIGHTNESS in kwargs:
+    #         self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+    #         self.control.set_level(scaleto100(self._brightness), self._transition)
+    #     else:
+    #         self.control.on(self._transition)
+
+    async def async_turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
-            self.control.set_level(scaleto100(self._brightness), self._transition)
+            await self.control.set_level(scaleto100(self._brightness), self._transition)
         else:
-            self.control.on(self._transition)
+            await self.control.on(self._transition)
+        await self.coordinator.async_request_refresh()
 
-    def turn_off(self, **kwargs):
+    # def turn_off(self, **kwargs):
+    #     if ATTR_TRANSITION in kwargs:
+    #         self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
+    #     self.control.off(self._transition)
+
+    async def async_turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
-        self.control.off(self._transition)
+        await self.control.off(self._transition)
+        await self.coordinator.async_request_refresh()
 
 
 class XPWMLight(IpxDevice, LightEntity):

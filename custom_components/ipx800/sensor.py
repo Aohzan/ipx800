@@ -6,7 +6,6 @@ from homeassistant.const import (
     DEVICE_CLASS_ILLUMINANCE,
     DEVICE_CLASS_TEMPERATURE,
 )
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity import Entity
 from pypx800 import *
 
@@ -16,27 +15,24 @@ from .const import *
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
     """Set up the IPX800 sensors."""
-    controller = hass.data[DOMAIN][discovery_info[CONTROLLER]]
+    controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
+    devices = [
+        d
+        for d in config_entry.data.get(CONF_DEVICES)
+        if d.get(CONF_COMPONENT) == "sensor"
+    ]
 
     async_add_entities(
         [
             AnalogInSensor(device, controller)
-            for device in (
-                item
-                for item in discovery_info[CONF_DEVICES]
-                if item.get(CONF_TYPE) == TYPE_ANALOGIN
-            )
+            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_ANALOGIN)
         ],
         True,
     )
 
-    for device in (
-        item
-        for item in discovery_info[CONF_DEVICES]
-        if item.get(CONF_TYPE) == TYPE_XTHL
-    ):
+    for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_XTHL):
         async_add_entities(
             [
                 XTHLSensor(

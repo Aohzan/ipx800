@@ -21,6 +21,8 @@ from homeassistant.const import (
     CONF_USERNAME,
     HTTP_OK,
 )
+from homeassistant.helpers import device_registry as dr
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import discovery
 from homeassistant.helpers.update_coordinator import (
@@ -73,53 +75,66 @@ CONFIG_SCHEMA = vol.Schema(
 
 async def async_setup(hass, config):
     """Set up the IPX800 from config file."""
+    gateways = config.get(DOMAIN)
+    if not gateways:
+        return True
+
+    for gateway in gateways:
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": SOURCE_IMPORT}, data=gateway
+            )
+        )
+
+    return True
+
+
+async def async_setup_entry(hass, config_entry):
+    """Set up the IPX800."""
     hass.data.setdefault(DOMAIN, {})
 
-    conf = config.get(DOMAIN)
-    if not conf:
-        return True
+    gateway_config = config_entry.data
 
     # Provide an endpoint for the IPX to call to push states
     hass.http.register_view(IpxRequestView)
 
-    for gateway in conf:
-        controller = IpxController(hass, gateway)
+    controller = IpxController(hass, gateway_config)
 
-        ping = await hass.async_add_executor_job(controller.ipx.ping)
+    ping = await hass.async_add_executor_job(controller.ipx.ping)
 
-        if ping:
-            _LOGGER.debug("Successfully connected to the IPX800 %s.", controller.name)
+    if ping:
+        _LOGGER.debug(
+            "Successfully connected to the IPX800 with name: %s.", controller.name
+        )
 
-            await controller.coordinator.async_refresh()
+        await controller.coordinator.async_refresh()
 
-            hass.data[DOMAIN][controller.name] = controller
-            controller.read_devices()
+        hass.data[DOMAIN][config_entry.entry_id] = {CONTROLLER: controller}
 
-            for component in CONF_COMPONENT_ALLOWED:
-                _LOGGER.debug(f"Load component %s.", component)
+        controller.read_devices()
 
-                discovery.load_platform(
-                    hass,
-                    component,
-                    DOMAIN,
-                    {
-                        CONTROLLER: controller.name,
-                        CONF_DEVICES: list(
-                            filter(
-                                lambda item: item.get(CONF_COMPONENT) == component,
-                                controller.devices,
-                            )
-                        ),
-                    },
-                    config,
-                )
+        device_registry = await dr.async_get_registry(hass)
+        device_registry.async_get_or_create(
+            config_entry_id=config_entry.entry_id,
+            identifiers={(DOMAIN, controller.name)},
+            manufacturer="GCE",
+            name=controller.name,
+            model="IPX800v4",
+        )
 
-            return True
-        else:
-            _LOGGER.error(
-                "Can't connect to the IPX800 %s, please check host, port and api_key.",
-                controller.name,
+        for component in CONF_COMPONENT_ALLOWED:
+            _LOGGER.debug(f"Load component %s.", component)
+            hass.async_create_task(
+                hass.config_entries.async_forward_entry_setup(config_entry, component)
             )
+
+        return True
+    else:
+        _LOGGER.error(
+            "Can't connect to the IPX800 %s, please check host, port and api_key.",
+            controller.name,
+        )
+    return False
 
 
 class IpxController:
@@ -274,25 +289,25 @@ class IpxDevice(CoordinatorEntity):
     def __init__(self, device_config, controller: IpxController, suffix_name=""):
         """Initialize the device."""
         super().__init__(controller.coordinator)
-        self.config = device_config
 
-        self._name = self.config.get(CONF_NAME)
+        self._name = device_config.get(CONF_NAME)
         if suffix_name:
             self._name += f" {suffix_name}"
-        self._device_class = self.config.get(CONF_DEVICE_CLASS) or None
-        self._unit_of_measurement = self.config.get(CONF_UNIT_OF_MEASUREMENT) or None
+        self._device_class = device_config.get(CONF_DEVICE_CLASS) or None
+        self._unit_of_measurement = device_config.get(CONF_UNIT_OF_MEASUREMENT) or None
         self._transition = int(
-            self.config.get(CONF_TRANSITION, DEFAULT_TRANSITION) * 1000
+            device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION) * 1000
         )
-        self._icon = self.config.get(CONF_ICON) or None
+        self._icon = device_config.get(CONF_ICON) or None
         self._state = None
-        self._id = self.config.get(CONF_ID)
-        self._ext_id = self.config.get(CONF_EXT_ID) or None
-        self._ids = self.config.get(CONF_IDS) or []
+        self._id = device_config.get(CONF_ID)
+        self._ext_id = device_config.get(CONF_EXT_ID) or None
+        self._ids = device_config.get(CONF_IDS) or []
 
         self._supported_features = 0
+        self._controller_name = controller.name
         self._unique_id = (
-            f"{self.config.get(CONTROLLER)}.{self.config.get(CONF_COMPONENT)}.{re.sub('[^A-Za-z0-9_]+', '', self._name.replace(' ', '_'))}"
+            f"{device_config.get(CONTROLLER)}.{device_config.get(CONF_COMPONENT)}.{re.sub('[^A-Za-z0-9_]+', '', self._name.replace(' ', '_'))}"
         ).lower()
 
     @property
@@ -317,7 +332,7 @@ class IpxDevice(CoordinatorEntity):
             "name": self._name,
             "manufacturer": "GCE",
             "model": "IPX800v4",
-            "via_device": (DOMAIN, self.config.get(CONTROLLER)),
+            "via_device": {(DOMAIN, self._controller_name)},
         }
 
     @property
