@@ -1,16 +1,16 @@
 # ipx800 component for Home Assistant
 
 This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
-The `ipx800` integration allows you to get information from [GCE Eco-Devices](http://gce-electronics.com/).
+The `ipx800` integration allows you to get information and control the [IPX800 v4 and its extensions](http://gce-electronics.com/).
 
 ## Installation
 
 Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant.
 Add the `ipx800` entry in your `configuration.yml` (see example below)
 
-## Requirement
+## Dependency
 
-[pypix800 python package](https://github.com/Aohzan/pypx800)
+[pypix800 python package](https://github.com/Aohzan/pypx800) (installed by Home-Assistant itself, nothing to do here)
 
 ## Description
 
