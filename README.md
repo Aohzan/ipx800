@@ -3,6 +3,8 @@
 This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
 The `ipx800` integration allows you to get information and control the [IPX800 v4 and its extensions](http://gce-electronics.com/).
 
+![README en français](README.md) :fr:
+
 ## Installation
 
 Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant.
