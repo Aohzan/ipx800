@@ -13,35 +13,21 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
     """Set up the IPX800 switches."""
     controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
-    devices = [
-        d
-        for d in config_entry.data.get(CONF_DEVICES)
-        if d.get(CONF_COMPONENT) == "switch"
-    ]
-
-    async_add_entities(
-        [
-            RelaySwitch(device, controller)
-            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_RELAY)
-        ],
-        True,
+    devices = filter(
+        lambda d: d[CONF_COMPONENT] == "switch", config_entry.data[CONF_DEVICES]
     )
 
-    async_add_entities(
-        [
-            VirtualOutSwitch(device, controller)
-            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_VIRTUALOUT)
-        ],
-        True,
-    )
+    entities = []
 
-    async_add_entities(
-        [
-            VirtualInSwitch(device, controller)
-            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_VIRTUALIN)
-        ],
-        True,
-    )
+    for device in devices:
+        if device.get(CONF_TYPE) == TYPE_RELAY:
+            entities.append(RelaySwitch(device, controller))
+        elif device.get(CONF_TYPE) == TYPE_VIRTUALOUT:
+            entities.append(VirtualOutSwitch(device, controller))
+        elif device.get(CONF_TYPE) == TYPE_VIRTUALIN:
+            entities.append(VirtualInSwitch(device, controller))
+
+    async_add_entities(entities, True)
 
 
 class RelaySwitch(IpxDevice, SwitchEntity):

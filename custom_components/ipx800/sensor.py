@@ -18,23 +18,17 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
     """Set up the IPX800 sensors."""
     controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
-    devices = [
-        d
-        for d in config_entry.data.get(CONF_DEVICES)
-        if d.get(CONF_COMPONENT) == "sensor"
-    ]
-
-    async_add_entities(
-        [
-            AnalogInSensor(device, controller)
-            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_ANALOGIN)
-        ],
-        True,
+    devices = filter(
+        lambda d: d[CONF_COMPONENT] == "sensor", config_entry.data[CONF_DEVICES]
     )
 
-    for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_XTHL):
-        async_add_entities(
-            [
+    entities = []
+
+    for device in devices:
+        if device.get(CONF_TYPE) == TYPE_ANALOGIN:
+            entities.append(AnalogInSensor(device, controller))
+        elif device.get(CONF_TYPE) == TYPE_XTHL:
+            entities.append(
                 XTHLSensor(
                     device,
                     controller,
@@ -42,10 +36,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
                     "°C",
                     "TEMP",
                     "Temperature",
-                ),
+                )
+            )
+            entities.append(
                 XTHLSensor(
                     device, controller, DEVICE_CLASS_HUMIDITY, "%", "HUM", "Humidity"
-                ),
+                )
+            )
+            entities.append(
                 XTHLSensor(
                     device,
                     controller,
@@ -53,10 +51,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
                     "lx",
                     "LUM",
                     "Luminance",
-                ),
-            ],
-            True,
-        )
+                )
+            )
+
+    async_add_entities(entities, True)
 
 
 class AnalogInSensor(IpxDevice, Entity):

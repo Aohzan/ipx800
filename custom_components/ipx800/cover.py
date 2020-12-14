@@ -21,19 +21,17 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
     """Set up the IPX800 covers."""
     controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
-    devices = [
-        d
-        for d in config_entry.data.get(CONF_DEVICES)
-        if d.get(CONF_COMPONENT) == "cover"
-    ]
-
-    async_add_entities(
-        [
-            X4VRCover(device, controller)
-            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_X4VR)
-        ],
-        True,
+    devices = filter(
+        lambda d: d[CONF_COMPONENT] == "cover", config_entry.data[CONF_DEVICES]
     )
+
+    entities = []
+
+    for device in devices:
+        if device.get(CONF_TYPE) == TYPE_X4VR:
+            entities.append(X4VRCover(device, controller))
+
+    async_add_entities(entities, True)
 
 
 class X4VRCover(IpxDevice, CoverEntity):

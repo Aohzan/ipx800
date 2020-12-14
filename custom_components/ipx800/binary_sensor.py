@@ -15,27 +15,19 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
     """Set up the IPX800 binary sensors."""
     controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
-    devices = [
-        d
-        for d in config_entry.data.get(CONF_DEVICES)
-        if d.get(CONF_COMPONENT) == "binary_sensor"
-    ]
-
-    async_add_entities(
-        [
-            VirtualOutBinarySensor(device, controller)
-            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_VIRTUALOUT)
-        ],
-        True,
+    devices = filter(
+        lambda d: d[CONF_COMPONENT] == "binary_sensor", config_entry.data[CONF_DEVICES]
     )
 
-    async_add_entities(
-        [
-            DigitalInBinarySensor(device, controller)
-            for device in (d for d in devices if d.get(CONF_TYPE) == TYPE_DIGITALIN)
-        ],
-        True,
-    )
+    entities = []
+
+    for device in devices:
+        if device.get(CONF_TYPE) == TYPE_VIRTUALOUT:
+            entities.append(VirtualOutBinarySensor(device, controller))
+        elif device.get(CONF_TYPE) == TYPE_DIGITALIN:
+            entities.append(DigitalInBinarySensor(device, controller))
+
+    async_add_entities(entities, True)
 
 
 class VirtualOutBinarySensor(IpxDevice, BinarySensorEntity):

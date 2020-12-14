@@ -118,8 +118,8 @@ async def async_setup_entry(hass, config_entry):
             config_entry_id=config_entry.entry_id,
             identifiers={(DOMAIN, controller.name)},
             manufacturer="GCE",
-            name=controller.name,
             model="IPX800v4",
+            name=controller.name,
         )
 
         for component in CONF_COMPONENT_ALLOWED:
@@ -291,23 +291,32 @@ class IpxDevice(CoordinatorEntity):
         super().__init__(controller.coordinator)
 
         self._name = device_config.get(CONF_NAME)
+        self._device_name = self._name
         if suffix_name:
             self._name += f" {suffix_name}"
-        self._device_class = device_config.get(CONF_DEVICE_CLASS) or None
-        self._unit_of_measurement = device_config.get(CONF_UNIT_OF_MEASUREMENT) or None
+
+        self._device_class = device_config.get(CONF_DEVICE_CLASS)
+        self._unit_of_measurement = device_config.get(CONF_UNIT_OF_MEASUREMENT)
         self._transition = int(
             device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION) * 1000
         )
-        self._icon = device_config.get(CONF_ICON) or None
-        self._state = None
+        self._icon = device_config.get(CONF_ICON)
+        self._type = device_config.get(CONF_TYPE)
+        self._component = device_config.get(CONF_COMPONENT)
         self._id = device_config.get(CONF_ID)
-        self._ext_id = device_config.get(CONF_EXT_ID) or None
-        self._ids = device_config.get(CONF_IDS) or []
+        self._ext_id = device_config.get(CONF_EXT_ID)
+        self._ids = device_config.get(CONF_IDS, [])
+        self._state = None
 
         self._supported_features = 0
         self._controller_name = controller.name
-        self._unique_id = (
-            f"{device_config.get(CONTROLLER)}.{device_config.get(CONF_COMPONENT)}.{re.sub('[^A-Za-z0-9_]+', '', self._name.replace(' ', '_'))}"
+
+        self._unique_id = self._generate_unique_id(self._name)
+        self._device_unique_id = self._generate_unique_id(self._device_name)
+
+    def _generate_unique_id(self, name):
+        return (
+            f"{self._controller_name}_{self._component}_{re.sub('[^A-Za-z0-9_]+', '', name.replace(' ', '_'))}"
         ).lower()
 
     @property
@@ -328,12 +337,18 @@ class IpxDevice(CoordinatorEntity):
     @property
     def device_info(self):
         return {
-            "identifiers": {(DOMAIN, self._unique_id)},
-            "name": self._name,
+            "identifiers": {(DOMAIN, self._device_unique_id)},
+            "name": self._device_name,
             "manufacturer": "GCE",
             "model": "IPX800v4",
-            "via_device": {(DOMAIN, self._controller_name)},
+            "via_device": (DOMAIN, self._controller_name),
+            CONF_TYPE: self._type,
         }
+
+    @property
+    def type(self):
+        """Return device type."""
+        return self._type
 
     @property
     def icon(self):
