@@ -56,7 +56,7 @@ GATEWAY_CONFIG = vol.Schema(
         vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_HOST): cv.string,
         vol.Optional(CONF_PORT, default=80): cv.port,
-        vol.Optional(CONF_SCAN_INTERVAL, default=5): cv.positive_int,
+        vol.Optional(CONF_SCAN_INTERVAL, default=10): cv.positive_int,
         vol.Required(CONF_API_KEY): cv.string,
         vol.Optional(CONF_USERNAME): cv.string,
         vol.Optional(CONF_PASSWORD): cv.string,
@@ -109,7 +109,12 @@ async def async_setup_entry(hass, config_entry):
 
         await controller.coordinator.async_refresh()
 
-        hass.data[DOMAIN][config_entry.entry_id] = {CONTROLLER: controller}
+        undo_listener = config_entry.add_update_listener(_async_update_listener)
+
+        hass.data[DOMAIN][config_entry.entry_id] = {
+            CONTROLLER: controller,
+            UNDO_UPDATE_LISTENER: undo_listener,
+        }
 
         controller.read_devices()
 
@@ -131,10 +136,35 @@ async def async_setup_entry(hass, config_entry):
         return True
     else:
         _LOGGER.error(
-            "Can't connect to the IPX800 %s, please check host, port and api_key.",
+            "Can't connect to the IPX800 named %s, please check host, port and api_key.",
             controller.name,
         )
     return False
+
+
+async def async_unload_entry(hass, config_entry):
+    """Unload a config entry."""
+    unload_ok = all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(config_entry, component)
+                for component in CONF_COMPONENT_ALLOWED
+            ]
+        )
+    )
+
+    if unload_ok:
+        hass.data[DOMAIN][config_entry.entry_id][UNDO_UPDATE_LISTENER]()
+        hass.data[DOMAIN].pop(config_entry.entry_id)
+        if not hass.data[DOMAIN]:
+            hass.data.pop(DOMAIN)
+
+    return unload_ok
+
+
+async def _async_update_listener(hass, config_entry):
+    """Handle options update."""
+    await hass.config_entries.async_reload(config_entry.entry_id)
 
 
 class IpxController:
@@ -154,10 +184,11 @@ class IpxController:
             config.get(CONF_PASSWORD),
         )
 
+        scan_interval = config.get(CONF_SCAN_INTERVAL)
         self.coordinator = IpxDataUpdateCoordinator(
             hass=hass,
             ipx=self.ipx,
-            update_interval=timedelta(seconds=config.get(CONF_SCAN_INTERVAL)),
+            update_interval=timedelta(seconds=scan_interval),
         )
 
         # devices config from user
@@ -275,6 +306,10 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass, ipx, update_interval):
         """Initialize."""
+        _LOGGER.debug(
+            "Define the coordinator to poll the IPX800 every %s seconds.",
+            update_interval.seconds,
+        )
         self.ipx = ipx
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=update_interval)
 
@@ -301,12 +336,11 @@ class IpxDevice(CoordinatorEntity):
             device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION) * 1000
         )
         self._icon = device_config.get(CONF_ICON)
-        self._type = device_config.get(CONF_TYPE)
+        self._ipx_type = device_config.get(CONF_TYPE)
         self._component = device_config.get(CONF_COMPONENT)
         self._id = device_config.get(CONF_ID)
         self._ext_id = device_config.get(CONF_EXT_ID)
         self._ids = device_config.get(CONF_IDS, [])
-        self._state = None
 
         self._supported_features = 0
         self._controller_name = controller.name
@@ -342,13 +376,8 @@ class IpxDevice(CoordinatorEntity):
             "manufacturer": "GCE",
             "model": "IPX800v4",
             "via_device": (DOMAIN, self._controller_name),
-            CONF_TYPE: self._type,
+            "connections": {(DOMAIN, self._ipx_type)},
         }
-
-    @property
-    def type(self):
-        """Return device type."""
-        return self._type
 
     @property
     def icon(self):

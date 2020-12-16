@@ -2,6 +2,7 @@
 DOMAIN = "ipx800"
 
 CONTROLLER = "controller"
+UNDO_UPDATE_LISTENER = "undo_update_listener"
 
 DEFAULT_TRANSITION = 0.5
 

@@ -41,11 +41,17 @@ class RelaySwitch(IpxDevice, SwitchEntity):
     def is_on(self) -> bool:
         return self.coordinator.data[f"R{self._id}"] == 1
 
-    def turn_on(self, **kwargs):
-        self.control.on()
+    async def async_turn_on(self, **kwargs):
+        await self.hass.async_add_job(self.control.on)
+        await self.coordinator.async_request_refresh()
 
-    def turn_off(self, **kwargs):
-        self.control.off()
+    async def async_turn_off(self, **kwargs):
+        await self.hass.async_add_job(self.control.off)
+        await self.coordinator.async_request_refresh()
+
+    async def async_toggle(self, **kwargs):
+        await self.hass.async_add_job(self.control.toggle)
+        await self.coordinator.async_request_refresh()
 
 
 class VirtualOutSwitch(IpxDevice, SwitchEntity):
@@ -59,14 +65,17 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
     def is_on(self) -> bool:
         return self.coordinator.data[f"R{self._id}"] == 1
 
-    def turn_on(self, **kwargs):
-        self.control.on()
+    async def async_turn_on(self, **kwargs):
+        await self.hass.async_add_job(self.control.on)
+        await self.coordinator.async_request_refresh()
 
-    def turn_off(self, **kwargs):
-        self.control.off()
+    async def async_turn_off(self, **kwargs):
+        await self.hass.async_add_job(self.control.off)
+        await self.coordinator.async_request_refresh()
 
-    def toggle(self, **kwargs):
-        self.control.toggle()
+    async def async_toggle(self, **kwargs):
+        await self.hass.async_add_job(self.control.toggle)
+        await self.coordinator.async_request_refresh()
 
 
 class VirtualInSwitch(IpxDevice, SwitchEntity):
@@ -80,11 +89,14 @@ class VirtualInSwitch(IpxDevice, SwitchEntity):
     def is_on(self) -> bool:
         return self.coordinator.data[f"VI{self._id}"] == 1
 
-    def turn_on(self, **kwargs):
-        self.control.on()
+    async def async_turn_on(self, **kwargs):
+        await self.hass.async_add_job(self.control.on)
+        await self.coordinator.async_request_refresh()
 
-    def turn_off(self, **kwargs):
-        self.control.off()
+    async def async_turn_off(self, **kwargs):
+        await self.hass.async_add_job(self.control.off)
+        await self.coordinator.async_request_refresh()
 
-    def toggle(self, **kwargs):
-        self.control.toggle()
+    async def async_toggle(self, **kwargs):
+        await self.hass.async_add_job(self.control.toggle)
+        await self.coordinator.async_request_refresh()

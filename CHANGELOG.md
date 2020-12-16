@@ -2,7 +2,12 @@
 
 ## 2.0.0
 
-- Rewrite
+- Major rewrite: remove old entry and entities before upgrade
+- Added in integration panel (just for information, no settings)
+- Add Devices
+- Improve async control
+- Add light toggle
+- Add logo
 
 ## 1.8.1
 

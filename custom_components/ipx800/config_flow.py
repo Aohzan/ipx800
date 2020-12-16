@@ -1,28 +1,27 @@
 """Config flow to configure the ipx800 integration."""
-import logging
-
 from homeassistant import config_entries
-from homeassistant import data_entry_flow
 
 from .const import DOMAIN
 from homeassistant.const import CONF_NAME
 
-_LOGGER = logging.getLogger(__name__)
-
 
 @config_entries.HANDLERS.register(DOMAIN)
 class IpxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a IPX800 config flow."""
+
     VERSION = 1
+    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
-    async def async_step_import(self, user_input):
+    async def async_step_import(self, import_info):
         """Import a config entry."""
-        return await self.async_step_user(user_input)
+        entry = await self.async_set_unique_id(
+            f"{DOMAIN}, {import_info.get(CONF_NAME)}"
+        )
 
-    async def async_step_user(self, user_input=None):
-        if user_input is not None:
-            await self.async_set_unique_id(f"{DOMAIN}, {user_input.get(CONF_NAME)}")
+        if entry:
+            self.hass.config_entries.async_update_entry(entry, data=import_info)
             self._abort_if_unique_id_configured()
 
-            return self.async_create_entry(
-                title=user_input.get(CONF_NAME), data=user_input
-            )
+        return self.async_create_entry(
+            title=import_info.get(CONF_NAME), data=import_info
+        )

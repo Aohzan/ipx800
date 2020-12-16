@@ -135,6 +135,11 @@ password:
   description: User's password (for X-PWM control only)
   required: false
   type: string
+scan_interval:
+  description: Time in seconds between two polling, small value can cause error from the IPX800
+  required: false
+  default: 10
+  type: int
 devices:
   component:
     description: device type

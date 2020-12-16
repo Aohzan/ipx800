@@ -56,18 +56,21 @@ class X4VRCover(IpxDevice, CoverEntity):
     def current_cover_position(self) -> int:
         return 100 - int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"])
 
-    def open_cover(self, **kwargs):
-        """Open the cover."""
-        self.control.on()
+    async def async_open_cover(self, **kwargs):
+        await self.hass.async_add_job(self.control.on)
+        await self.coordinator.async_request_refresh()
 
-    def close_cover(self, **kwargs):
+    async def async_close_cover(self, **kwargs):
         """Close cover."""
-        self.control.off()
+        await self.hass.async_add_job(self.control.off)
+        await self.coordinator.async_request_refresh()
 
-    def stop_cover(self, **kwargs):
+    async def async_stop_cover(self, **kwargs):
         """Stop the cover."""
-        self.control.stop()
+        await self.hass.async_add_job(self.control.stop)
+        await self.coordinator.async_request_refresh()
 
-    def set_cover_position(self, **kwargs):
+    async def async_set_cover_position(self, **kwargs):
         """Set the cover to a specific position."""
-        self.control.set_level(kwargs.get(ATTR_POSITION))
+        await self.hass.async_add_job(self.control.set_level, kwargs.get(ATTR_POSITION))
+        await self.coordinator.async_request_refresh()
