@@ -8,6 +8,8 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_DEVICE_CLASS,
@@ -142,20 +144,20 @@ async def async_setup_entry(hass, config_entry):
     return False
 
 
-async def async_unload_entry(hass, config_entry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
     unload_ok = all(
         await asyncio.gather(
             *[
-                hass.config_entries.async_forward_entry_unload(config_entry, component)
+                hass.config_entries.async_forward_entry_unload(entry, component)
                 for component in CONF_COMPONENT_ALLOWED
             ]
         )
     )
 
     if unload_ok:
-        hass.data[DOMAIN][config_entry.entry_id][UNDO_UPDATE_LISTENER]()
-        hass.data[DOMAIN].pop(config_entry.entry_id)
+        hass.data[DOMAIN][entry.entry_id][UNDO_UPDATE_LISTENER]()
+        hass.data[DOMAIN].pop(entry.entry_id)
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN)
 
