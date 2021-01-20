@@ -78,7 +78,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
     def preset_mode(self):
         return self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")
 
-    async def async_set_preset_mode(self, preset_mode):
+    def set_preset_mode(self, preset_mode):
         """Set new target preset mode."""
         switcher = {
             "Confort": 0,
@@ -91,19 +91,17 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         _LOGGER.debug(
             "set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode)
         )
-        await self.hass.async_add_job(self.control.set_mode, switcher.get(preset_mode))
-        await self.coordinator.async_request_refresh()
+        self.control.set_mode(switcher.get(preset_mode))
 
-    async def async_set_hvac_mode(self, hvac_mode):
+    def set_hvac_mode(self, hvac_mode):
         """Set hvac mode."""
         if hvac_mode == HVAC_MODE_HEAT:
-            await self.hass.async_add_job(self.control.set_mode, 0)
+            self.control.set_mode(0)
         elif hvac_mode == HVAC_MODE_OFF:
-            await self.hass.async_add_job(self.control.set_mode, 3)
+            self.control.set_mode(3)
         else:
             _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
             return
-        await self.coordinator.async_request_refresh()
 
 
 class RelayClimate(IpxDevice, ClimateEntity):
@@ -159,31 +157,29 @@ class RelayClimate(IpxDevice, ClimateEntity):
         }
         return switcher.get((state_minus, state_plus), "Inconnu")
 
-    async def async_set_hvac_mode(self, hvac_mode):
+    def set_hvac_mode(self, hvac_mode):
         """Set hvac mode."""
         if hvac_mode == HVAC_MODE_HEAT:
-            await self.hass.async_add_job(self.control.minus.off)
-            await self.hass.async_add_job(self.control.plus.off)
+            self.control_minus.off()
+            self.control_plus.off()
         elif hvac_mode == HVAC_MODE_OFF:
-            await self.hass.async_add_job(self.control.minus.off)
-            await self.hass.async_add_job(self.control.plus.on)
+            self.control_minus.off()
+            self.control_plus.on()
         else:
             _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
             return
-        await self.coordinator.async_request_refresh()
 
-    async def async_set_preset_mode(self, preset_mode):
+    def set_preset_mode(self, preset_mode):
         """Set new target preset mode."""
         if preset_mode == "Confort":
-            await self.hass.async_add_job(self.control.minus.off)
-            await self.hass.async_add_job(self.control.plus.off)
+            self.control_minus.off()
+            self.control_plus.off()
         elif preset_mode == "Eco":
-            await self.hass.async_add_job(self.control.minus.on)
-            await self.hass.async_add_job(self.control.plus.on)
+            self.control_minus.on()
+            self.control_plus.on()
         elif preset_mode == "Hors Gel":
-            await self.hass.async_add_job(self.control.minus.on)
-            await self.hass.async_add_job(self.control.plus.off)
+            self.control_minus.on()
+            self.control_plus.off()
         else:
-            await self.hass.async_add_job(self.control.minus.off)
-            await self.hass.async_add_job(self.control.plus.on)
-        await self.coordinator.async_request_refresh()
+            self.control_minus.off()
+            self.control_plus.on()
