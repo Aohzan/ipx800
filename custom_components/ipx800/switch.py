@@ -63,7 +63,7 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        return self.coordinator.data[f"R{self._id}"] == 1
+        return self.coordinator.data[f"VO{self._id}"] == 1
 
     async def async_turn_on(self, **kwargs):
         await self.hass.async_add_job(self.control.on)
