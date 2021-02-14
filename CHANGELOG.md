@@ -9,6 +9,10 @@
 - Add light toggle
 - Add logo
 
+## 1.8.2
+
+- Fix polling key for VirtualOut switch
+
 ## 1.8.1
 
 - Remove the wrong climate setup error
