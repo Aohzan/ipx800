@@ -7,7 +7,7 @@ The `ipx800` integration allows you to get information and control the [IPX800 v
 
 ## Installation
 
-Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant.
+Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant (you must have `*.py` files in `config/custom_components/ipx800`).
 Add the `ipx800` entry in your `configuration.yml` (see example below).
 
 The IPX800 must be available during Home Assistant start. If you have an other home automation system which query the IPX800, like Jeedom, disable it during start to ensure it will respond to requests.
