@@ -20,6 +20,7 @@ from . import IpxController, IpxDevice
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
+PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities) -> None:

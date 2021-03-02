@@ -26,6 +26,7 @@ from . import IpxController, IpxDevice
 from .const import *
 
 _LOGGER = logging.getLogger(__name__)
+PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 
 def scaleto255(value):
