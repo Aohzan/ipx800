@@ -5,8 +5,8 @@ L'intégration `ipx800v4` vous permet de contrôler et d'obtenir des information
 
 ## Installation
 
-Copier le dossier `custom_components/ipx800v4` dans `config/custom_components` de votre installation Home Assistant.
-Ajouter l'entrée `ipx800v4` dans votre fichier `configuration.yml` (voir l'exemple ci-dessous).
+Copier le dossier `custom_components/ipx800` dans `config/custom_components` de votre installation Home Assistant (vous devez avoir les fichiers `*.py` dans `config/custom_components/ipx800`).
+Ajouter l'entrée `ipx800` dans votre fichier `configuration.yml` (voir l'exemple ci-dessous).
 
 L'IPX800 doit être disponible pendant le démarrage d'Home Assistant.
 Si vous avez un autre système domotique qui communiquer avec l'IPX800, comme Jeedom, désactivez le pendant le démarrage d'Home Assistant, afin d'être sûr qu'il puisse répondre aux requêtes.
