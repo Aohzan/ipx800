@@ -98,8 +98,9 @@ async def async_setup_entry(hass, config_entry):
 
     gateway_config = config_entry.data
 
-    # Provide an endpoint for the IPX to call to push states
+    # Provide endpoints for the IPX to call to push states
     hass.http.register_view(IpxRequestView)
+    hass.http.register_view(IpxRequestDataView)
 
     controller = IpxController(hass, gateway_config)
 
@@ -302,6 +303,31 @@ class IpxRequestView(HomeAssistantView):
             return web.Response(status=HTTP_OK, text="OK")
         else:
             _LOGGER.warning("Entity not found for state updating: %s", entity_id)
+
+
+class IpxRequestDataView(HomeAssistantView):
+    """Provide a page for the device to call for send multiple data."""
+
+    requires_auth = False
+    url = "/api/ipx800v4_data/{data}"
+    name = "api:ipx800v4_data"
+
+    async def get(self, request, data):
+        """Respond to requests from the device."""
+        hass = request.app["hass"]
+        entities_data = data.split("&")
+        for entity_data in entities_data:
+            entity_id = entity_data.split("=")[0]
+            state = entity_data.split("=")[1]
+
+            old_state = hass.states.get(entity_id)
+            _LOGGER.debug("Update %s to state %s.", entity_id, state)
+            if old_state:
+                hass.states.async_set(entity_id, state, old_state.attributes)
+            else:
+                _LOGGER.warning("Entity not found for state updating: %s", entity_id)
+
+        return web.Response(status=HTTP_OK, text="OK")
 
 
 class IpxDataUpdateCoordinator(DataUpdateCoordinator):
