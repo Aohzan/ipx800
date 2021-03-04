@@ -1,4 +1,4 @@
-"""Config flow to configure the ipx800 integration."""
+"""Config flow to configure the ipx800v4 integration."""
 from homeassistant import config_entries
 from homeassistant.const import CONF_NAME
 

@@ -1,4 +1,4 @@
-"""Support for the GCE IPX800v4."""
+"""Support for the GCE IPX800 V4."""
 import asyncio
 from datetime import timedelta
 import logging
@@ -126,7 +126,7 @@ async def async_setup_entry(hass, config_entry):
             config_entry_id=config_entry.entry_id,
             identifiers={(DOMAIN, controller.name)},
             manufacturer="GCE",
-            model="IPX800v4",
+            model="IPX800 V4",
             name=controller.name,
         )
 
@@ -289,8 +289,8 @@ class IpxRequestView(HomeAssistantView):
     """Provide a page for the device to call."""
 
     requires_auth = False
-    url = "/api/ipx800/{entity_id}/{state}"
-    name = "api:ipx800"
+    url = "/api/ipx800v4/{entity_id}/{state}"
+    name = "api:ipx800v4"
 
     async def get(self, request, entity_id, state):
         """Respond to requests from the device."""
@@ -389,7 +389,7 @@ class IpxDevice(CoordinatorEntity):
             "identifiers": {(DOMAIN, self._device_unique_id)},
             "name": self._device_name,
             "manufacturer": "GCE",
-            "model": "IPX800v4",
+            "model": "IPX800 V4",
             "via_device": (DOMAIN, self._controller_name),
             "connections": {(DOMAIN, self._ipx_type)},
         }

@@ -1,4 +1,4 @@
-"""Support for IPX800 climate."""
+"""Support for IPX800 V4 climates."""
 import logging
 
 from pypx800 import *

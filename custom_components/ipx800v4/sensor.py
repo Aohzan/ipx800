@@ -1,4 +1,4 @@
-"""Support for IPX800 sensors."""
+"""Support for IPX800 V4 sensors."""
 import logging
 
 from pypx800 import *

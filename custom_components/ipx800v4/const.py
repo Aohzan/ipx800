@@ -1,5 +1,5 @@
-"""Constant for the ipx800 integration"""
-DOMAIN = "ipx800"
+"""Constant for the ipx800v4 integration"""
+DOMAIN = "ipx800v4"
 GLOBAL_PARALLEL_UPDATES = 1
 
 CONTROLLER = "controller"

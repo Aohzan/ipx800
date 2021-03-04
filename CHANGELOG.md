@@ -3,6 +3,7 @@
 ## 2.0.0
 
 - Major rewrite: remove old entry and entities before upgrade
+- Rename to ipx800v4 to avoid conflict with others ipx800 versions
 - Added in integration panel (just for information, no settings)
 - Add Devices
 - Fix request error and related issues (thanks @guigeek38)

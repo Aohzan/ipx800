@@ -63,7 +63,7 @@ class IpxDevice(Entity):
             "identifiers": {(DOMAIN, self._unique_id)},
             "name": self._name,
             "manufacturer": "GCE",
-            "model": "IPX800v4",
+            "model": "IPX800 V4",
             "via_device": (DOMAIN, self.controller.name),
         }
 

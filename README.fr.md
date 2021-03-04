@@ -1,12 +1,12 @@
-# Component ipx800 pour Home Assistant
+# Component ipx800v4 pour Home Assistant
 
 Il s'agit d'un _custom component_ pour [Home Assistant](https://www.home-assistant.io/).
-L'intégration `ipx800` vous permet de contrôler et d'obtenir des informations de votre [IPX800 v4 et de ses extensions](http://gce-electronics.com/).
+L'intégration `ipx800v4` vous permet de contrôler et d'obtenir des informations de votre [IPX800 v4 et de ses extensions](http://gce-electronics.com/).
 
 ## Installation
 
-Copier le dossier `custom_components/ipx800` dans `config/custom_components` de votre installation Home Assistant.
-Ajouter l'entrée `ipx800` dans votre fichier `configuration.yml` (voir l'exemple ci-dessous).
+Copier le dossier `custom_components/ipx800v4` dans `config/custom_components` de votre installation Home Assistant.
+Ajouter l'entrée `ipx800v4` dans votre fichier `configuration.yml` (voir l'exemple ci-dessous).
 
 L'IPX800 doit être disponible pendant le démarrage d'Home Assistant.
 Si vous avez un autre système domotique qui communiquer avec l'IPX800, comme Jeedom, désactivez le pendant le démarrage d'Home Assistant, afin d'être sûr qu'il puisse répondre aux requêtes.
@@ -36,8 +36,8 @@ Vous pouvez mettre à jour la valeur d'une entité en définissant une commande 
 Utile pour mettre à jour directement un binary_sensor ou un  switch sans attendre la prochaine récupération d'état.
 Dans `URL ON` et `URL_OFF` mettre `/api/ipx800/entity_id/state`:
 
-![PUSH configuration example](ipx800_push_configuration_example.png)
+![PUSH configuration example](ipx800_push_configuration_example.jpg)
 
 ## Exemple et paramètres de configuration
-![Sur le README original](README.md)
 
+![Sur le README original](README.md)

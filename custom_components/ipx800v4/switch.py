@@ -1,4 +1,4 @@
-"""Support for IPX800 switches."""
+"""Support for IPX800 V4 switches."""
 import logging
 
 from pypx800 import *

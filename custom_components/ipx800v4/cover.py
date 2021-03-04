@@ -1,4 +1,4 @@
-"""Support for IPX800 cover."""
+"""Support for IPX800 V4 covers."""
 import logging
 
 from pypx800 import *

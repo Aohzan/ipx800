@@ -1,14 +1,14 @@
-# ipx800 component for Home Assistant
+# ipx800v4 component for Home Assistant
 
 This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
-The `ipx800` integration allows you to get information and control the [IPX800 v4 and its extensions](http://gce-electronics.com/).
+The `ipx800v4` integration allows you to get information and control the [IPX800 v4 and its extensions](http://gce-electronics.com/).
 
 ![README en français](README.fr.md) :fr:
 
 ## Installation
 
-Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant.
-Add the `ipx800` entry in your `configuration.yml` (see example below).
+Copy `custom_components/ipx800v4` in `config/custom_components` of your Home Assistant.
+Add the `ipx800v4` entry in your `configuration.yml` (see example below).
 
 The IPX800 must be available during Home Assistant start. If you have an other home automation system which query the IPX800, like Jeedom, disable it during start to ensure it will respond to requests.
 
@@ -34,20 +34,18 @@ You can control by setting the type of the device:
 - `x4fp` as climate
 
 You can update value of a device by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
-In `URL ON` and `URL_OFF` set `/api/ipx800/entity_id/state`:
+In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
 
-![PUSH configuration example](ipx800_push_configuration_example.png)
+![PUSH configuration example](ipx800_push_configuration_example.jpg)
 
 ## Example
 
 ```yaml
 # Example configuration.yaml entry
-ipx800:
-  - name: IPX00
+ipx800v4:
+  - name: IPX800
     host: "192.168.1.240"
     api_key: "apikey"
-    username: user
-    password: password
     scan_interval: 10
     devices:
       - name: Chaudière
