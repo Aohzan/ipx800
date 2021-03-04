@@ -1,6 +1,8 @@
 """Support for IPX800 climate."""
 import logging
 
+from pypx800 import *
+
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
     ATTR_PRESET_MODE,
@@ -14,7 +16,6 @@ from homeassistant.components.climate.const import (
     SUPPORT_PRESET_MODE,
 )
 from homeassistant.const import TEMP_CELSIUS
-from pypx800 import *
 
 from . import IpxController, IpxDevice
 from .const import *

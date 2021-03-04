@@ -1,6 +1,8 @@
 """Support for IPX800 cover."""
 import logging
 
+from pypx800 import *
+
 from homeassistant.components.cover import (
     ATTR_POSITION,
     DEVICE_CLASS_SHUTTER,
@@ -10,7 +12,6 @@ from homeassistant.components.cover import (
     SUPPORT_STOP,
     CoverEntity,
 )
-from pypx800 import *
 
 from . import IpxController, IpxDevice
 from .const import *
@@ -58,20 +59,17 @@ class X4VRCover(IpxDevice, CoverEntity):
         return 100 - int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"])
 
     async def async_open_cover(self, **kwargs):
-        await self.hass.async_add_job(self.control.on)
-        await self.coordinator.async_request_refresh()
+        """Open cover."""
+        self.control.on()
 
     async def async_close_cover(self, **kwargs):
         """Close cover."""
-        await self.hass.async_add_job(self.control.off)
-        await self.coordinator.async_request_refresh()
+        self.control.off()
 
     async def async_stop_cover(self, **kwargs):
         """Stop the cover."""
-        await self.hass.async_add_job(self.control.stop)
-        await self.coordinator.async_request_refresh()
+        self.control.stop()
 
-    async def async_set_cover_position(self, **kwargs):
+    def set_cover_position(self, **kwargs):
         """Set the cover to a specific position."""
-        await self.hass.async_add_job(self.control.set_level, kwargs.get(ATTR_POSITION))
-        await self.coordinator.async_request_refresh()
+        self.control.set_level(kwargs.get(ATTR_POSITION))

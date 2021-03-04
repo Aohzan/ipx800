@@ -1,13 +1,14 @@
 """Support for IPX800 sensors."""
 import logging
 
+from pypx800 import *
+
 from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
     DEVICE_CLASS_ILLUMINANCE,
     DEVICE_CLASS_TEMPERATURE,
 )
 from homeassistant.helpers.entity import Entity
-from pypx800 import *
 
 from . import IpxController, IpxDevice
 from .const import *

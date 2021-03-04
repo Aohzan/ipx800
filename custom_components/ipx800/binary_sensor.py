@@ -1,10 +1,11 @@
 """Support for IPX800 binary sensors."""
 import logging
 
+from pypx800 import *
+
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.const import STATE_OFF, STATE_ON
 from homeassistant.helpers.entity import Entity
-from pypx800 import *
 
 from . import IpxController, IpxDevice
 from .const import *

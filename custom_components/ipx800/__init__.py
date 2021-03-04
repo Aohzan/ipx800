@@ -1,15 +1,15 @@
 """Support for the GCE IPX800v4."""
 import asyncio
+from datetime import timedelta
 import logging
 import re
-from datetime import timedelta
 
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from aiohttp import web
+from pypx800 import *
+import voluptuous as vol
+
 from homeassistant.components.http import HomeAssistantView
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_DEVICE_CLASS,
@@ -23,18 +23,17 @@ from homeassistant.const import (
     CONF_USERNAME,
     HTTP_OK,
 )
-from homeassistant.helpers import device_registry as dr
-from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import discovery
+from homeassistant.helpers import device_registry as dr, discovery
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import (
+    REQUEST_REFRESH_DEFAULT_IMMEDIATE,
     CoordinatorEntity,
     DataUpdateCoordinator,
     UpdateFailed,
-    REQUEST_REFRESH_DEFAULT_IMMEDIATE,
 )
-from pypx800 import *
 
 from .const import *
 
@@ -326,7 +325,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
                 cooldown=2,
                 immediate=IpxDataUpdateCoordinator,
                 function=self.async_refresh,
-            )
+            ),
         )
 
     async def _async_update_data(self):

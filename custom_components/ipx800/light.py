@@ -1,7 +1,8 @@
 """Support for IPX800 lights."""
 import logging
 
-import homeassistant.util.color as color_util
+from pypx800 import *
+
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_HS_COLOR,
@@ -20,7 +21,7 @@ from homeassistant.const import (
     CONF_NAME,
     CONF_UNIT_OF_MEASUREMENT,
 )
-from pypx800 import *
+import homeassistant.util.color as color_util
 
 from . import IpxController, IpxDevice
 from .const import *
@@ -105,8 +106,7 @@ class XDimmerLight(IpxDevice, LightEntity):
             self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
-            self.control.set_level(scaleto100(
-                self._brightness), self._transition)
+            self.control.set_level(scaleto100(self._brightness), self._transition)
         else:
             self.control.on(self._transition)
 
@@ -144,8 +144,7 @@ class XPWMLight(IpxDevice, LightEntity):
             self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
         if ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
-            self.control.set_level(scaleto100(
-                self._brightness), self._transition)
+            self.control.set_level(scaleto100(self._brightness), self._transition)
         else:
             self.control.on(self._transition)
 
@@ -196,7 +195,7 @@ class XPWMRGBLight(IpxDevice, LightEntity):
         level_b = scaleto255(self.coordinator.data[f"PWM{self._ids[2]}"])
         return [level_r, level_g, level_b]
 
-    async def async_turn_on(self, **kwargs):
+    def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
 
@@ -204,20 +203,16 @@ class XPWMRGBLight(IpxDevice, LightEntity):
             if ATTR_RGB_COLOR in kwargs:
                 self._rgb_color = kwargs.get(ATTR_RGB_COLOR)
             elif ATTR_HS_COLOR in kwargs:
-                self._rgb_color = color_util.color_hs_to_RGB(
-                    *kwargs.get(ATTR_HS_COLOR))
-            await self.hass.async_add_job(
-                self.xpwm_rgb_r.set_level,
+                self._rgb_color = color_util.color_hs_to_RGB(*kwargs.get(ATTR_HS_COLOR))
+            self.xpwm_rgb_r.set_level(
                 scaleto100(self._rgb_color[0]),
                 self._transition,
             )
-            await self.hass.async_add_job(
-                self.xpwm_rgb_g.set_level,
+            self.xpwm_rgb_g.set_level(
                 scaleto100(self._rgb_color[1]),
                 self._transition,
             )
-            await self.hass.async_add_job(
-                self.xpwm_rgb_b.set_level,
+            self.xpwm_rgb_b.set_level(
                 scaleto100(self._rgb_color[2]),
                 self._transition,
             )
@@ -225,50 +220,42 @@ class XPWMRGBLight(IpxDevice, LightEntity):
         elif ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs.get(ATTR_BRIGHTNESS)
             if self.is_on:
-                await self.hass.async_add_job(
-                    self.xpwm_rgb_r.set_level,
+                self.xpwm_rgb_r.set_level(
                     scaleto100(self.xpwm_rgb_r.level * self._brightness / 255),
                     self._transition,
                 )
-                await self.hass.async_add_job(
-                    self.xpwm_rgb_g.set_level,
+                self.xpwm_rgb_g.set_level(
                     scaleto100(self.xpwm_rgb_g.level * self._brightness / 255),
                     self._transition,
                 )
-                await self.hass.async_add_job(
-                    self.xpwm_rgb_b.set_level,
+                self.xpwm_rgb_b.set_level(
                     scaleto100(self.xpwm_rgb_b.level * self._brightness / 255),
                     self._transition,
                 )
             else:
-                await self.hass.async_add_job(
-                    self.xpwm_rgb_r.set_level,
+                self.xpwm_rgb_r.set_level(
                     scaleto100(self._brightness),
                     self._transition,
                 )
-                await self.hass.async_add_job(
-                    self.xpwm_rgb_g.set_level,
+                self.xpwm_rgb_g.set_level(
                     scaleto100(self._brightness),
                     self._transition,
                 )
-                await self.hass.async_add_job(
-                    self.xpwm_rgb_b.set_level,
+                self.xpwm_rgb_b.set_level(
                     scaleto100(self._brightness),
                     self._transition,
                 )
         else:
-            await self.hass.async_add_job(self.xpwm_rgb_r.on, self._transition)
-            await self.hass.async_add_job(self.xpwm_rgb_g.on, self._transition)
-            await self.hass.async_add_job(self.xpwm_rgb_b.on, self._transition)
-        await self.coordinator.async_request_refresh()
+            self.xpwm_rgb_r.on(self._transition)
+            self.xpwm_rgb_g.on(self._transition)
+            self.xpwm_rgb_b.on(self._transition)
 
-    async def async_turn_off(self, **kwargs):
+    def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
-        await self.hass.async_add_job(self.xpwm_rgb_r.off, self._transition)
-        await self.hass.async_add_job(self.xpwm_rgb_g.off, self._transition)
-        await self.hass.async_add_job(self.xpwm_rgb_b.off, self._transition)
-        await self.coordinator.async_request_refresh()
+        self.xpwm_rgb_r.off(self._transition)
+        self.xpwm_rgb_g.off(self._transition)
+        self.xpwm_rgb_b.off(self._transition)
 
 
 class XPWMRGBWLight(IpxDevice, LightEntity):
@@ -322,7 +309,7 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
     def white_value(self):
         return scaleto255(self.coordinator.data[f"PWM{self._ids[3]}"])
 
-    async def async_turn_on(self, **kwargs):
+    def turn_on(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
 
@@ -330,75 +317,46 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
             if ATTR_RGB_COLOR in kwargs:
                 self._rgb_color = kwargs.get(ATTR_RGB_COLOR)
             elif ATTR_HS_COLOR in kwargs:
-                self._rgb_color = color_util.color_hs_to_RGB(
-                    *kwargs.get(ATTR_HS_COLOR))
+                self._rgb_color = color_util.color_hs_to_RGB(*kwargs.get(ATTR_HS_COLOR))
             rgbw = color_util.color_rgb_to_rgbw(*self._rgb_color)
-            await self.hass.async_add_job(
-                self.xpwm_rgbw_r.set_level, scaleto100(
-                    rgbw[0]), self._transition
-            )
-            await self.hass.async_add_job(
-                self.xpwm_rgbw_g.set_level, scaleto100(
-                    rgbw[1]), self._transition
-            )
-            await self.hass.async_add_job(
-                self.xpwm_rgbw_b.set_level, scaleto100(
-                    rgbw[2]), self._transition
-            )
-            await self.hass.async_add_job(
-                self.xpwm_rgbw_w.set_level, scaleto100(
-                    rgbw[3]), self._transition
-            )
+            self.xpwm_rgbw_r.set_level(scaleto100(rgbw[0]), self._transition)
+            self.xpwm_rgbw_g.set_level(scaleto100(rgbw[1]), self._transition)
+            self.xpwm_rgbw_b.set_level(scaleto100(rgbw[2]), self._transition)
+            self.xpwm_rgbw_w.set_level(scaleto100(rgbw[3]), self._transition)
         elif ATTR_WHITE_VALUE in kwargs:
             self._white_value = kwargs.get(ATTR_WHITE_VALUE)
-            await self.hass.async_add_job(
-                self.xpwm_rgbw_w.set_level,
-                scaleto100(self._white_value),
-                self._transition,
-            )
+            self.xpwm_rgbw_w.set_level(scaleto100(self._white_value), self._transition)
         elif ATTR_BRIGHTNESS in kwargs:
             self._brightness = kwargs.get(ATTR_BRIGHTNESS)
             if self.is_on:
-                await self.hass.async_add_job(
-                    self.xpwm_rgbw_r.set_level,
-                    scaleto100(self.xpwm_rgbw_r.level *
-                               self._brightness / 255),
+                self.xpwm_rgbw_r.set_level(
+                    scaleto100(self.xpwm_rgbw_r.level * self._brightness / 255),
                     self._transition,
                 )
-                await self.hass.async_add_job(
-                    self.xpwm_rgbw_g.set_level,
-                    scaleto100(self.xpwm_rgbw_g.level *
-                               self._brightness / 255),
+                self.xpwm_rgbw_g.set_level(
+                    scaleto100(self.xpwm_rgbw_g.level * self._brightness / 255),
                     self._transition,
                 )
-                await self.hass.async_add_job(
-                    self.xpwm_rgbw_b.set_level(
-                        scaleto100(self.xpwm_rgbw_b.level *
-                                   self._brightness / 255),
-                        self._transition,
-                    )
+                self.xpwm_rgbw_b.set_level(
+                    scaleto100(self.xpwm_rgbw_b.level * self._brightness / 255),
+                    self._transition,
                 )
-                await self.hass.async_add_job(
-                    self.xpwm_rgbw_w.set_level,
-                    scaleto100(self.xpwm_rgbw_w.level *
-                               self._brightness / 255),
+                self.xpwm_rgbw_w.set_level(
+                    scaleto100(self.xpwm_rgbw_w.level * self._brightness / 255),
                     self._transition,
                 )
             else:
-                await self.hass.async_add_job(
-                    self.xpwm_rgbw_w.set_level,
+                self.xpwm_rgbw_w.set_level(
                     scaleto100(self._brightness),
                     self._transition,
                 )
         else:
-            await self.hass.async_add_job(self.xpwm_rgbw_w.on, self._transition)
-        await self.coordinator.async_request_refresh()
+            self.xpwm_rgbw_w.on(self._transition)
 
-    async def async_turn_off(self, **kwargs):
+    def turn_off(self, **kwargs):
         if ATTR_TRANSITION in kwargs:
             self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
-        await self.hass.async_add_job(self.xpwm_rgbw_r.off, self._transition)
-        await self.hass.async_add_job(self.xpwm_rgbw_g.off, self._transition)
-        await self.hass.async_add_job(self.xpwm_rgbw_b.off, self._transition)
-        await self.hass.async_add_job(self.xpwm_rgbw_w.off, self._transition)
-        await self.coordinator.async_request_refresh()
+        self.xpwm_rgbw_r.off(self._transition)
+        self.xpwm_rgbw_g.off(self._transition)
+        self.xpwm_rgbw_b.off(self._transition)
+        self.xpwm_rgbw_w.off(self._transition)

@@ -1,8 +1,9 @@
 """Support for IPX800 switches."""
 import logging
 
-from homeassistant.components.switch import SwitchEntity
 from pypx800 import *
+
+from homeassistant.components.switch import SwitchEntity
 
 from . import IpxController, IpxDevice
 from .const import *
@@ -42,17 +43,14 @@ class RelaySwitch(IpxDevice, SwitchEntity):
     def is_on(self) -> bool:
         return self.coordinator.data[f"R{self._id}"] == 1
 
-    async def async_turn_on(self, **kwargs):
-        await self.hass.async_add_job(self.control.on)
-        await self.coordinator.async_request_refresh()
+    def turn_on(self, **kwargs):
+        self.control.on()
 
-    async def async_turn_off(self, **kwargs):
-        await self.hass.async_add_job(self.control.off)
-        await self.coordinator.async_request_refresh()
+    def turn_off(self, **kwargs):
+        self.control.off()
 
-    async def async_toggle(self, **kwargs):
-        await self.hass.async_add_job(self.control.toggle)
-        await self.coordinator.async_request_refresh()
+    def toggle(self, **kwargs):
+        self.control.toggle()
 
 
 class VirtualOutSwitch(IpxDevice, SwitchEntity):
@@ -66,17 +64,14 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
     def is_on(self) -> bool:
         return self.coordinator.data[f"VO{self._id}"] == 1
 
-    async def async_turn_on(self, **kwargs):
-        await self.hass.async_add_job(self.control.on)
-        await self.coordinator.async_request_refresh()
+    def turn_on(self, **kwargs):
+        self.control.on()
 
-    async def async_turn_off(self, **kwargs):
-        await self.hass.async_add_job(self.control.off)
-        await self.coordinator.async_request_refresh()
+    def turn_off(self, **kwargs):
+        self.control.off()
 
-    async def async_toggle(self, **kwargs):
-        await self.hass.async_add_job(self.control.toggle)
-        await self.coordinator.async_request_refresh()
+    def toggle(self, **kwargs):
+        self.control.toggle()
 
 
 class VirtualInSwitch(IpxDevice, SwitchEntity):
@@ -90,14 +85,11 @@ class VirtualInSwitch(IpxDevice, SwitchEntity):
     def is_on(self) -> bool:
         return self.coordinator.data[f"VI{self._id}"] == 1
 
-    async def async_turn_on(self, **kwargs):
-        await self.hass.async_add_job(self.control.on)
-        await self.coordinator.async_request_refresh()
+    def turn_on(self, **kwargs):
+        self.control.on()
 
-    async def async_turn_off(self, **kwargs):
-        await self.hass.async_add_job(self.control.off)
-        await self.coordinator.async_request_refresh()
+    def turn_off(self, **kwargs):
+        self.control.off()
 
-    async def async_toggle(self, **kwargs):
-        await self.hass.async_add_job(self.control.toggle)
-        await self.coordinator.async_request_refresh()
+    def toggle(self, **kwargs):
+        self.control.toggle()

@@ -1,8 +1,8 @@
 """Config flow to configure the ipx800 integration."""
 from homeassistant import config_entries
+from homeassistant.const import CONF_NAME
 
 from .const import DOMAIN
-from homeassistant.const import CONF_NAME
 
 
 @config_entries.HANDLERS.register(DOMAIN)
