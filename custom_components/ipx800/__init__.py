@@ -27,10 +27,12 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import discovery
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
     UpdateFailed,
+    REQUEST_REFRESH_DEFAULT_IMMEDIATE,
 )
 from pypx800 import *
 
@@ -313,7 +315,19 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval.seconds,
         )
         self.ipx = ipx
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=update_interval)
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=update_interval,
+            request_refresh_debouncer=Debouncer(
+                hass,
+                _LOGGER,
+                cooldown=2,
+                immediate=IpxDataUpdateCoordinator,
+                function=self.async_refresh,
+            )
+        )
 
     async def _async_update_data(self):
         """Get all states from API."""
