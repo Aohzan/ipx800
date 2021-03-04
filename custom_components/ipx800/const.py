@@ -1,5 +1,6 @@
 """Constant for the ipx800 integration"""
 DOMAIN = "ipx800"
+GLOBAL_PARALLEL_UPDATES = 1
 
 CONTROLLER = "controller"
 UNDO_UPDATE_LISTENER = "undo_update_listener"
