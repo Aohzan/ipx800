@@ -5,7 +5,7 @@
 - Major rewrite: remove old entry and entities before upgrade
 - Added in integration panel (just for information, no settings)
 - Add Devices
-- Improve async control
+- Fix request error and related issues (thanks @guigeek38)
 - Add light toggle
 - Add logo
 
