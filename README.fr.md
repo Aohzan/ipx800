@@ -38,6 +38,12 @@ Dans `URL ON` et `URL_OFF` mettre `/api/ipx800/entity_id/state`:
 
 ![PUSH configuration example](ipx800_push_configuration_example.jpg)
 
+Vous pouvez également mettre à jour plusieurs entités depuis une seule commande push (voir le wiki officiel : http://gce.ovh/wiki/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
+
+Vous devez mettre au format `entity_id=$XXYY` séparé par un `&`, exemple : `/api/ipx800v4_data/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06`.
+
+![PUSH data configuration example](ipx800_push_data_configuration_example.jpg)
+
 ## Exemple et paramètres de configuration
 
-![Sur le README original](README.md)
+[Sur le README original](README.md)

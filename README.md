@@ -33,10 +33,16 @@ You can control by setting the type of the device:
 - `xthl` as sensors
 - `x4fp` as climate
 
-You can update value of a device by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
+You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
 In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
 
 ![PUSH configuration example](ipx800_push_configuration_example.jpg)
+
+You can update values of multiple entities with one request (see official wiki: http://gce.ovh/wiki/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
+
+You have to set the `entity_id=$XXYY` separate by a `&`, example : `/api/ipx800v4_data/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06`.
+
+![PUSH data configuration example](ipx800_push_data_configuration_example.jpg)
 
 ## Example
 

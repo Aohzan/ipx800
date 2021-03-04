@@ -306,7 +306,7 @@ class IpxRequestView(HomeAssistantView):
 
 
 class IpxRequestDataView(HomeAssistantView):
-    """Provide a page for the device to call for send multiple data."""
+    """Provide a page for the device to call for send multiple data at once."""
 
     requires_auth = False
     url = "/api/ipx800v4_data/{data}"
@@ -318,7 +318,7 @@ class IpxRequestDataView(HomeAssistantView):
         entities_data = data.split("&")
         for entity_data in entities_data:
             entity_id = entity_data.split("=")[0]
-            state = entity_data.split("=")[1]
+            state = "on" if entity_data.split("=")[1] in ["1", "on", "true"] else "off"
 
             old_state = hass.states.get(entity_id)
             _LOGGER.debug("Update %s to state %s.", entity_id, state)

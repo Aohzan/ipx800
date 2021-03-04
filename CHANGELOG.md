@@ -9,6 +9,7 @@
 - Fix request error and related issues (thanks @guigeek38)
 - Add light toggle
 - Add logo
+- Add API url to push multiple data at once
 
 ## 1.8.2
 
