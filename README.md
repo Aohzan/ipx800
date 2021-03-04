@@ -33,6 +33,8 @@ You can control by setting the type of the device:
 - `xthl` as sensors
 - `x4fp` as climate
 
+## Push data from the IPX800
+
 You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
 In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
 
