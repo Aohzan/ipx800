@@ -29,7 +29,6 @@ from homeassistant.helpers import device_registry as dr, discovery
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import (
-    REQUEST_REFRESH_DEFAULT_IMMEDIATE,
     CoordinatorEntity,
     DataUpdateCoordinator,
     UpdateFailed,
@@ -348,8 +347,8 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             request_refresh_debouncer=Debouncer(
                 hass,
                 _LOGGER,
-                cooldown=2,
-                immediate=IpxDataUpdateCoordinator,
+                cooldown=REQUEST_REFRESH_DELAY,
+                immediate=True,
                 function=self.async_refresh,
             ),
         )
