@@ -46,9 +46,7 @@ ipx800:
   - name: IPX00
     host: "192.168.1.240"
     api_key: "apikey"
-    username: user
-    password: password
-    scan_interval: 10
+    scan_interval: 15
     devices:
       - name: Chaudière
         icon: mdi:water-boiler
@@ -133,7 +131,6 @@ api_key:
 username:
   description: Username (for X-PWM control only)
   required: false
-  default: VA
   type: string
 password:
   description: User's password (for X-PWM control only)
