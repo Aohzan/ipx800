@@ -139,7 +139,6 @@ api_key:
 username:
   description: Username (for X-PWM control only)
   required: false
-  default: VA
   type: string
 password:
   description: User's password (for X-PWM control only)
