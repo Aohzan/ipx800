@@ -7,8 +7,8 @@ The `ipx800v4` integration allows you to get information and control the [IPX800
 
 ## Installation
 
-Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant (you must have `*.py` files in `config/custom_components/ipx800`).
-Add the `ipx800` entry in your `configuration.yml` (see example below).
+Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant (you must have `*.py` files in `config/custom_components/ipx800v4`).
+Add the `ipx800v4` entry in your `configuration.yml` (see example below).
 
 The IPX800 must be available during Home Assistant start. If you have an other home automation system which query the IPX800, like Jeedom, disable it during start to ensure it will respond to requests.
 
@@ -54,7 +54,7 @@ ipx800v4:
   - name: IPX800
     host: "192.168.1.240"
     api_key: "apikey"
-    scan_interval: 10
+    scan_interval: 15
     devices:
       - name: Chaudière
         icon: mdi:water-boiler
