@@ -2,8 +2,8 @@
   "domain": "ipx800v4",
   "name": "GCE IPX800 V4",
   "documentation": "https://github.com/Aohzan/ipx800",
-  "requirements": ["pypx800==1.8.0"],
-  "dependencies": [],
+  "requirements": ["pypx800==2.1.1"],
+  "dependencies": ["http"],
   "config_flow": true,
   "codeowners": ["@Aohzan"],
   "version": "2.0.0"

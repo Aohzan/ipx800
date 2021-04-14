@@ -1,33 +1,43 @@
 """Support for IPX800 V4 binary sensors."""
 import logging
 
-from pypx800 import *
-
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.const import STATE_OFF, STATE_ON
-from homeassistant.helpers.entity import Entity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 
-from . import IpxController, IpxDevice
-from .const import *
+from . import IpxDevice
+from .const import (
+    CONF_DEVICES,
+    CONF_TYPE,
+    CONTROLLER,
+    COORDINATOR,
+    DOMAIN,
+    GLOBAL_PARALLEL_UPDATES,
+    TYPE_DIGITALIN,
+    TYPE_VIRTUALOUT,
+)
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities,
+) -> None:
     """Set up the IPX800 binary sensors."""
-    controller = hass.data[DOMAIN][config_entry.entry_id][CONTROLLER]
-    devices = filter(
-        lambda d: d[CONF_COMPONENT] == "binary_sensor", config_entry.data[CONF_DEVICES]
-    )
+    controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
+    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
+    devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["binary_sensor"]
 
     entities = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_VIRTUALOUT:
-            entities.append(VirtualOutBinarySensor(device, controller))
+            entities.append(VirtualOutBinarySensor(device, controller, coordinator))
         elif device.get(CONF_TYPE) == TYPE_DIGITALIN:
-            entities.append(DigitalInBinarySensor(device, controller))
+            entities.append(DigitalInBinarySensor(device, controller, coordinator))
 
     async_add_entities(entities, True)
 
@@ -35,28 +45,26 @@ async def async_setup_entry(hass, config_entry, async_add_entities) -> None:
 class VirtualOutBinarySensor(IpxDevice, BinarySensorEntity):
     """Representation of a IPX Virtual Out."""
 
-    def __init__(self, device_config, controller: IpxController):
-        super().__init__(device_config, controller)
-
     @property
     def device_class(self):
+        """Return the device class."""
         return self._device_class
 
     @property
     def is_on(self) -> bool:
+        """Return the state."""
         return self.coordinator.data[f"VO{self._id}"] == 1
 
 
 class DigitalInBinarySensor(IpxDevice, BinarySensorEntity):
     """Representation of a IPX Virtual In."""
 
-    def __init__(self, device_config, controller: IpxController):
-        super().__init__(device_config, controller)
-
     @property
     def device_class(self):
+        """Return the device class."""
         return self._device_class
 
     @property
     def is_on(self) -> bool:
+        """Return the state."""
         return self.coordinator.data[f"D{self._id}"] == 1

@@ -1,12 +1,13 @@
-"""Constant for the ipx800v4 integration"""
+"""Constants for the ipx800v4 integration."""
 DOMAIN = "ipx800v4"
-GLOBAL_PARALLEL_UPDATES = 1
 
 CONTROLLER = "controller"
+COORDINATOR = "coordinator"
 UNDO_UPDATE_LISTENER = "undo_update_listener"
+GLOBAL_PARALLEL_UPDATES = 1
 
 DEFAULT_TRANSITION = 0.5
-REQUEST_REFRESH_DELAY = 0.6
+REQUEST_REFRESH_DELAY = 0.5
 
 CONF_DEVICES = "devices"
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0
+
+- Use async request
+- Optimize request
+- Fix devices issues
+
 ## 2.0.0
 
 - Major rewrite: remove old entry and entities before upgrade
