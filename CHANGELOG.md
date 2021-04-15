@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1
+
+- Fix async related issues
+- Use climate presets
+
 ## 2.1.0
 
 - Use async request

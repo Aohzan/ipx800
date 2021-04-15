@@ -9,6 +9,10 @@ from homeassistant.components.climate.const import (
     CURRENT_HVAC_OFF,
     HVAC_MODE_HEAT,
     HVAC_MODE_OFF,
+    PRESET_AWAY,
+    PRESET_COMFORT,
+    PRESET_ECO,
+    PRESET_NONE,
     SUPPORT_PRESET_MODE,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -84,21 +88,28 @@ class X4FPClimate(IpxDevice, ClimateEntity):
     @property
     def hvac_mode(self) -> str:
         """Return current mode if heating or not."""
-        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == "Arret":
+        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == PRESET_NONE:
             return HVAC_MODE_OFF
         return HVAC_MODE_HEAT
 
     @property
     def hvac_action(self) -> str:
         """Return current action if heating or not."""
-        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == "Arret":
+        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == PRESET_NONE:
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_HEAT
 
     @property
     def preset_modes(self) -> str:
         """Return all preset modes."""
-        return ["Confort", "Eco", "Hors Gel", "Arret", "Confort -1", "Confort -2"]
+        return [
+            PRESET_COMFORT,
+            PRESET_ECO,
+            PRESET_AWAY,
+            PRESET_NONE,
+            f"{PRESET_COMFORT} -1",
+            f"{PRESET_COMFORT} -2",
+        ]
 
     @property
     def preset_mode(self) -> str:
@@ -108,12 +119,12 @@ class X4FPClimate(IpxDevice, ClimateEntity):
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""
         switcher = {
-            "Confort": 0,
-            "Eco": 1,
-            "Hors Gel": 2,
-            "Arret": 3,
-            "Confort -1": 4,
-            "Confort -2": 5,
+            PRESET_COMFORT: 0,
+            PRESET_ECO: 1,
+            PRESET_AWAY: 2,
+            PRESET_NONE: 3,
+            f"{PRESET_COMFORT} -1": 4,
+            f"{PRESET_COMFORT} -2": 5,
         }
         _LOGGER.debug(
             "set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode)
@@ -195,7 +206,7 @@ class RelayClimate(IpxDevice, ClimateEntity):
     @property
     def preset_modes(self) -> str:
         """Return all preset modes."""
-        return ["Confort", "Eco", "Hors Gel", "Stop"]
+        return [PRESET_COMFORT, PRESET_ECO, PRESET_AWAY, PRESET_NONE]
 
     @property
     def preset_mode(self) -> str:
@@ -203,10 +214,10 @@ class RelayClimate(IpxDevice, ClimateEntity):
         state_minus = int(self.coordinator.data[f"R{self._ids[0]}"])
         state_plus = int(self.coordinator.data[f"R{self._ids[1]}"])
         switcher = {
-            (0, 0): "Confort",
-            (0, 1): "Stop",
-            (1, 0): "Hors Gel",
-            (1, 1): "Eco",
+            (0, 0): PRESET_COMFORT,
+            (0, 1): PRESET_NONE,
+            (1, 0): PRESET_AWAY,
+            (1, 1): PRESET_ECO,
         }
         return switcher.get((state_minus, state_plus))
 
@@ -231,13 +242,13 @@ class RelayClimate(IpxDevice, ClimateEntity):
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set target preset mode."""
         try:
-            if preset_mode == "Confort":
+            if preset_mode == PRESET_COMFORT:
                 await self.control_minus.off()
                 await self.control_plus.off()
-            elif preset_mode == "Eco":
+            elif preset_mode == PRESET_ECO:
                 await self.control_minus.on()
                 await self.control_plus.on()
-            elif preset_mode == "Hors Gel":
+            elif preset_mode == PRESET_AWAY:
                 await self.control_minus.on()
                 await self.control_plus.off()
             else:
