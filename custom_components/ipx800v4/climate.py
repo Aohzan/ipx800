@@ -28,6 +28,10 @@ from .const import (
     COORDINATOR,
     DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
+    IPX_PRESET_AWAY,
+    IPX_PRESET_COMFORT,
+    IPX_PRESET_ECO,
+    IPX_PRESET_NONE,
     TYPE_RELAY,
     TYPE_X4FP,
 )
@@ -88,14 +92,20 @@ class X4FPClimate(IpxDevice, ClimateEntity):
     @property
     def hvac_mode(self) -> str:
         """Return current mode if heating or not."""
-        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == PRESET_NONE:
+        if (
+            self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
+            == IPX_PRESET_NONE
+        ):
             return HVAC_MODE_OFF
         return HVAC_MODE_HEAT
 
     @property
     def hvac_action(self) -> str:
         """Return current action if heating or not."""
-        if self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"] == PRESET_NONE:
+        if (
+            self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
+            == IPX_PRESET_NONE
+        ):
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_HEAT
 
@@ -114,7 +124,17 @@ class X4FPClimate(IpxDevice, ClimateEntity):
     @property
     def preset_mode(self) -> str:
         """Return current preset mode."""
-        return self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")
+        switcher = {
+            IPX_PRESET_NONE: PRESET_NONE,
+            IPX_PRESET_ECO: PRESET_ECO,
+            IPX_PRESET_AWAY: PRESET_AWAY,
+            IPX_PRESET_COMFORT: PRESET_COMFORT,
+            f"{IPX_PRESET_COMFORT} -1": f"{PRESET_COMFORT} -1",
+            f"{IPX_PRESET_COMFORT} -2": f"{PRESET_COMFORT} -2",
+        }
+        return switcher.get(
+            self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")
+        )
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set new target preset mode."""

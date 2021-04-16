@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.2
+
+- Fix climate value
+
 ## 2.1.1
 
 - Fix async related issues
