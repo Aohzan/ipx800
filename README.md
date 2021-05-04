@@ -1,14 +1,14 @@
-# ipx800 component for Home Assistant
+# ipx800v4 component for Home Assistant
 
 This a _custom component_ for [Home Assistant](https://www.home-assistant.io/).
-The `ipx800` integration allows you to get information and control the [IPX800 v4 and its extensions](http://gce-electronics.com/).
+The `ipx800v4` integration allows you to get information and control the [IPX800 v4 and its extensions](http://gce-electronics.com/).
 
 ![README en français](README.fr.md) :fr:
 
 ## Installation
 
-Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant (you must have `*.py` files in `config/custom_components/ipx800`).
-Add the `ipx800` entry in your `configuration.yml` (see example below).
+Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant (you must have `*.py` files in `config/custom_components/ipx800v4`).
+Add the `ipx800v4` entry in your `configuration.yml` (see example below).
 
 The IPX800 must be available during Home Assistant start. If you have an other home automation system which query the IPX800, like Jeedom, disable it during start to ensure it will respond to requests.
 
@@ -33,17 +33,25 @@ You can control by setting the type of the device:
 - `xthl` as sensors
 - `x4fp` as climate
 
-You can update value of a device by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
-In `URL ON` and `URL_OFF` set `/api/ipx800/entity_id/state`:
+## Push data from the IPX800
 
-![PUSH configuration example](ipx800_push_configuration_example.png)
+You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
+In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
+
+![PUSH configuration example](ipx800_push_configuration_example.jpg)
+
+You can update values of multiple entities with one request (see official wiki: http://gce.ovh/wiki/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
+
+You have to set the `entity_id=$XXYY` separate by a `&`, example : `/api/ipx800v4_data/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06`.
+
+![PUSH data configuration example](ipx800_push_data_configuration_example.jpg)
 
 ## Example
 
 ```yaml
 # Example configuration.yaml entry
-ipx800:
-  - name: IPX00
+ipx800v4:
+  - name: IPX800
     host: "192.168.1.240"
     api_key: "apikey"
     scan_interval: 15
@@ -136,6 +144,11 @@ password:
   description: User's password (for X-PWM control only)
   required: false
   type: string
+scan_interval:
+  description: Time in seconds between two polling, small value can cause error from the IPX800
+  required: false
+  default: 10
+  type: int
 devices:
   component:
     description: device type

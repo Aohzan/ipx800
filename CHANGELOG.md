@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.1.2
+
+- Fix climate value
+
+## 2.1.1
+
+- Fix async related issues
+- Use climate presets
+
+## 2.1.0
+
+- Use async request
+- Optimize request
+- Fix devices issues
+
+## 2.0.0
+
+- Major rewrite: remove old entry and entities before upgrade
+- Rename to ipx800v4 to avoid conflict with others ipx800 versions
+- Added in integration panel (just for information, no settings)
+- Add Devices
+- Fix request error and related issues (thanks @guigeek38)
+- Add light toggle
+- Add logo
+- Add API url to push multiple data at once
+
 ## 1.8.2
 
 - Fix polling key for VirtualOut switch

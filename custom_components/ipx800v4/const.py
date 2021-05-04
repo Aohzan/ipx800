@@ -1,7 +1,13 @@
-"""Constant for ipx800 integration"""
-DOMAIN = "ipx800"
+"""Constants for the ipx800v4 integration."""
+DOMAIN = "ipx800v4"
+
+CONTROLLER = "controller"
+COORDINATOR = "coordinator"
+UNDO_UPDATE_LISTENER = "undo_update_listener"
+GLOBAL_PARALLEL_UPDATES = 1
 
 DEFAULT_TRANSITION = 0.5
+REQUEST_REFRESH_DELAY = 0.5
 
 CONF_DEVICES = "devices"
 
@@ -25,8 +31,14 @@ TYPE_X4VR = "x4vr"
 TYPE_XTHL = "xthl"
 TYPE_X4FP = "x4fp"
 
-CONF_COMPONENT_ALLOWED = ["light", "switch", "sensor",
-                          "binary_sensor", "cover", "climate"]
+CONF_COMPONENT_ALLOWED = [
+    "light",
+    "switch",
+    "sensor",
+    "binary_sensor",
+    "cover",
+    "climate",
+]
 
 CONF_TYPE_ALLOWED = [
     TYPE_RELAY,
@@ -42,3 +54,8 @@ CONF_TYPE_ALLOWED = [
     TYPE_XTHL,
     TYPE_X4FP,
 ]
+
+IPX_PRESET_NONE = "Arret"
+IPX_PRESET_ECO = "Eco"
+IPX_PRESET_AWAY = "Hors Gel"
+IPX_PRESET_COMFORT = "Confort"
