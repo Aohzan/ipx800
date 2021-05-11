@@ -26,6 +26,7 @@ TYPE_XDIMMER = "xdimmer"
 TYPE_VIRTUALOUT = "virtualout"
 TYPE_VIRTUALIN = "virtualin"
 TYPE_ANALOGIN = "analogin"
+TYPE_VIRTUALANALOGIN = "virtualanalogin"
 TYPE_DIGITALIN = "digitalin"
 TYPE_X4VR = "x4vr"
 TYPE_XTHL = "xthl"
@@ -49,6 +50,7 @@ CONF_TYPE_ALLOWED = [
     TYPE_VIRTUALOUT,
     TYPE_VIRTUALIN,
     TYPE_ANALOGIN,
+    TYPE_VIRTUALANALOGIN,
     TYPE_DIGITALIN,
     TYPE_X4VR,
     TYPE_XTHL,

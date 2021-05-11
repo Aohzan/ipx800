@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.0
+
+- Add Virtual Analog Input
+
 ## 2.1.2
 
 - Fix climate value

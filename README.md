@@ -25,6 +25,7 @@ You can control by setting the type of the device:
 - `virtualin` as switch
 - `digitalin` as binarysensor
 - `analogin` in as sensor
+- `virtualanalogin` in as sensor
 - `xdimmer` as light
 - `xpwm` as light
 - `xpwm_rgb` as light (use 3 xpwm channels)
@@ -181,7 +182,7 @@ devices:
     description: type of input/output on the IPX800 or an extension.
     required: true
     type: string
-    values: "relay", "analogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp"
+    values: "relay", "analogin", "virtualanalogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp"
   id:
     description: id of type output, required for all except xpwm_rgb and xpwm_rgbw type
     required: false
