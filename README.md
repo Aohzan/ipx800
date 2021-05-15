@@ -195,5 +195,9 @@ devices:
     description: ids of channel for xpwm_rgb, xpwm_rgbw type or relay as climate component
     required: false
     type: list of int
+  default_brightness:
+    description: default brightness for xpwm, xpwm_rgb and xpwm_rgbw only for turn on command (must be between 1 and 255)
+    required: false
+    type: int
 {% endconfiguration %}
 ```

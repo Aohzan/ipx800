@@ -37,6 +37,7 @@ from homeassistant.helpers.update_coordinator import (
 from .const import (
     CONF_COMPONENT,
     CONF_COMPONENT_ALLOWED,
+    CONF_DEFAULT_BRIGHTNESS,
     CONF_DEVICES,
     CONF_EXT_ID,
     CONF_ID,
@@ -51,6 +52,7 @@ from .const import (
     REQUEST_REFRESH_DELAY,
     TYPE_RELAY,
     TYPE_X4VR,
+    TYPE_XPWM,
     TYPE_XPWM_RGB,
     TYPE_XPWM_RGBW,
     UNDO_UPDATE_LISTENER,
@@ -66,6 +68,7 @@ DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
         vol.Optional(CONF_ID): cv.positive_int,
         vol.Optional(CONF_IDS): cv.ensure_list,
         vol.Optional(CONF_EXT_ID): cv.positive_int,
+        vol.Optional(CONF_DEFAULT_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_ICON): cv.icon,
         vol.Optional(CONF_TRANSITION, default=DEFAULT_TRANSITION): vol.Coerce(float),
         vol.Optional(CONF_DEVICE_CLASS): cv.string,
@@ -262,6 +265,31 @@ def build_device_list(devices_config: list) -> list:
                 device_config[CONF_NAME],
                 TYPE_X4VR,
                 CONF_EXT_ID,
+            )
+            continue
+
+        # Check if only PWM have default_brightness set
+        if CONF_DEFAULT_BRIGHTNESS in device_config and not (
+            device_config[CONF_TYPE] == TYPE_XPWM
+            or device_config[CONF_TYPE] == TYPE_XPWM_RGB
+            or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
+        ):
+            _LOGGER.error(
+                "Device %s skipped: %s must be set only for XPWM types.",
+                device_config[CONF_NAME],
+                CONF_DEFAULT_BRIGHTNESS,
+            )
+            continue
+
+        # Check if only PWM have default_brightness set
+        if CONF_DEFAULT_BRIGHTNESS in device_config and (
+            device_config[CONF_DEFAULT_BRIGHTNESS] < 1
+            or device_config[CONF_DEFAULT_BRIGHTNESS] > 255
+        ):
+            _LOGGER.error(
+                "Device %s skipped: %s must be between 1 and 255.",
+                device_config[CONF_NAME],
+                CONF_DEFAULT_BRIGHTNESS,
             )
             continue
 

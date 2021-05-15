@@ -12,6 +12,7 @@ REQUEST_REFRESH_DELAY = 0.5
 CONF_DEVICES = "devices"
 
 CONF_COMPONENT = "component"
+CONF_DEFAULT_BRIGHTNESS = "default_brightness"
 CONF_ID = "id"
 CONF_IDS = "ids"
 CONF_EXT_ID = "ext_id"

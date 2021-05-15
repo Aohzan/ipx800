@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.0
+
+- Use new color mode for lights
+- Add `default_brightness` for XPWM lights, to turn on the light to a defined brightness instead of 100%
+
 ## 2.2.0
 
 - Add Virtual Analog Input
