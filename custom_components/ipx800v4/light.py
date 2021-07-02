@@ -1,5 +1,6 @@
 """Support for IPX800 V4 lights."""
 import logging
+from typing import List
 
 from pypx800 import IPX800, XPWM, Ipx800RequestError, Relay, XDimmer
 
@@ -61,7 +62,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["light"]
 
-    entities = []
+    entities: List[LightEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_RELAY:
@@ -182,9 +183,9 @@ class XDimmerLight(IpxDevice, LightEntity):
         """Turn on the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
+                self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_BRIGHTNESS in kwargs:
-                self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+                self._brightness = kwargs[ATTR_BRIGHTNESS]
                 await self.control.set_level(
                     scaleto100(self._brightness), self._transition * 1000
                 )
@@ -200,7 +201,7 @@ class XDimmerLight(IpxDevice, LightEntity):
         """Turn off the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
+                self._transition = kwargs[ATTR_TRANSITION]
             await self.control.off(self._transition * 1000)
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
@@ -212,7 +213,7 @@ class XDimmerLight(IpxDevice, LightEntity):
         """Toggle the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
+                self._transition = kwargs[ATTR_TRANSITION]
             await self.control.toggle(self._transition * 1000)
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
@@ -265,9 +266,9 @@ class XPWMLight(IpxDevice, LightEntity):
         """Turn on the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
+                self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_BRIGHTNESS in kwargs:
-                self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+                self._brightness = kwargs[ATTR_BRIGHTNESS]
                 await self.control.set_level(
                     scaleto100(self._brightness), self._transition * 1000
                 )
@@ -285,7 +286,7 @@ class XPWMLight(IpxDevice, LightEntity):
         """Turn off the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
+                self._transition = kwargs[ATTR_TRANSITION]
             await self.control.off(self._transition * 1000)
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
@@ -297,7 +298,7 @@ class XPWMLight(IpxDevice, LightEntity):
         """Toggle the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
+                self._transition = kwargs[ATTR_TRANSITION]
             await self.control.toggle(self._transition * 1000)
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
@@ -360,10 +361,9 @@ class XPWMRGBLight(IpxDevice, LightEntity):
         """Turn on the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
-
+                self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_RGB_COLOR in kwargs:
-                colors = kwargs.get(ATTR_RGB_COLOR)
+                colors = kwargs[ATTR_RGB_COLOR]
                 await self.xpwm_rgb_r.set_level(
                     scaleto100(colors[0]), self._transition * 1000
                 )
@@ -374,7 +374,7 @@ class XPWMRGBLight(IpxDevice, LightEntity):
                     scaleto100(colors[2]), self._transition * 1000
                 )
             elif ATTR_BRIGHTNESS in kwargs:
-                self._brightness = kwargs.get(ATTR_BRIGHTNESS)
+                self._brightness = kwargs[ATTR_BRIGHTNESS]
                 if self.is_on:
                     await self.xpwm_rgb_r.set_level(
                         self.coordinator.data[f"PWM{self._ids[0]}"]
@@ -427,7 +427,7 @@ class XPWMRGBLight(IpxDevice, LightEntity):
         """Turn off the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION) * 1000)
+                self._transition = kwargs[ATTR_TRANSITION] * 1000
             await self.xpwm_rgb_r.off(self._transition * 1000)
             await self.xpwm_rgb_g.off(self._transition * 1000)
             await self.xpwm_rgb_b.off(self._transition * 1000)
@@ -496,10 +496,10 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
         """Turn on the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
+                self._transition = kwargs[ATTR_TRANSITION]
 
             if ATTR_RGBW_COLOR in kwargs:
-                colors = kwargs.get(ATTR_RGBW_COLOR)
+                colors = kwargs[ATTR_RGBW_COLOR]
                 # if only rgb color have been set
                 await self.xpwm_rgbw_r.set_level(
                     scaleto100(colors[0]), self._transition * 1000
@@ -514,7 +514,7 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
                     scaleto100(colors[3]), self._transition * 1000
                 )
             elif ATTR_BRIGHTNESS in kwargs:
-                self._brightness = kwargs.get(ATTR_BRIGHTNESS)
+                self._brightness = kwargs[ATTR_BRIGHTNESS]
                 if self.is_on:
                     await self.xpwm_rgbw_r.set_level(
                         self.coordinator.data[f"PWM{self._ids[0]}"]
@@ -559,7 +559,7 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
         """Turn off the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = int(kwargs.get(ATTR_TRANSITION))
+                self._transition = kwargs[ATTR_TRANSITION]
             await self.xpwm_rgbw_w.off(self._transition * 1000)
             await self.xpwm_rgbw_r.off(self._transition * 1000)
             await self.xpwm_rgbw_g.off(self._transition * 1000)
