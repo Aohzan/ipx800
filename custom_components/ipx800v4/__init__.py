@@ -1,4 +1,5 @@
 """Support for the GCE IPX800 V4."""
+import base64
 from datetime import timedelta
 import logging
 import re
@@ -42,6 +43,7 @@ from .const import (
     CONF_EXT_ID,
     CONF_ID,
     CONF_IDS,
+    CONF_PUSH_PASSWORD,
     CONF_TRANSITION,
     CONF_TYPE,
     CONF_TYPE_ALLOWED,
@@ -49,6 +51,7 @@ from .const import (
     COORDINATOR,
     DEFAULT_TRANSITION,
     DOMAIN,
+    PUSH_USERNAME,
     REQUEST_REFRESH_DELAY,
     TYPE_RELAY,
     TYPE_X4VR,
@@ -103,7 +106,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     if DOMAIN in config:
-        for gateway in config.get(DOMAIN):
+        for gateway in config[DOMAIN]:
             hass.async_create_task(
                 hass.config_entries.flow.async_init(
                     DOMAIN, context={"source": SOURCE_IMPORT}, data=gateway
@@ -147,7 +150,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         except Ipx800CannotConnectError as err:
             raise UpdateFailed(f"Failed to communicating with API: {err}") from err
 
-    scan_interval = int(entry.data.get(CONF_SCAN_INTERVAL))
+    scan_interval = entry.data[CONF_SCAN_INTERVAL]
 
     if scan_interval < 10:
         _LOGGER.warning(
@@ -209,8 +212,18 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         )
 
     # Provide endpoints for the IPX to call to push states
-    hass.http.register_view(IpxRequestView)
-    hass.http.register_view(IpxRequestDataView)
+    if CONF_PUSH_PASSWORD in entry.data:
+        hass.http.register_view(
+            IpxRequestView(entry.data[CONF_HOST], entry.data[CONF_PUSH_PASSWORD])
+        )
+        hass.http.register_view(
+            IpxRequestDataView(entry.data[CONF_HOST], entry.data[CONF_PUSH_PASSWORD])
+        )
+    else:
+        _LOGGER.info(
+            "No %s parameter provided in configuration, skip API call handling for IPX800 PUSH.",
+            CONF_PUSH_PASSWORD,
+        )
 
     return True
 
@@ -347,8 +360,21 @@ class IpxRequestView(HomeAssistantView):
     url = "/api/ipx800v4/{entity_id}/{state}"
     name = "api:ipx800v4"
 
+    def __init__(self, host: str, password: str) -> None:
+        """Init the IPX view."""
+        self.host = host
+        self.password = password
+        super().__init__()
+
     async def get(self, request, entity_id, state):
         """Respond to requests from the device."""
+        if request.remote != self.host:
+            raise ApiCallNotAuthorized("API call not coming from IPX800 IP.")
+        if "Authorization" not in request.headers:
+            raise ApiCallNotAuthorized("API call not provider authentication.")
+        api_auth = base64.b64decode(request.headers["Authorization"]).split(":")
+        if api_auth[0] != PUSH_USERNAME and api_auth[1] != self.password:
+            raise ApiCallNotAuthorized("API call authentication invalid.")
         hass = request.app["hass"]
         old_state = hass.states.get(entity_id)
         _LOGGER.debug("Update %s to state %s.", entity_id, state)
@@ -365,8 +391,21 @@ class IpxRequestDataView(HomeAssistantView):
     url = "/api/ipx800v4_data/{data}"
     name = "api:ipx800v4_data"
 
+    def __init__(self, host: str, password: str) -> None:
+        """Init the IPX view."""
+        self.host = host
+        self.password = password
+        super().__init__()
+
     async def get(self, request, data):
         """Respond to requests from the device."""
+        if request.remote != self.host:
+            raise ApiCallNotAuthorized("API call not coming from IPX800 IP.")
+        if "Authorization" not in request.headers:
+            raise ApiCallNotAuthorized("API call not provider authentication.")
+        api_auth = base64.b64decode(request.headers["Authorization"]).split(":")
+        if api_auth[0] != PUSH_USERNAME and api_auth[1] != self.password:
+            raise ApiCallNotAuthorized("API call authentication invalid.")
         hass = request.app["hass"]
         entities_data = data.split("&")
         for entity_data in entities_data:
@@ -381,6 +420,10 @@ class IpxRequestDataView(HomeAssistantView):
                 _LOGGER.warning("Entity not found for state updating: %s", entity_id)
 
         return web.Response(status=HTTP_OK, text="OK")
+
+
+class ApiCallNotAuthorized(BaseException):
+    """API call for IPX800 view not authorized."""
 
 
 class IpxDevice(CoordinatorEntity):
@@ -401,7 +444,7 @@ class IpxDevice(CoordinatorEntity):
         self._name = device_config.get(CONF_NAME)
         self._device_name = self._name
         if suffix_name:
-            self._name += f" {suffix_name}"
+            self._name = f"{self._name} {suffix_name}"
 
         self._device_class = device_config.get(CONF_DEVICE_CLASS)
         self._unit_of_measurement = device_config.get(CONF_UNIT_OF_MEASUREMENT)

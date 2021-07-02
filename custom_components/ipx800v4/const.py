@@ -5,6 +5,7 @@ CONTROLLER = "controller"
 COORDINATOR = "coordinator"
 UNDO_UPDATE_LISTENER = "undo_update_listener"
 GLOBAL_PARALLEL_UPDATES = 1
+PUSH_USERNAME = "ipx800"
 
 DEFAULT_TRANSITION = 0.5
 REQUEST_REFRESH_DELAY = 0.5
@@ -16,6 +17,7 @@ CONF_DEFAULT_BRIGHTNESS = "default_brightness"
 CONF_ID = "id"
 CONF_IDS = "ids"
 CONF_EXT_ID = "ext_id"
+CONF_PUSH_PASSWORD = "push_password"
 CONF_TRANSITION = "transition"
 CONF_TYPE = "type"
 

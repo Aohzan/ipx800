@@ -36,6 +36,9 @@ You can control by setting the type of the device:
 
 ## Push data from the IPX800
 
+First, if you want to push data from your IPX800, you have to set a password on `push_password` config parameter.
+Then in your IPX800 PUSH configuration, in the `Identifiant` field, set : `ipx800:mypassword`.
+
 You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
 In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
 
@@ -150,6 +153,10 @@ scan_interval:
   required: false
   default: 10
   type: int
+push_password:
+  description: Define a password to allow API calls from IPX800 PUSH
+  required: false
+  type: string
 devices:
   component:
     description: device type
