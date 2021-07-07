@@ -1,5 +1,5 @@
 """Support for the GCE IPX800 V4."""
-import base64
+from base64 import b64decode
 from datetime import timedelta
 import logging
 import re
@@ -371,9 +371,13 @@ class IpxRequestView(HomeAssistantView):
         if request.remote != self.host:
             raise ApiCallNotAuthorized("API call not coming from IPX800 IP.")
         if "Authorization" not in request.headers:
-            raise ApiCallNotAuthorized("API call not provider authentication.")
-        api_auth = base64.b64decode(request.headers["Authorization"]).split(":")
-        if api_auth[0] != PUSH_USERNAME and api_auth[1] != self.password:
+            raise ApiCallNotAuthorized("API call no authentication provided.")
+        header_auth = request.headers["Authorization"]
+        split = header_auth.strip().split(" ")
+        if len(split) != 2 or split[0].strip().lower() != "basic":
+            raise ApiCallNotAuthorized("Malformed Authorization header")
+        username, password = b64decode(split[1]).decode().split(":", 1)
+        if username != PUSH_USERNAME and password != self.password:
             raise ApiCallNotAuthorized("API call authentication invalid.")
         hass = request.app["hass"]
         old_state = hass.states.get(entity_id)
@@ -402,9 +406,13 @@ class IpxRequestDataView(HomeAssistantView):
         if request.remote != self.host:
             raise ApiCallNotAuthorized("API call not coming from IPX800 IP.")
         if "Authorization" not in request.headers:
-            raise ApiCallNotAuthorized("API call not provider authentication.")
-        api_auth = base64.b64decode(request.headers["Authorization"]).split(":")
-        if api_auth[0] != PUSH_USERNAME and api_auth[1] != self.password:
+            raise ApiCallNotAuthorized("API call no authentication provided.")
+        header_auth = request.headers["Authorization"]
+        split = header_auth.strip().split(" ")
+        if len(split) != 2 or split[0].strip().lower() != "basic":
+            raise ApiCallNotAuthorized("Malformed Authorization header")
+        username, password = b64decode(split[1]).decode().split(":", 1)
+        if username != PUSH_USERNAME and password != self.password:
             raise ApiCallNotAuthorized("API call authentication invalid.")
         hass = request.app["hass"]
         entities_data = data.split("&")
