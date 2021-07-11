@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.4.0
+
+- BREAKING CHANGE: Authentication now needed to PUSH data from IPX800. See README for more information
+- Check source IP for PUSH call to check if the call is made by the IPX800 IP
+
+## 2.3.0
+
+- Use new color mode for lights
+- Add `default_brightness` for XPWM lights, to turn on the light to a defined brightness instead of 100%
+
+## 2.2.0
+
+- Add Virtual Analog Input
+
 ## 2.1.2
 
 - Fix climate value
