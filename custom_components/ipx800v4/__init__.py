@@ -148,7 +148,8 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         except Ipx800InvalidAuthError as err:
             raise UpdateFailed("Authentication error on Eco-Devices") from err
         except Ipx800CannotConnectError as err:
-            raise UpdateFailed(f"Failed to communicating with API: {err}") from err
+            raise UpdateFailed(
+                f"Failed to communicating with API: {err}") from err
 
     scan_interval = entry.data[CONF_SCAN_INTERVAL]
 
@@ -214,10 +215,12 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     # Provide endpoints for the IPX to call to push states
     if CONF_PUSH_PASSWORD in entry.data:
         hass.http.register_view(
-            IpxRequestView(entry.data[CONF_HOST], entry.data[CONF_PUSH_PASSWORD])
+            IpxRequestView(entry.data[CONF_HOST],
+                           entry.data[CONF_PUSH_PASSWORD])
         )
         hass.http.register_view(
-            IpxRequestDataView(entry.data[CONF_HOST], entry.data[CONF_PUSH_PASSWORD])
+            IpxRequestDataView(
+                entry.data[CONF_HOST], entry.data[CONF_PUSH_PASSWORD])
         )
     else:
         _LOGGER.info(
@@ -353,6 +356,21 @@ def filter_device_list(devices: list, component: str) -> list:
     return list(filter(lambda d: d[CONF_COMPONENT] == component, devices))
 
 
+def check_api_auth(request, host, password) -> bool:
+    if request.remote != host:
+        raise ApiCallNotAuthorized("API call not coming from IPX800 IP.")
+    if "Authorization" not in request.headers:
+        raise ApiCallNotAuthorized("API call no authentication provided.")
+    header_auth = request.headers["Authorization"]
+    split = header_auth.strip().split(" ")
+    if len(split) != 2 or split[0].strip().lower() != "basic":
+        raise ApiCallNotAuthorized("Malformed Authorization header")
+    username, password = b64decode(split[1]).decode().split(":", 1)
+    if username != PUSH_USERNAME or password != password:
+        raise ApiCallNotAuthorized("API call authentication invalid.")
+    return True
+
+
 class IpxRequestView(HomeAssistantView):
     """Provide a page for the device to call."""
 
@@ -368,24 +386,15 @@ class IpxRequestView(HomeAssistantView):
 
     async def get(self, request, entity_id, state):
         """Respond to requests from the device."""
-        if request.remote != self.host:
-            raise ApiCallNotAuthorized("API call not coming from IPX800 IP.")
-        if "Authorization" not in request.headers:
-            raise ApiCallNotAuthorized("API call no authentication provided.")
-        header_auth = request.headers["Authorization"]
-        split = header_auth.strip().split(" ")
-        if len(split) != 2 or split[0].strip().lower() != "basic":
-            raise ApiCallNotAuthorized("Malformed Authorization header")
-        username, password = b64decode(split[1]).decode().split(":", 1)
-        if username != PUSH_USERNAME and password != self.password:
-            raise ApiCallNotAuthorized("API call authentication invalid.")
-        hass = request.app["hass"]
-        old_state = hass.states.get(entity_id)
-        _LOGGER.debug("Update %s to state %s.", entity_id, state)
-        if old_state:
-            hass.states.async_set(entity_id, state, old_state.attributes)
-            return web.Response(status=HTTP_OK, text="OK")
-        _LOGGER.warning("Entity not found for state updating: %s", entity_id)
+        if check_api_auth(request, self.host, self.password):
+            hass = request.app["hass"]
+            old_state = hass.states.get(entity_id)
+            _LOGGER.debug("Update %s to state %s.", entity_id, state)
+            if old_state:
+                hass.states.async_set(entity_id, state, old_state.attributes)
+                return web.Response(status=HTTP_OK, text="OK")
+            _LOGGER.warning(
+                "Entity not found for state updating: %s", entity_id)
 
 
 class IpxRequestDataView(HomeAssistantView):
@@ -403,31 +412,24 @@ class IpxRequestDataView(HomeAssistantView):
 
     async def get(self, request, data):
         """Respond to requests from the device."""
-        if request.remote != self.host:
-            raise ApiCallNotAuthorized("API call not coming from IPX800 IP.")
-        if "Authorization" not in request.headers:
-            raise ApiCallNotAuthorized("API call no authentication provided.")
-        header_auth = request.headers["Authorization"]
-        split = header_auth.strip().split(" ")
-        if len(split) != 2 or split[0].strip().lower() != "basic":
-            raise ApiCallNotAuthorized("Malformed Authorization header")
-        username, password = b64decode(split[1]).decode().split(":", 1)
-        if username != PUSH_USERNAME and password != self.password:
-            raise ApiCallNotAuthorized("API call authentication invalid.")
-        hass = request.app["hass"]
-        entities_data = data.split("&")
-        for entity_data in entities_data:
-            entity_id = entity_data.split("=")[0]
-            state = "on" if entity_data.split("=")[1] in ["1", "on", "true"] else "off"
+        if check_api_auth(request, self.host, self.password):
+            hass = request.app["hass"]
+            entities_data = data.split("&")
+            for entity_data in entities_data:
+                entity_id = entity_data.split("=")[0]
+                state = "on" if entity_data.split(
+                    "=")[1] in ["1", "on", "true"] else "off"
 
-            old_state = hass.states.get(entity_id)
-            _LOGGER.debug("Update %s to state %s.", entity_id, state)
-            if old_state:
-                hass.states.async_set(entity_id, state, old_state.attributes)
-            else:
-                _LOGGER.warning("Entity not found for state updating: %s", entity_id)
+                old_state = hass.states.get(entity_id)
+                _LOGGER.debug("Update %s to state %s.", entity_id, state)
+                if old_state:
+                    hass.states.async_set(
+                        entity_id, state, old_state.attributes)
+                else:
+                    _LOGGER.warning(
+                        "Entity not found for state updating: %s", entity_id)
 
-        return web.Response(status=HTTP_OK, text="OK")
+            return web.Response(status=HTTP_OK, text="OK")
 
 
 class ApiCallNotAuthorized(BaseException):
@@ -481,7 +483,8 @@ class IpxDevice(CoordinatorEntity):
                 DOMAIN,
                 self.ipx.host,
                 self._component,
-                re.sub("[^A-Za-z0-9_]+", "", self._name.replace(" ", "_")).lower(),
+                re.sub("[^A-Za-z0-9_]+", "",
+                       self._name.replace(" ", "_")).lower(),
             ]
         )
 
@@ -493,7 +496,8 @@ class IpxDevice(CoordinatorEntity):
                 (
                     DOMAIN,
                     re.sub(
-                        "[^A-Za-z0-9_]+", "", self._device_name.replace(" ", "_")
+                        "[^A-Za-z0-9_]+", "", self._device_name.replace(
+                            " ", "_")
                     ).lower(),
                 )
             },

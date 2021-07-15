@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.4.1
+
+- Fix API authentication verification
+
 ## 2.4.0
 
 - BREAKING CHANGE: Authentication now needed to PUSH data from IPX800. See README for more information
