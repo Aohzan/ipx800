@@ -148,8 +148,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         except Ipx800InvalidAuthError as err:
             raise UpdateFailed("Authentication error on Eco-Devices") from err
         except Ipx800CannotConnectError as err:
-            raise UpdateFailed(
-                f"Failed to communicating with API: {err}") from err
+            raise UpdateFailed(f"Failed to communicating with API: {err}") from err
 
     scan_interval = entry.data[CONF_SCAN_INTERVAL]
 
@@ -215,12 +214,10 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     # Provide endpoints for the IPX to call to push states
     if CONF_PUSH_PASSWORD in entry.data:
         hass.http.register_view(
-            IpxRequestView(entry.data[CONF_HOST],
-                           entry.data[CONF_PUSH_PASSWORD])
+            IpxRequestView(entry.data[CONF_HOST], entry.data[CONF_PUSH_PASSWORD])
         )
         hass.http.register_view(
-            IpxRequestDataView(
-                entry.data[CONF_HOST], entry.data[CONF_PUSH_PASSWORD])
+            IpxRequestDataView(entry.data[CONF_HOST], entry.data[CONF_PUSH_PASSWORD])
         )
     else:
         _LOGGER.info(
@@ -357,6 +354,7 @@ def filter_device_list(devices: list, component: str) -> list:
 
 
 def check_api_auth(request, host, password) -> bool:
+    """Check authentication on API call."""
     if request.remote != host:
         raise ApiCallNotAuthorized("API call not coming from IPX800 IP.")
     if "Authorization" not in request.headers:
@@ -393,8 +391,7 @@ class IpxRequestView(HomeAssistantView):
             if old_state:
                 hass.states.async_set(entity_id, state, old_state.attributes)
                 return web.Response(status=HTTP_OK, text="OK")
-            _LOGGER.warning(
-                "Entity not found for state updating: %s", entity_id)
+            _LOGGER.warning("Entity not found for state updating: %s", entity_id)
 
 
 class IpxRequestDataView(HomeAssistantView):
@@ -417,17 +414,18 @@ class IpxRequestDataView(HomeAssistantView):
             entities_data = data.split("&")
             for entity_data in entities_data:
                 entity_id = entity_data.split("=")[0]
-                state = "on" if entity_data.split(
-                    "=")[1] in ["1", "on", "true"] else "off"
+                state = (
+                    "on" if entity_data.split("=")[1] in ["1", "on", "true"] else "off"
+                )
 
                 old_state = hass.states.get(entity_id)
                 _LOGGER.debug("Update %s to state %s.", entity_id, state)
                 if old_state:
-                    hass.states.async_set(
-                        entity_id, state, old_state.attributes)
+                    hass.states.async_set(entity_id, state, old_state.attributes)
                 else:
                     _LOGGER.warning(
-                        "Entity not found for state updating: %s", entity_id)
+                        "Entity not found for state updating: %s", entity_id
+                    )
 
             return web.Response(status=HTTP_OK, text="OK")
 
@@ -483,8 +481,7 @@ class IpxDevice(CoordinatorEntity):
                 DOMAIN,
                 self.ipx.host,
                 self._component,
-                re.sub("[^A-Za-z0-9_]+", "",
-                       self._name.replace(" ", "_")).lower(),
+                re.sub("[^A-Za-z0-9_]+", "", self._name.replace(" ", "_")).lower(),
             ]
         )
 
@@ -496,8 +493,7 @@ class IpxDevice(CoordinatorEntity):
                 (
                     DOMAIN,
                     re.sub(
-                        "[^A-Za-z0-9_]+", "", self._device_name.replace(
-                            " ", "_")
+                        "[^A-Za-z0-9_]+", "", self._device_name.replace(" ", "_")
                     ).lower(),
                 )
             },
