@@ -1,5 +1,6 @@
 """Support for IPX800 V4 covers."""
 import logging
+from typing import List
 
 from pypx800 import IPX800, X4VR, Ipx800RequestError
 
@@ -41,7 +42,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["cover"]
 
-    entities = []
+    entities: List[CoverEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_X4VR:

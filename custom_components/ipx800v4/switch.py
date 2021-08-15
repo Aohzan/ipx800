@@ -1,5 +1,6 @@
 """Support for IPX800 V4 switches."""
 import logging
+from typing import List
 
 from pypx800 import IPX800, Ipx800RequestError, Relay, VInput, VOutput
 
@@ -35,7 +36,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["switch"]
 
-    entities = []
+    entities: List[SwitchEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_RELAY:

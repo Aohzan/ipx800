@@ -1,8 +1,10 @@
 """Support for IPX800 V4 sensors."""
 import logging
+from typing import List
 
 from pypx800 import IPX800
 
+from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     DEVICE_CLASS_HUMIDITY,
@@ -10,7 +12,6 @@ from homeassistant.const import (
     DEVICE_CLASS_TEMPERATURE,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import IpxDevice
@@ -40,7 +41,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["sensor"]
 
-    entities = []
+    entities: List[SensorEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_ANALOGIN:
@@ -85,7 +86,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class AnalogInSensor(IpxDevice, Entity):
+class AnalogInSensor(IpxDevice, SensorEntity):
     """Representation of a IPX sensor through analog input."""
 
     @property
@@ -104,7 +105,7 @@ class AnalogInSensor(IpxDevice, Entity):
         return self.coordinator.data[f"A{self._id}"]
 
 
-class VirtualAnalogInSensor(IpxDevice, Entity):
+class VirtualAnalogInSensor(IpxDevice, SensorEntity):
     """Representation of a IPX sensor through virtual analog input."""
 
     @property
@@ -123,7 +124,7 @@ class VirtualAnalogInSensor(IpxDevice, Entity):
         return self.coordinator.data[f"VA{self._id}"]
 
 
-class XTHLSensor(IpxDevice, Entity):
+class XTHLSensor(IpxDevice, SensorEntity):
     """Representation of a X-THL sensor."""
 
     def __init__(
@@ -153,6 +154,11 @@ class XTHLSensor(IpxDevice, Entity):
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         return self._unit_of_measurement
+
+    @property
+    def state_class(self):
+        """Return the device class of the sensor."""
+        return STATE_CLASS_MEASUREMENT
 
     @property
     def state(self) -> str:

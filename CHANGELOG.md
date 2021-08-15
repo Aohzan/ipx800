@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.0
+
+- Set X-THL as statistics sensors
+- Optimizations
+
 ## 2.4.1
 
 - Fix API authentication verification

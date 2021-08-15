@@ -1,5 +1,6 @@
 """Support for IPX800 V4 climates."""
 import logging
+from typing import List
 
 from pypx800 import IPX800, X4FP, Ipx800RequestError, Relay
 
@@ -50,7 +51,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["climate"]
 
-    entities = []
+    entities: List[ClimateEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_X4FP:
@@ -80,7 +81,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         return SUPPORT_PRESET_MODE
 
     @property
-    def temperature_unit(self) -> str:
+    def temperature_unit(self):
         """Return Celsius indifferently since there is no temperature support."""
         return TEMP_CELSIUS
 
@@ -90,7 +91,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         return [HVAC_MODE_HEAT, HVAC_MODE_OFF]
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self):
         """Return current mode if heating or not."""
         if (
             self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
@@ -100,7 +101,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         return HVAC_MODE_HEAT
 
     @property
-    def hvac_action(self) -> str:
+    def hvac_action(self):
         """Return current action if heating or not."""
         if (
             self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
@@ -110,7 +111,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         return CURRENT_HVAC_HEAT
 
     @property
-    def preset_modes(self) -> str:
+    def preset_modes(self):
         """Return all preset modes."""
         return [
             PRESET_COMFORT,
@@ -122,7 +123,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         ]
 
     @property
-    def preset_mode(self) -> str:
+    def preset_mode(self):
         """Return current preset mode."""
         switcher = {
             IPX_PRESET_NONE: PRESET_NONE,
@@ -194,7 +195,7 @@ class RelayClimate(IpxDevice, ClimateEntity):
         return SUPPORT_PRESET_MODE
 
     @property
-    def temperature_unit(self) -> str:
+    def temperature_unit(self):
         """Return Celsius indifferently since there is no temperature support."""
         return TEMP_CELSIUS
 
@@ -204,7 +205,7 @@ class RelayClimate(IpxDevice, ClimateEntity):
         return [HVAC_MODE_HEAT, HVAC_MODE_OFF]
 
     @property
-    def hvac_mode(self) -> str:
+    def hvac_mode(self):
         """Return current mode if heating or not."""
         if (
             int(self.coordinator.data[f"R{self._ids[0]}"]) == 0
@@ -214,7 +215,7 @@ class RelayClimate(IpxDevice, ClimateEntity):
         return HVAC_MODE_HEAT
 
     @property
-    def hvac_action(self) -> str:
+    def hvac_action(self):
         """Return current action if heating or not."""
         if (
             int(self.coordinator.data[f"R{self._ids[0]}"]) == 0
@@ -224,12 +225,12 @@ class RelayClimate(IpxDevice, ClimateEntity):
         return CURRENT_HVAC_HEAT
 
     @property
-    def preset_modes(self) -> str:
+    def preset_modes(self):
         """Return all preset modes."""
         return [PRESET_COMFORT, PRESET_ECO, PRESET_AWAY, PRESET_NONE]
 
     @property
-    def preset_mode(self) -> str:
+    def preset_mode(self):
         """Return current preset mode from 2 relay states."""
         state_minus = int(self.coordinator.data[f"R{self._ids[0]}"])
         state_plus = int(self.coordinator.data[f"R{self._ids[1]}"])

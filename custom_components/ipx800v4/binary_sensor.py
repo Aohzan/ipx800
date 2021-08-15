@@ -1,5 +1,6 @@
 """Support for IPX800 V4 binary sensors."""
 import logging
+from typing import List
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -31,7 +32,7 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["binary_sensor"]
 
-    entities = []
+    entities: List[BinarySensorEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_VIRTUALOUT:
