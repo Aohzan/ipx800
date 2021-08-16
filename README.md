@@ -7,6 +7,12 @@ The `ipx800v4` integration allows you to get information and control the [IPX800
 
 ## Installation
 
+### HACS
+
+HACS > Integrations > Explore & Add Repositories > GCE IPX800 V4 > Install this repository
+
+### Manually
+
 Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant (you must have `*.py` files in `config/custom_components/ipx800v4`).
 Add the `ipx800v4` entry in your `configuration.yml` (see example below).
 
