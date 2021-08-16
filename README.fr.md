@@ -5,6 +5,12 @@ L'intégration `ipx800v4` vous permet de contrôler et d'obtenir des information
 
 ## Installation
 
+### HACS
+
+HACS > Intégrations > Explorer et ajouter des dépôts > GCE IPX800 V4 > Installer ce dépôt dans HACS
+
+### Manually
+
 Copier le dossier `custom_components/ipx800` dans `config/custom_components` de votre installation Home Assistant (vous devez avoir les fichiers `*.py` dans `config/custom_components/ipx800`).
 Ajouter l'entrée `ipx800` dans votre fichier `configuration.yml` (voir l'exemple ci-dessous).
 
