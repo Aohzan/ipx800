@@ -434,7 +434,7 @@ class ApiCallNotAuthorized(BaseException):
     """API call for IPX800 view not authorized."""
 
 
-class IpxDevice(CoordinatorEntity):
+class IpxEntity(CoordinatorEntity):
     """Representation of a IPX800 generic device entity."""
 
     def __init__(
@@ -448,67 +448,44 @@ class IpxDevice(CoordinatorEntity):
         super().__init__(coordinator)
 
         self.ipx = ipx
-
-        self._name = device_config.get(CONF_NAME)
-        self._device_name = self._name
-        if suffix_name:
-            self._name = f"{self._name} {suffix_name}"
-
-        self._device_class = device_config.get(CONF_DEVICE_CLASS)
-        self._unit_of_measurement = device_config.get(CONF_UNIT_OF_MEASUREMENT)
         self._transition = int(
             device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION) * 1000
         )
-        self._icon = device_config.get(CONF_ICON)
-        self._ipx_type = device_config.get(CONF_TYPE)
-        self._component = device_config.get(CONF_COMPONENT)
+        self._ipx_type = device_config[CONF_TYPE]
+        self._component = device_config[CONF_COMPONENT]
         self._id = device_config.get(CONF_ID)
         self._ext_id = device_config.get(CONF_EXT_ID)
         self._ids = device_config.get(CONF_IDS, [])
 
-        self._supported_features = 0
-
-    @property
-    def name(self):
-        """Return the display name of this light."""
-        return self._name
-
-    @property
-    def unique_id(self):
-        """Return an unique id."""
-        return "_".join(
+        self._attr_name: str = device_config[CONF_NAME]
+        if suffix_name:
+            self._attr_name = f"{self._attr_name} {suffix_name}"
+        self._attr_device_class = device_config.get(CONF_DEVICE_CLASS)
+        self._attr_native_unit_of_measurement = device_config.get(
+            CONF_UNIT_OF_MEASUREMENT
+        )
+        self._attr_icon = device_config.get(CONF_ICON)
+        self._attr_unique_id = "_".join(
             [
                 DOMAIN,
                 self.ipx.host,
                 self._component,
-                re.sub("[^A-Za-z0-9_]+", "", self._name.replace(" ", "_")).lower(),
+                re.sub("[^A-Za-z0-9_]+", "", self._attr_name.replace(" ", "_")).lower(),
             ]
         )
-
-    @property
-    def device_info(self):
-        """Return device info."""
-        return {
+        self._attr_device_info = {
             "identifiers": {
                 (
                     DOMAIN,
                     re.sub(
-                        "[^A-Za-z0-9_]+", "", self._device_name.replace(" ", "_")
+                        "[^A-Za-z0-9_]+",
+                        "",
+                        self._attr_name.replace(" ", "_"),
                     ).lower(),
                 )
             },
-            "name": self._device_name,
+            "name": self._attr_name,
             "manufacturer": "GCE",
             "model": "IPX800 V4",
             "via_device": (DOMAIN, self.ipx.host),
         }
-
-    @property
-    def icon(self):
-        """Icon to use in the frontend, if any."""
-        return self._icon
-
-    @property
-    def supported_features(self):
-        """Flag supported features."""
-        return self._supported_features

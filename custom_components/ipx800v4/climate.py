@@ -21,7 +21,7 @@ from homeassistant.const import TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxDevice
+from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -62,7 +62,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class X4FPClimate(IpxDevice, ClimateEntity):
+class X4FPClimate(IpxEntity, ClimateEntity):
     """Representation of a IPX Climate through X4FP."""
 
     def __init__(
@@ -74,21 +74,17 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         """Initialize the X4FPClimate."""
         super().__init__(device_config, ipx, coordinator)
         self.control = X4FP(ipx, self._ext_id, self._id)
-
-    @property
-    def supported_features(self) -> int:
-        """Flag supported features."""
-        return SUPPORT_PRESET_MODE
-
-    @property
-    def temperature_unit(self):
-        """Return Celsius indifferently since there is no temperature support."""
-        return TEMP_CELSIUS
-
-    @property
-    def hvac_modes(self) -> list:
-        """Return modes."""
-        return [HVAC_MODE_HEAT, HVAC_MODE_OFF]
+        self._attr_supported_features = SUPPORT_PRESET_MODE
+        self._attr_temperature_unit = TEMP_CELSIUS
+        self._attr_hvac_modes = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
+        self._attr_preset_modes = [
+            PRESET_COMFORT,
+            PRESET_ECO,
+            PRESET_AWAY,
+            PRESET_NONE,
+            f"{PRESET_COMFORT} -1",
+            f"{PRESET_COMFORT} -2",
+        ]
 
     @property
     def hvac_mode(self):
@@ -109,18 +105,6 @@ class X4FPClimate(IpxDevice, ClimateEntity):
         ):
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_HEAT
-
-    @property
-    def preset_modes(self):
-        """Return all preset modes."""
-        return [
-            PRESET_COMFORT,
-            PRESET_ECO,
-            PRESET_AWAY,
-            PRESET_NONE,
-            f"{PRESET_COMFORT} -1",
-            f"{PRESET_COMFORT} -2",
-        ]
 
     @property
     def preset_mode(self):
@@ -175,7 +159,7 @@ class X4FPClimate(IpxDevice, ClimateEntity):
             )
 
 
-class RelayClimate(IpxDevice, ClimateEntity):
+class RelayClimate(IpxEntity, ClimateEntity):
     """Representation of a IPX Climate through 2 relais."""
 
     def __init__(
@@ -188,21 +172,10 @@ class RelayClimate(IpxDevice, ClimateEntity):
         super().__init__(device_config, ipx, coordinator)
         self.control_minus = Relay(ipx, self._ids[0])
         self.control_plus = Relay(ipx, self._ids[1])
-
-    @property
-    def supported_features(self) -> int:
-        """Flag supported features."""
-        return SUPPORT_PRESET_MODE
-
-    @property
-    def temperature_unit(self):
-        """Return Celsius indifferently since there is no temperature support."""
-        return TEMP_CELSIUS
-
-    @property
-    def hvac_modes(self) -> list:
-        """Return modes."""
-        return [HVAC_MODE_HEAT, HVAC_MODE_OFF]
+        self._attr_supported_features = SUPPORT_PRESET_MODE
+        self._attr_temperature_unit = TEMP_CELSIUS
+        self._attr_hvac_modes = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
+        self._attr_preset_modes = [PRESET_COMFORT, PRESET_ECO, PRESET_AWAY, PRESET_NONE]
 
     @property
     def hvac_mode(self):
@@ -223,11 +196,6 @@ class RelayClimate(IpxDevice, ClimateEntity):
         ):
             return CURRENT_HVAC_OFF
         return CURRENT_HVAC_HEAT
-
-    @property
-    def preset_modes(self):
-        """Return all preset modes."""
-        return [PRESET_COMFORT, PRESET_ECO, PRESET_AWAY, PRESET_NONE]
 
     @property
     def preset_mode(self):

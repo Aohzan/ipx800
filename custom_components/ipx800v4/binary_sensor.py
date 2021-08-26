@@ -6,7 +6,7 @@ from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from . import IpxDevice
+from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -43,13 +43,8 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class VirtualOutBinarySensor(IpxDevice, BinarySensorEntity):
+class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual Out."""
-
-    @property
-    def device_class(self):
-        """Return the device class."""
-        return self._device_class
 
     @property
     def is_on(self) -> bool:
@@ -57,13 +52,8 @@ class VirtualOutBinarySensor(IpxDevice, BinarySensorEntity):
         return self.coordinator.data[f"VO{self._id}"] == 1
 
 
-class DigitalInBinarySensor(IpxDevice, BinarySensorEntity):
+class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual In."""
-
-    @property
-    def device_class(self):
-        """Return the device class."""
-        return self._device_class
 
     @property
     def is_on(self) -> bool:

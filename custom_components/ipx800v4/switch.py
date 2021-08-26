@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxDevice
+from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -49,7 +49,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class RelaySwitch(IpxDevice, SwitchEntity):
+class RelaySwitch(IpxEntity, SwitchEntity):
     """Representation of a IPX Switch through relay."""
 
     def __init__(
@@ -94,7 +94,7 @@ class RelaySwitch(IpxDevice, SwitchEntity):
             _LOGGER.error("An error occurred while toggle IPX800 switch: %s", self.name)
 
 
-class VirtualOutSwitch(IpxDevice, SwitchEntity):
+class VirtualOutSwitch(IpxEntity, SwitchEntity):
     """Representation of a IPX Virtual Out."""
 
     def __init__(
@@ -141,7 +141,7 @@ class VirtualOutSwitch(IpxDevice, SwitchEntity):
             _LOGGER.error("An error occurred while toggle IPX800 switch: %s", self.name)
 
 
-class VirtualInSwitch(IpxDevice, SwitchEntity):
+class VirtualInSwitch(IpxEntity, SwitchEntity):
     """Representation of a IPX Virtual In."""
 
     def __init__(

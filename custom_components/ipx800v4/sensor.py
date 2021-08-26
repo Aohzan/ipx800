@@ -14,7 +14,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxDevice
+from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -86,45 +86,25 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class AnalogInSensor(IpxDevice, SensorEntity):
+class AnalogInSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through analog input."""
 
     @property
-    def device_class(self):
-        """Return the device class."""
-        return self._device_class
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit_of_measurement
-
-    @property
-    def state(self) -> str:
-        """Return the state."""
+    def native_value(self):
+        """Return the current value."""
         return self.coordinator.data[f"A{self._id}"]
 
 
-class VirtualAnalogInSensor(IpxDevice, SensorEntity):
+class VirtualAnalogInSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through virtual analog input."""
 
     @property
-    def device_class(self):
-        """Return the device class."""
-        return self._device_class
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit_of_measurement
-
-    @property
-    def state(self) -> str:
-        """Return the state."""
+    def native_value(self):
+        """Return the current value."""
         return self.coordinator.data[f"VA{self._id}"]
 
 
-class XTHLSensor(IpxDevice, SensorEntity):
+class XTHLSensor(IpxEntity, SensorEntity):
     """Representation of a X-THL sensor."""
 
     def __init__(
@@ -139,28 +119,12 @@ class XTHLSensor(IpxDevice, SensorEntity):
     ):
         """Initialize the XTHLSensor."""
         super().__init__(device_config, ipx, coordinator, suffix_name)
-        self._device_class = device_class
-        # Allow overriding of temperature unit if specified in the xthl conf
-        if not (self._unit_of_measurement and device_class == DEVICE_CLASS_TEMPERATURE):
-            self._unit_of_measurement = unit_of_measurement
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit_of_measurement
+        self._attr_state_class = STATE_CLASS_MEASUREMENT
         self._req_type = req_type
 
     @property
-    def device_class(self):
-        """Return the device class."""
-        return self._device_class
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement."""
-        return self._unit_of_measurement
-
-    @property
-    def state_class(self):
-        """Return the device class of the sensor."""
-        return STATE_CLASS_MEASUREMENT
-
-    @property
-    def state(self) -> str:
-        """Return the state."""
+    def native_value(self):
+        """Return the current value."""
         return round(self.coordinator.data[f"THL{self._id}-{self._req_type}"], 1)

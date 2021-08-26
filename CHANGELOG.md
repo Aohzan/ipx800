@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.0
+
+- /!\ Home-Assistant >= 2021.9.0 required
+- Une new native value sensor for X-THL
+- Simplify code
+
 ## 2.5.0
 
 - Set X-THL as statistics sensors

@@ -17,7 +17,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxDevice
+from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -51,7 +51,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class X4VRCover(IpxDevice, CoverEntity):
+class X4VRCover(IpxEntity, CoverEntity):
     """Representation of a IPX Cover through X4VR."""
 
     def __init__(
@@ -63,16 +63,10 @@ class X4VRCover(IpxDevice, CoverEntity):
         """Initialize the X4VRCover."""
         super().__init__(device_config, ipx, coordinator)
         self.control = X4VR(ipx, self._ext_id, self._id)
-
-    @property
-    def device_class(self):
-        """Return the device class."""
-        return self._device_class or DEVICE_CLASS_SHUTTER
-
-    @property
-    def supported_features(self):
-        """Flag supported features."""
-        return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+        self._attr_device_class = DEVICE_CLASS_SHUTTER
+        self._attr_supported_features = (
+            SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+        )
 
     @property
     def is_closed(self) -> bool:

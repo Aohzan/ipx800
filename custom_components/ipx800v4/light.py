@@ -20,7 +20,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxDevice
+from . import IpxEntity
 from .const import (
     CONF_DEFAULT_BRIGHTNESS,
     CONF_DEVICES,
@@ -79,7 +79,7 @@ async def async_setup_entry(
     async_add_entities(entities, True)
 
 
-class RelayLight(IpxDevice, LightEntity):
+class RelayLight(IpxEntity, LightEntity):
     """Representation of a IPX Light through relay."""
 
     def __init__(
@@ -91,16 +91,8 @@ class RelayLight(IpxDevice, LightEntity):
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
         self.control = Relay(ipx, self._id)
-
-    @property
-    def supported_color_modes(self) -> set:
-        """Return supported color modes."""
-        return {COLOR_MODE_ONOFF}
-
-    @property
-    def color_mode(self) -> str:
-        """Return the color mode of the light."""
-        return COLOR_MODE_ONOFF
+        self._attr_supported_color_modes = {COLOR_MODE_ONOFF}
+        self._attr_color_mode = COLOR_MODE_ONOFF
 
     @property
     def is_on(self) -> bool:
@@ -139,7 +131,7 @@ class RelayLight(IpxDevice, LightEntity):
             return None
 
 
-class XDimmerLight(IpxDevice, LightEntity):
+class XDimmerLight(IpxEntity, LightEntity):
     """Representation of a IPX Light through X-Dimmer."""
 
     def __init__(
@@ -153,21 +145,9 @@ class XDimmerLight(IpxDevice, LightEntity):
         self.control = XDimmer(ipx, self._id)
         self._brightness = None
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
-
-    @property
-    def supported_color_modes(self) -> set:
-        """Return supported color modes."""
-        return {COLOR_MODE_BRIGHTNESS}
-
-    @property
-    def supported_features(self) -> int:
-        """Return supported features."""
-        return SUPPORT_TRANSITION
-
-    @property
-    def color_mode(self) -> str:
-        """Return the color mode of the light."""
-        return COLOR_MODE_BRIGHTNESS
+        self._attr_supported_color_modes = {COLOR_MODE_BRIGHTNESS}
+        self._attr_color_mode = COLOR_MODE_BRIGHTNESS
+        self._attr_supported_features = SUPPORT_TRANSITION
 
     @property
     def is_on(self) -> bool:
@@ -220,7 +200,7 @@ class XDimmerLight(IpxDevice, LightEntity):
             _LOGGER.error("An error occurred while toggle IPX800 light: %s", self.name)
 
 
-class XPWMLight(IpxDevice, LightEntity):
+class XPWMLight(IpxEntity, LightEntity):
     """Representation of a IPX Light through X-PWM single channel."""
 
     def __init__(
@@ -236,21 +216,9 @@ class XPWMLight(IpxDevice, LightEntity):
         self._brightness = None
         self._default_brightness = device_config.get(CONF_DEFAULT_BRIGHTNESS, 100)
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
-
-    @property
-    def supported_color_modes(self) -> set:
-        """Return supported color modes."""
-        return {COLOR_MODE_BRIGHTNESS}
-
-    @property
-    def supported_features(self) -> int:
-        """Return supported features."""
-        return SUPPORT_TRANSITION
-
-    @property
-    def color_mode(self) -> str:
-        """Return the color mode of the light."""
-        return COLOR_MODE_BRIGHTNESS
+        self._attr_supported_color_modes = {COLOR_MODE_BRIGHTNESS}
+        self._attr_color_mode = COLOR_MODE_BRIGHTNESS
+        self._attr_supported_features = SUPPORT_TRANSITION
 
     @property
     def is_on(self) -> bool:
@@ -305,7 +273,7 @@ class XPWMLight(IpxDevice, LightEntity):
             _LOGGER.error("An error occurred while toggle IPX800 light: %s", self.name)
 
 
-class XPWMRGBLight(IpxDevice, LightEntity):
+class XPWMRGBLight(IpxEntity, LightEntity):
     """Representation of a RGB light through 3 X-PWM channels."""
 
     def __init__(
@@ -323,21 +291,9 @@ class XPWMRGBLight(IpxDevice, LightEntity):
         self._brightness = None
         self._default_brightness = device_config.get(CONF_DEFAULT_BRIGHTNESS, 100)
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
-
-    @property
-    def supported_color_modes(self) -> set:
-        """Return supported color modes."""
-        return {COLOR_MODE_RGB}
-
-    @property
-    def supported_features(self) -> int:
-        """Return supported features."""
-        return SUPPORT_TRANSITION
-
-    @property
-    def color_mode(self) -> str:
-        """Return the color mode of the light."""
-        return COLOR_MODE_RGB
+        self._attr_supported_color_modes = {COLOR_MODE_RGB}
+        self._attr_color_mode = COLOR_MODE_RGB
+        self._attr_supported_features = SUPPORT_TRANSITION
 
     @property
     def is_on(self) -> bool:
@@ -438,7 +394,7 @@ class XPWMRGBLight(IpxDevice, LightEntity):
             )
 
 
-class XPWMRGBWLight(IpxDevice, LightEntity):
+class XPWMRGBWLight(IpxEntity, LightEntity):
     """Representation of a RGBW light through 4 X-PWM channels."""
 
     def __init__(
@@ -457,21 +413,9 @@ class XPWMRGBWLight(IpxDevice, LightEntity):
         self._brightness = None
         self._default_brightness = device_config.get(CONF_DEFAULT_BRIGHTNESS, 100)
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
-
-    @property
-    def supported_color_modes(self) -> set:
-        """Return supported color modes."""
-        return {COLOR_MODE_RGBW}
-
-    @property
-    def supported_features(self) -> int:
-        """Return supported features."""
-        return SUPPORT_TRANSITION
-
-    @property
-    def color_mode(self) -> str:
-        """Return the color mode of the light."""
-        return COLOR_MODE_RGBW
+        self._attr_supported_color_modes = {COLOR_MODE_RGBW}
+        self._attr_color_mode = COLOR_MODE_RGBW
+        self._attr_supported_features = SUPPORT_TRANSITION
 
     @property
     def is_on(self) -> bool:
