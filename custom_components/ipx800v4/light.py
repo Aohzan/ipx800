@@ -1,4 +1,5 @@
 """Support for IPX800 V4 lights."""
+from asyncio import gather as async_gather
 import logging
 from typing import List
 
@@ -143,7 +144,6 @@ class XDimmerLight(IpxEntity, LightEntity):
         """Initialize the class XDimmerLight."""
         super().__init__(device_config, ipx, coordinator)
         self.control = XDimmer(ipx, self._id)
-        self._brightness = None
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
         self._attr_supported_color_modes = {COLOR_MODE_BRIGHTNESS}
         self._attr_color_mode = COLOR_MODE_BRIGHTNESS
@@ -165,9 +165,8 @@ class XDimmerLight(IpxEntity, LightEntity):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_BRIGHTNESS in kwargs:
-                self._brightness = kwargs[ATTR_BRIGHTNESS]
                 await self.control.set_level(
-                    scaleto100(self._brightness), self._transition * 1000
+                    scaleto100(kwargs[ATTR_BRIGHTNESS]), self._transition * 1000
                 )
             else:
                 await self.control.on(self._transition * 1000)
@@ -213,8 +212,9 @@ class XPWMLight(IpxEntity, LightEntity):
         super().__init__(device_config, ipx, coordinator)
         self.control = XPWM(ipx, self._id)
 
-        self._brightness = None
-        self._default_brightness = device_config.get(CONF_DEFAULT_BRIGHTNESS, 100)
+        self._default_brightness = scaleto100(
+            device_config.get(CONF_DEFAULT_BRIGHTNESS, 255)
+        )
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
         self._attr_supported_color_modes = {COLOR_MODE_BRIGHTNESS}
         self._attr_color_mode = COLOR_MODE_BRIGHTNESS
@@ -236,9 +236,8 @@ class XPWMLight(IpxEntity, LightEntity):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_BRIGHTNESS in kwargs:
-                self._brightness = kwargs[ATTR_BRIGHTNESS]
                 await self.control.set_level(
-                    scaleto100(self._brightness), self._transition * 1000
+                    scaleto100(kwargs[ATTR_BRIGHTNESS]), self._transition * 1000
                 )
             else:
                 await self.control.set_level(
@@ -288,8 +287,9 @@ class XPWMRGBLight(IpxEntity, LightEntity):
         self.xpwm_rgb_g = XPWM(ipx, self._ids[1])
         self.xpwm_rgb_b = XPWM(ipx, self._ids[2])
 
-        self._brightness = None
-        self._default_brightness = device_config.get(CONF_DEFAULT_BRIGHTNESS, 100)
+        self._default_brightness = scaleto100(
+            device_config.get(CONF_DEFAULT_BRIGHTNESS, 255)
+        )
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
         self._attr_supported_color_modes = {COLOR_MODE_RGB}
         self._attr_color_mode = COLOR_MODE_RGB
@@ -320,58 +320,69 @@ class XPWMRGBLight(IpxEntity, LightEntity):
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_RGB_COLOR in kwargs:
                 colors = kwargs[ATTR_RGB_COLOR]
-                await self.xpwm_rgb_r.set_level(
-                    scaleto100(colors[0]), self._transition * 1000
-                )
-                await self.xpwm_rgb_g.set_level(
-                    scaleto100(colors[1]), self._transition * 1000
-                )
-                await self.xpwm_rgb_b.set_level(
-                    scaleto100(colors[2]), self._transition * 1000
+                await async_gather(
+                    self.xpwm_rgb_r.set_level(
+                        scaleto100(colors[0]), self._transition * 1000
+                    ),
+                    self.xpwm_rgb_g.set_level(
+                        scaleto100(colors[1]), self._transition * 1000
+                    ),
+                    self.xpwm_rgb_b.set_level(
+                        scaleto100(colors[2]), self._transition * 1000
+                    ),
                 )
             elif ATTR_BRIGHTNESS in kwargs:
-                self._brightness = kwargs[ATTR_BRIGHTNESS]
+                brightness = kwargs[ATTR_BRIGHTNESS]
                 if self.is_on:
-                    await self.xpwm_rgb_r.set_level(
-                        self.coordinator.data[f"PWM{self._ids[0]}"]
-                        * self._brightness
-                        / 100,
-                        self._transition * 1000,
-                    )
-                    await self.xpwm_rgb_g.set_level(
-                        self.coordinator.data[f"PWM{self._ids[1]}"]
-                        * self._brightness
-                        / 100,
-                        self._transition * 1000,
-                    )
-                    await self.xpwm_rgb_b.set_level(
-                        self.coordinator.data[f"PWM{self._ids[2]}"]
-                        * self._brightness
-                        / 100,
-                        self._transition * 1000,
+                    await async_gather(
+                        self.xpwm_rgb_r.set_level(
+                            scaleto100(
+                                self.rgb_color[0] * brightness / self.brightness
+                            ),
+                            self._transition * 1000,
+                        ),
+                        self.xpwm_rgb_g.set_level(
+                            scaleto100(
+                                self.rgb_color[1] * brightness / self.brightness
+                            ),
+                            self._transition * 1000,
+                        ),
+                        self.xpwm_rgb_b.set_level(
+                            scaleto100(
+                                self.rgb_color[2] * brightness / self.brightness
+                            ),
+                            self._transition * 1000,
+                        ),
                     )
                 else:
-                    await self.xpwm_rgb_r.set_level(
-                        scaleto100(self._brightness),
-                        self._transition * 1000,
-                    )
-                    await self.xpwm_rgb_g.set_level(
-                        scaleto100(self._brightness),
-                        self._transition * 1000,
-                    )
-                    await self.xpwm_rgb_b.set_level(
-                        scaleto100(self._brightness),
-                        self._transition * 1000,
+                    await async_gather(
+                        self.xpwm_rgb_r.set_level(
+                            scaleto100(brightness),
+                            self._transition * 1000,
+                        ),
+                        self.xpwm_rgb_g.set_level(
+                            scaleto100(brightness),
+                            self._transition * 1000,
+                        ),
+                        self.xpwm_rgb_b.set_level(
+                            scaleto100(brightness),
+                            self._transition * 1000,
+                        ),
                     )
             else:
-                await self.xpwm_rgb_r.set_level(
-                    self._default_brightness, self._transition * 1000
-                )
-                await self.xpwm_rgb_g.set_level(
-                    self._default_brightness, self._transition * 1000
-                )
-                await self.xpwm_rgb_b.set_level(
-                    self._default_brightness, self._transition * 1000
+                await async_gather(
+                    self.xpwm_rgb_r.set_level(
+                        scaleto100(self._default_brightness),
+                        self._transition * 1000,
+                    ),
+                    self.xpwm_rgb_g.set_level(
+                        scaleto100(self._default_brightness),
+                        self._transition * 1000,
+                    ),
+                    self.xpwm_rgb_b.set_level(
+                        scaleto100(self._default_brightness),
+                        self._transition * 1000,
+                    ),
                 )
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
@@ -383,10 +394,12 @@ class XPWMRGBLight(IpxEntity, LightEntity):
         """Turn off the light."""
         try:
             if ATTR_TRANSITION in kwargs:
-                self._transition = kwargs[ATTR_TRANSITION] * 1000
-            await self.xpwm_rgb_r.off(self._transition * 1000)
-            await self.xpwm_rgb_g.off(self._transition * 1000)
-            await self.xpwm_rgb_b.off(self._transition * 1000)
+                self._transition = kwargs[ATTR_TRANSITION]
+            await async_gather(
+                self.xpwm_rgb_r.off(self._transition * 1000),
+                self.xpwm_rgb_g.off(self._transition * 1000),
+                self.xpwm_rgb_b.off(self._transition * 1000),
+            )
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
             _LOGGER.error(
@@ -410,8 +423,9 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
         self.xpwm_rgbw_b = XPWM(ipx, self._ids[2])
         self.xpwm_rgbw_w = XPWM(ipx, self._ids[3])
 
-        self._brightness = None
-        self._default_brightness = device_config.get(CONF_DEFAULT_BRIGHTNESS, 100)
+        self._default_brightness = scaleto100(
+            device_config.get(CONF_DEFAULT_BRIGHTNESS, 255)
+        )
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
         self._attr_supported_color_modes = {COLOR_MODE_RGBW}
         self._attr_color_mode = COLOR_MODE_RGBW
@@ -445,48 +459,52 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
             if ATTR_RGBW_COLOR in kwargs:
                 colors = kwargs[ATTR_RGBW_COLOR]
                 # if only rgb color have been set
-                await self.xpwm_rgbw_r.set_level(
-                    scaleto100(colors[0]), self._transition * 1000
-                )
-                await self.xpwm_rgbw_g.set_level(
-                    scaleto100(colors[1]), self._transition * 1000
-                )
-                await self.xpwm_rgbw_b.set_level(
-                    scaleto100(colors[2]), self._transition * 1000
-                )
-                await self.xpwm_rgbw_w.set_level(
-                    scaleto100(colors[3]), self._transition * 1000
+                await async_gather(
+                    self.xpwm_rgbw_r.set_level(
+                        scaleto100(colors[0]), self._transition * 1000
+                    ),
+                    self.xpwm_rgbw_g.set_level(
+                        scaleto100(colors[1]), self._transition * 1000
+                    ),
+                    self.xpwm_rgbw_b.set_level(
+                        scaleto100(colors[2]), self._transition * 1000
+                    ),
+                    self.xpwm_rgbw_w.set_level(
+                        scaleto100(colors[3]), self._transition * 1000
+                    ),
                 )
             elif ATTR_BRIGHTNESS in kwargs:
-                self._brightness = kwargs[ATTR_BRIGHTNESS]
+                brightness = kwargs[ATTR_BRIGHTNESS]
                 if self.is_on:
-                    await self.xpwm_rgbw_r.set_level(
-                        self.coordinator.data[f"PWM{self._ids[0]}"]
-                        * self._brightness
-                        / 100,
-                        self._transition * 1000,
-                    )
-                    await self.xpwm_rgbw_g.set_level(
-                        self.coordinator.data[f"PWM{self._ids[1]}"]
-                        * self._brightness
-                        / 100,
-                        self._transition * 1000,
-                    )
-                    await self.xpwm_rgbw_b.set_level(
-                        self.coordinator.data[f"PWM{self._ids[2]}"]
-                        * self._brightness
-                        / 100,
-                        self._transition * 1000,
-                    )
-                    await self.xpwm_rgbw_w.set_level(
-                        self.coordinator.data[f"PWM{self._ids[3]}"]
-                        * self._brightness
-                        / 100,
-                        self._transition * 1000,
+                    await async_gather(
+                        self.xpwm_rgbw_r.set_level(
+                            scaleto100(
+                                self.rgbw_color[0] * brightness / self.brightness
+                            ),
+                            self._transition * 1000,
+                        ),
+                        self.xpwm_rgbw_g.set_level(
+                            scaleto100(
+                                self.rgbw_color[1] * brightness / self.brightness
+                            ),
+                            self._transition * 1000,
+                        ),
+                        self.xpwm_rgbw_b.set_level(
+                            scaleto100(
+                                self.rgbw_color[2] * brightness / self.brightness
+                            ),
+                            self._transition * 1000,
+                        ),
+                        self.xpwm_rgbw_w.set_level(
+                            scaleto100(
+                                self.rgbw_color[3] * brightness / self.brightness
+                            ),
+                            self._transition * 1000,
+                        ),
                     )
                 else:
                     await self.xpwm_rgbw_w.set_level(
-                        scaleto100(self._brightness),
+                        scaleto100(brightness),
                         self._transition * 1000,
                     )
             else:
@@ -504,10 +522,12 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
         try:
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await self.xpwm_rgbw_w.off(self._transition * 1000)
-            await self.xpwm_rgbw_r.off(self._transition * 1000)
-            await self.xpwm_rgbw_g.off(self._transition * 1000)
-            await self.xpwm_rgbw_b.off(self._transition * 1000)
+            await async_gather(
+                self.xpwm_rgbw_w.off(self._transition * 1000),
+                self.xpwm_rgbw_r.off(self._transition * 1000),
+                self.xpwm_rgbw_g.off(self._transition * 1000),
+                self.xpwm_rgbw_b.off(self._transition * 1000),
+            )
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
             _LOGGER.error(

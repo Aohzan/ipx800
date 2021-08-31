@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.7.0
+
+- Lights fixes and enhancements
+
 ## 2.6.0
 
 - /!\ Home-Assistant >= 2021.9.0 required
