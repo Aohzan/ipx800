@@ -3,7 +3,7 @@
   "name": "GCE IPX800 V4",
   "documentation": "https://github.com/Aohzan/ipx800",
   "issue_tracker": "https://github.com/Aohzan/ipx800/issues",
-  "requirements": ["pypx800==2.2.0"],
+  "requirements": ["pypx800==2.3.0"],
   "dependencies": ["http"],
   "config_flow": true,
   "codeowners": ["@Aohzan"],

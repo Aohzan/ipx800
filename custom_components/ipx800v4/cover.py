@@ -10,6 +10,8 @@ from homeassistant.components.cover import (
     SUPPORT_CLOSE,
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
+    SUPPORT_OPEN_TILT,
+    SUPPORT_CLOSE_TILT,
     SUPPORT_STOP,
     CoverEntity,
 )
@@ -26,6 +28,7 @@ from .const import (
     DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     TYPE_X4VR,
+    TYPE_X4VR_BSO,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,8 +48,7 @@ async def async_setup_entry(
     entities: List[CoverEntity] = []
 
     for device in devices:
-        if device.get(CONF_TYPE) == TYPE_X4VR:
-            entities.append(X4VRCover(device, controller, coordinator))
+        entities.append(X4VRCover(device, controller, coordinator))
 
     async_add_entities(entities, True)
 
@@ -67,6 +69,8 @@ class X4VRCover(IpxEntity, CoverEntity):
         self._attr_supported_features = (
             SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
         )
+        if device_config[CONF_TYPE] == TYPE_X4VR_BSO:
+            self._attr_supported_features += SUPPORT_CLOSE_TILT | SUPPORT_OPEN_TILT
 
     @property
     def is_closed(self) -> bool:
@@ -106,6 +110,26 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Set the cover to a specific position."""
         try:
             await self.control.set_level(kwargs.get(ATTR_POSITION))
+            await self.coordinator.async_request_refresh()
+        except Ipx800RequestError:
+            _LOGGER.error(
+                "An error occurred while set IPX800 cover position: %s", self.name
+            )
+
+    async def async_open_cover_tilt(self, **kwargs):
+        """Open the cover tilt."""
+        try:
+            await self.control.set_pulse_up(20)
+            await self.coordinator.async_request_refresh()
+        except Ipx800RequestError:
+            _LOGGER.error(
+                "An error occurred while set IPX800 tilt position: %s", self.name
+            )
+
+    async def async_close_cover_tilt(self, **kwargs):
+        """Close the cover tilt."""
+        try:
+            await self.control.set_pulse_down(20)
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
             _LOGGER.error(
