@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.0
+
+- Add cover tilt (BSO)
+
 ## 2.7.0
 
 - Lights fixes and enhancements

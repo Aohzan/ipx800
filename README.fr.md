@@ -35,6 +35,7 @@ Vous pouvez contrôller ces types d'appareil :
 - `xpwm_rgb` en tant que light (utilise 3 canaux xpwm)
 - `xpwm_rgbw` en tant que light (utilise 4 canaux xpwm)
 - `x4vr` en tant que cover
+- `x4vr_bso` en tant que cover avec support du BSO
 - `xthl` en tant que sensors
 - `x4fp` en tant que climate
 
