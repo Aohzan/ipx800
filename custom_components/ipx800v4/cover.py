@@ -119,7 +119,7 @@ class X4VRCover(IpxEntity, CoverEntity):
     async def async_open_cover_tilt(self, **kwargs):
         """Open the cover tilt."""
         try:
-            await self.control.set_pulse_up(20)
+            await self.control.set_pulse_up(1)
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
             _LOGGER.error(
@@ -129,7 +129,7 @@ class X4VRCover(IpxEntity, CoverEntity):
     async def async_close_cover_tilt(self, **kwargs):
         """Close the cover tilt."""
         try:
-            await self.control.set_pulse_down(20)
+            await self.control.set_pulse_down(1)
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
             _LOGGER.error(
