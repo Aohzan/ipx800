@@ -37,6 +37,7 @@ You can control by setting the type of the device:
 - `xpwm_rgb` as light (use 3 xpwm channels)
 - `xpwm_rgbw` as light (use 4 xpwm channels)
 - `x4vr` as cover
+- `x4vr_bso` as cover with BSO/tilt support
 - `xthl` as sensors
 - `x4fp` as climate
 
