@@ -1,6 +1,7 @@
 """Support for the GCE IPX800 V4."""
 from base64 import b64decode
 from datetime import timedelta
+from http import HTTPStatus
 import logging
 import re
 
@@ -21,7 +22,6 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_UNIT_OF_MEASUREMENT,
     CONF_USERNAME,
-    HTTP_OK,
 )
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
@@ -390,7 +390,7 @@ class IpxRequestView(HomeAssistantView):
             _LOGGER.debug("Update %s to state %s.", entity_id, state)
             if old_state:
                 hass.states.async_set(entity_id, state, old_state.attributes)
-                return web.Response(status=HTTP_OK, text="OK")
+                return web.Response(status=HTTPStatus.OK, text="OK")
             _LOGGER.warning("Entity not found for state updating: %s", entity_id)
 
 
@@ -427,7 +427,7 @@ class IpxRequestDataView(HomeAssistantView):
                         "Entity not found for state updating: %s", entity_id
                     )
 
-            return web.Response(status=HTTP_OK, text="OK")
+            return web.Response(status=HTTPStatus.OK, text="OK")
 
 
 class ApiCallNotAuthorized(BaseException):
