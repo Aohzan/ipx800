@@ -146,7 +146,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         try:
             return await ipx.global_get()
         except Ipx800InvalidAuthError as err:
-            raise UpdateFailed("Authentication error on Eco-Devices") from err
+            raise UpdateFailed("Authentication error on IPX800") from err
         except Ipx800CannotConnectError as err:
             raise UpdateFailed(f"Failed to communicating with API: {err}") from err
 
@@ -191,6 +191,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         manufacturer="GCE",
         model="IPX800 V4",
         name=entry.data[CONF_NAME],
+        configuration_url=f"http://{ipx.host}:{ipx.port}/"
     )
 
     if CONF_DEVICES not in entry.data:
