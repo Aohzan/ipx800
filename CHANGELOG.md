@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0
+
+- /!\ Entities uniqueid different, remove old entry before restart
+- Add options flow to set update interval
+- Add configuration url
+- Fix XTHL device
+
 ## 2.8.0
 
 - Add cover tilt (BSO)

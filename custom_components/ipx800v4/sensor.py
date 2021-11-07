@@ -57,7 +57,7 @@ async def async_setup_entry(
                     DEVICE_CLASS_TEMPERATURE,
                     "°C",
                     "TEMP",
-                    "Temperature",
+                    suffix_name="Temperature",
                 )
             )
             entities.append(
@@ -68,7 +68,7 @@ async def async_setup_entry(
                     DEVICE_CLASS_HUMIDITY,
                     "%",
                     "HUM",
-                    "Humidity",
+                    suffix_name="Humidity",
                 )
             )
             entities.append(
@@ -79,7 +79,7 @@ async def async_setup_entry(
                     DEVICE_CLASS_ILLUMINANCE,
                     "lx",
                     "LUM",
-                    "Luminance",
+                    suffix_name="Luminance",
                 )
             )
 

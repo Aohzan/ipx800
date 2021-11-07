@@ -1,10 +1,19 @@
 {
-  "title": "GCE IPX800 V4",
   "config": {
     "step": {
       "user": {
         "title": "GCE IPX800 V4",
-        "description": "La configuration de l'intégration se fait via le fichier configuration.yaml. Voir la documentation pour plus d'informations : https://www.home-assistant.io/integrations/ipx800v4."
+        "description": "Configuration depuis le fichier configuration.yaml. Voir la documentation : https://github.com/Aohzan/ipx800."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Interval de scan"
+        },
+        "title": "Options IPX800 V4"
       }
     }
   }

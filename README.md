@@ -65,7 +65,6 @@ ipx800v4:
   - name: IPX800
     host: "192.168.1.240"
     api_key: "apikey"
-    scan_interval: 15
     devices:
       - name: Chaudière
         icon: mdi:water-boiler
