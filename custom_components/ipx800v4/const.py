@@ -36,6 +36,7 @@ TYPE_X4VR = "x4vr"
 TYPE_X4VR_BSO = "x4vr_bso"
 TYPE_XTHL = "xthl"
 TYPE_X4FP = "x4fp"
+TYPE_COUNTER = "counter"
 
 CONF_COMPONENT_ALLOWED = [
     "light",
@@ -61,6 +62,7 @@ CONF_TYPE_ALLOWED = [
     TYPE_X4VR_BSO,
     TYPE_XTHL,
     TYPE_X4FP,
+    TYPE_COUNTER,
 ]
 
 IPX_PRESET_NONE = "Arret"

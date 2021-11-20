@@ -1,6 +1,7 @@
 """Support for the GCE IPX800 V4."""
 from base64 import b64decode
 from datetime import timedelta
+from http import HTTPStatus
 import logging
 
 from aiohttp import web
@@ -20,7 +21,6 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_UNIT_OF_MEASUREMENT,
     CONF_USERNAME,
-    HTTP_OK,
 )
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
@@ -55,6 +55,7 @@ from .const import (
     PUSH_USERNAME,
     REQUEST_REFRESH_DELAY,
     TYPE_ANALOGIN,
+    TYPE_COUNTER,
     TYPE_DIGITALIN,
     TYPE_RELAY,
     TYPE_VIRTUALANALOGIN,
@@ -134,12 +135,17 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
 
     session = async_get_clientsession(hass, False)
 
+    specific_devices_types = []
+    if any(d[CONF_TYPE] == TYPE_COUNTER for d in config[CONF_DEVICES]):
+        specific_devices_types.append(TYPE_COUNTER)
+
     ipx = IPX800(
         host=config[CONF_HOST],
         port=config[CONF_PORT],
         api_key=config[CONF_API_KEY],
         username=config.get(CONF_USERNAME),
         password=config.get(CONF_PASSWORD),
+        specific_devices_types=specific_devices_types,
         session=session,
     )
 
@@ -408,7 +414,7 @@ class IpxRequestView(HomeAssistantView):
             _LOGGER.debug("Update %s to state %s.", entity_id, state)
             if old_state:
                 hass.states.async_set(entity_id, state, old_state.attributes)
-                return web.Response(status=HTTP_OK, text="OK")
+                return web.Response(status=HTTPStatus.OK, text="OK")
             _LOGGER.warning("Entity not found for state updating: %s", entity_id)
 
 
@@ -445,7 +451,7 @@ class IpxRequestDataView(HomeAssistantView):
                         "Entity not found for state updating: %s", entity_id
                     )
 
-            return web.Response(status=HTTP_OK, text="OK")
+            return web.Response(status=HTTPStatus.OK, text="OK")
 
 
 class ApiCallNotAuthorized(BaseException):
@@ -497,7 +503,7 @@ class IpxEntity(CoordinatorEntity):
         elif self._ipx_type in [TYPE_X4VR, TYPE_X4VR_BSO]:
             configuration_url += "volet.htm"
         elif self._ipx_type in [TYPE_XPWM, TYPE_XPWM_RGB, TYPE_XPWM_RGBW]:
-            configuration_url += "volet.htm"
+            configuration_url += "pwm.htm"
         elif self._ipx_type == TYPE_XDIMMER:
             configuration_url += "dimmer.htm"
         elif self._ipx_type == TYPE_VIRTUALOUT:

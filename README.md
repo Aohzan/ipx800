@@ -40,6 +40,7 @@ You can control by setting the type of the device:
 - `x4vr_bso` as cover with BSO/tilt support
 - `xthl` as sensors
 - `x4fp` as climate
+- `counter` as sensor
 
 ## Push data from the IPX800
 
@@ -123,6 +124,10 @@ ipx800v4:
         name: Radiateur Salle de Bains
         type: relay
         ids: [7, 8]
+      - component: sensor
+        name: Compteur
+        type: counter
+        id: 1
 ```
 
 ## List of configuration parameters
@@ -195,7 +200,7 @@ devices:
     description: type of input/output on the IPX800 or an extension.
     required: true
     type: string
-    values: "relay", "analogin", "virtualanalogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp"
+    values: "relay", "analogin", "virtualanalogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp", "counter"
   id:
     description: id of type output, required for all except xpwm_rgb and xpwm_rgbw type
     required: false

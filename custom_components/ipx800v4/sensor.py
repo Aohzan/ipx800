@@ -23,6 +23,7 @@ from .const import (
     DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     TYPE_ANALOGIN,
+    TYPE_COUNTER,
     TYPE_VIRTUALANALOGIN,
     TYPE_XTHL,
 )
@@ -48,6 +49,8 @@ async def async_setup_entry(
             entities.append(AnalogInSensor(device, controller, coordinator))
         elif device.get(CONF_TYPE) == TYPE_VIRTUALANALOGIN:
             entities.append(VirtualAnalogInSensor(device, controller, coordinator))
+        elif device.get(CONF_TYPE) == TYPE_COUNTER:
+            entities.append(CounterSensor(device, controller, coordinator))
         elif device.get(CONF_TYPE) == TYPE_XTHL:
             entities.append(
                 XTHLSensor(
@@ -93,6 +96,15 @@ class AnalogInSensor(IpxEntity, SensorEntity):
     def native_value(self):
         """Return the current value."""
         return self.coordinator.data[f"A{self._id}"]
+
+
+class CounterSensor(IpxEntity, SensorEntity):
+    """Representation of a IPX sensor through analog input."""
+
+    @property
+    def native_value(self):
+        """Return the current value."""
+        return self.coordinator.data[f"C{self._id}"]
 
 
 class VirtualAnalogInSensor(IpxEntity, SensorEntity):
