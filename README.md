@@ -42,22 +42,6 @@ You can control by setting the type of the device:
 - `x4fp` as climate
 - `counter` as sensor
 
-## Push data from the IPX800
-
-First, if you want to push data from your IPX800, you have to set a password on `push_password` config parameter.
-Then in your IPX800 PUSH configuration, in the `Identifiant` field, set : `ipx800:mypassword`.
-
-You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
-In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
-
-![PUSH configuration example](ipx800_push_configuration_example.jpg)
-
-You can update values of multiple entities with one request (see official wiki: http://gce.ovh/wiki/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
-
-You have to set the `entity_id=$XXYY` separate by a `&`, example : `/api/ipx800v4_data/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06`.
-
-![PUSH data configuration example](ipx800_push_data_configuration_example.jpg)
-
 ## Example
 
 ```yaml
@@ -133,7 +117,6 @@ ipx800v4:
 ## List of configuration parameters
 
 ```yaml
-{% configuration %}
 name:
   description: Name of the IPX800.
   required: true
@@ -169,53 +152,75 @@ push_password:
   required: false
   type: string
 devices:
-  component:
-    description: device type
-    required: true
-    type: string
-    values: "switch", "light", "cover", "sensor" or "binary_sensor"
-  name:
-    description: friendly name of the device
-    required: true
-    type: string
-  device_class:
-    description: custom device_class for binary_sensor and sensor only, see Home Assistant
-    required: false
-    type: string
-  unit_of_measurement:
-    description: set a unit of measurement for sensor only
-    required: false
-    type: string
-  transition:
-    description: transition time in millisecond, for lights only trough X-Dimmer or X-PWM
-    required: false
-    default: 500
-    type: int
-  icon:
-    description: custom icon
-    required: false
-    type: string
-  # Type to control/Get value, only one otherwise the device will not be added
-  type:
-    description: type of input/output on the IPX800 or an extension.
-    required: true
-    type: string
-    values: "relay", "analogin", "virtualanalogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp", "counter"
-  id:
-    description: id of type output, required for all except xpwm_rgb and xpwm_rgbw type
-    required: false
-    type: int
-  ext_id:
-    description: id of X-4VR extension, required only for x4vr and x4fp type
-    required: false
-    type: int
-  ids:
-    description: ids of channel for xpwm_rgb, xpwm_rgbw type or relay as climate component
-    required: false
-    type: list of int
-  default_brightness:
-    description: default brightness for xpwm, xpwm_rgb and xpwm_rgbw only for turn on command (must be between 1 and 255)
-    required: false
-    type: int
-{% endconfiguration %}
+  description: List of your devices configuration (switch of relays, light of X-Dimmer...), see below
+  required: true
+  type: list
 ```
+
+### Devices configuration
+```yaml
+component:
+  description: device type
+  required: true
+  type: string
+  values: "switch", "light", "cover", "sensor" or "binary_sensor"
+name:
+  description: friendly name of the device
+  required: true
+  type: string
+device_class:
+  description: custom device_class for binary_sensor and sensor only, see Home Assistant
+  required: false
+  type: string
+unit_of_measurement:
+  description: set a unit of measurement for sensor only
+  required: false
+  type: string
+transition:
+  description: transition time in millisecond, for lights only trough X-Dimmer or X-PWM
+  required: false
+  default: 500
+  type: int
+icon:
+  description: custom icon
+  required: false
+  type: string
+# Type to control/Get value, only one otherwise the device will not be added
+type:
+  description: type of input/output on the IPX800 or an extension.
+  required: true
+  type: string
+  values: "relay", "analogin", "virtualanalogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp", "counter"
+id:
+  description: id of type output, required for all except xpwm_rgb and xpwm_rgbw type
+  required: false
+  type: int
+ext_id:
+  description: id of X-4VR extension, required only for x4vr and x4fp type
+  required: false
+  type: int
+ids:
+  description: ids of channel for xpwm_rgb, xpwm_rgbw type or relay as climate component
+  required: false
+  type: list of int
+default_brightness:
+  description: default brightness for xpwm, xpwm_rgb and xpwm_rgbw only for turn on command (must be between 1 and 255)
+  required: false
+  type: int
+```
+
+## Push data from the IPX800
+
+First, if you want to push data from your IPX800, you have to set a password on `push_password` config parameter.
+Then in your IPX800 PUSH configuration, in the `Identifiant` field, set : `ipx800:mypassword`.
+
+You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
+In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
+
+![PUSH configuration example](ipx800_push_configuration_example.jpg)
+
+You can update values of multiple entities with one request (see official wiki: http://gce.ovh/wiki/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
+
+You have to set the `entity_id=$XXYY` separate by a `&`, example : `/api/ipx800v4_data/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06`.
+
+![PUSH data configuration example](ipx800_push_data_configuration_example.jpg)
