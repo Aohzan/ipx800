@@ -3,7 +3,7 @@
 ## 3.2.0
 
 - Add API to ask a full state refresh
-- Code improvments
+- Code improvements
 
 ## 3.1.0
 
