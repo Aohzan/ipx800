@@ -1,12 +1,12 @@
 """Support for IPX800 V4 switches."""
 import logging
-from typing import List
 
 from pypx800 import IPX800, Ipx800RequestError, Relay, VInput, VOutput
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import IpxEntity
@@ -29,14 +29,14 @@ PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the IPX800 switches."""
     controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["switch"]
 
-    entities: List[SwitchEntity] = []
+    entities: list[SwitchEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_RELAY:
@@ -57,7 +57,7 @@ class RelaySwitch(IpxEntity, SwitchEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the RelaySwitch."""
         super().__init__(device_config, ipx, coordinator)
         self.control = Relay(ipx, self._id)
@@ -102,7 +102,7 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the VirtualOutSwitch."""
         super().__init__(device_config, ipx, coordinator)
         self.control = VOutput(ipx, self._id)
@@ -149,7 +149,7 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the VirtualInSwitch."""
         super().__init__(device_config, ipx, coordinator)
         self.control = VInput(ipx, self._id)

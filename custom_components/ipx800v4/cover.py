@@ -1,6 +1,5 @@
 """Support for IPX800 V4 covers."""
 import logging
-from typing import List
 
 from pypx800 import IPX800, X4VR, Ipx800RequestError
 
@@ -8,15 +7,16 @@ from homeassistant.components.cover import (
     ATTR_POSITION,
     DEVICE_CLASS_SHUTTER,
     SUPPORT_CLOSE,
-    SUPPORT_OPEN,
-    SUPPORT_SET_POSITION,
-    SUPPORT_OPEN_TILT,
     SUPPORT_CLOSE_TILT,
+    SUPPORT_OPEN,
+    SUPPORT_OPEN_TILT,
+    SUPPORT_SET_POSITION,
     SUPPORT_STOP,
     CoverEntity,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import IpxEntity
@@ -27,7 +27,6 @@ from .const import (
     COORDINATOR,
     DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
-    TYPE_X4VR,
     TYPE_X4VR_BSO,
 )
 
@@ -38,14 +37,14 @@ PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the IPX800 covers."""
     controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["cover"]
 
-    entities: List[CoverEntity] = []
+    entities: list[CoverEntity] = []
 
     for device in devices:
         entities.append(X4VRCover(device, controller, coordinator))
@@ -61,7 +60,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the X4VRCover."""
         super().__init__(device_config, ipx, coordinator)
         self.control = X4VR(ipx, self._ext_id, self._id)

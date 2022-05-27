@@ -1,7 +1,6 @@
 """Support for IPX800 V4 lights."""
 from asyncio import gather as async_gather
 import logging
-from typing import List
 
 from pypx800 import IPX800, XPWM, Ipx800RequestError, Relay, XDimmer
 
@@ -19,6 +18,7 @@ from homeassistant.components.light import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import IpxEntity
@@ -56,14 +56,14 @@ def scaleto100(value):
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the IPX800 lights."""
     controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["light"]
 
-    entities: List[LightEntity] = []
+    entities: list[LightEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_RELAY:
@@ -88,7 +88,7 @@ class RelayLight(IpxEntity, LightEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
         self.control = Relay(ipx, self._id)
@@ -140,7 +140,7 @@ class XDimmerLight(IpxEntity, LightEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the class XDimmerLight."""
         super().__init__(device_config, ipx, coordinator)
         self.control = XDimmer(ipx, self._id)
@@ -207,7 +207,7 @@ class XPWMLight(IpxEntity, LightEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the XPWMLight."""
         super().__init__(device_config, ipx, coordinator)
         self.control = XPWM(ipx, self._id)
@@ -280,7 +280,7 @@ class XPWMRGBLight(IpxEntity, LightEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the XPWMRGBLight."""
         super().__init__(device_config, ipx, coordinator)
         self.xpwm_rgb_r = XPWM(ipx, self._ids[0])
@@ -415,7 +415,7 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-    ):
+    ) -> None:
         """Initialize the XPWMRGBWLight."""
         super().__init__(device_config, ipx, coordinator)
         self.xpwm_rgbw_r = XPWM(ipx, self._ids[0])

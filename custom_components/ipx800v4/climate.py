@@ -1,6 +1,5 @@
 """Support for IPX800 V4 climates."""
 import logging
-from typing import List
 
 from pypx800 import IPX800, X4FP, Ipx800RequestError, Relay
 
@@ -19,6 +18,7 @@ from homeassistant.components.climate.const import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import IpxEntity
@@ -44,14 +44,14 @@ PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the IPX800 climates."""
     controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["climate"]
 
-    entities: List[ClimateEntity] = []
+    entities: list[ClimateEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_X4FP:

@@ -1,6 +1,5 @@
 """Support for IPX800 V4 sensors."""
 import logging
-from typing import List
 
 from pypx800 import IPX800
 
@@ -12,6 +11,7 @@ from homeassistant.const import (
     DEVICE_CLASS_TEMPERATURE,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import IpxEntity
@@ -35,14 +35,14 @@ PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the IPX800 sensors."""
     controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["sensor"]
 
-    entities: List[SensorEntity] = []
+    entities: list[SensorEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_ANALOGIN:
@@ -128,7 +128,7 @@ class XTHLSensor(IpxEntity, SensorEntity):
         unit_of_measurement: str,
         req_type: str,
         suffix_name: str,
-    ):
+    ) -> None:
         """Initialize the XTHLSensor."""
         super().__init__(device_config, ipx, coordinator, suffix_name)
         self._attr_device_class = device_class

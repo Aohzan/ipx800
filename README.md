@@ -18,10 +18,6 @@ Add the `ipx800v4` entry in your `configuration.yml` (see example below).
 
 The IPX800 must be available during Home Assistant start. If you have an other home automation system which query the IPX800, like Jeedom, disable it during start to ensure it will respond to requests.
 
-## Dependency
-
-[pypix800 python package](https://github.com/Aohzan/pypx800) (installed by Home-Assistant itself, nothing to do here)
-
 ## Description
 
 You can control by setting the type of the device:
@@ -158,6 +154,7 @@ devices:
 ```
 
 ### Devices configuration
+
 ```yaml
 component:
   description: device type
@@ -214,6 +211,8 @@ default_brightness:
 First, if you want to push data from your IPX800, you have to set a password on `push_password` config parameter.
 Then in your IPX800 PUSH configuration, in the `Identifiant` field, set : `ipx800:mypassword`.
 
+By calling the URL `/api/ipx800v4_refresh/` from the IPX800, you ask a state refresh from all IPX800 entities.
+
 You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
 In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
 
@@ -224,3 +223,7 @@ You can update values of multiple entities with one request (see official wiki: 
 You have to set the `entity_id=$XXYY` separate by a `&`, example : `/api/ipx800v4_data/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06`.
 
 ![PUSH data configuration example](ipx800_push_data_configuration_example.jpg)
+
+## Dependency
+
+[pypix800 python package](https://github.com/Aohzan/pypx800) (installed by Home-Assistant itself, nothing to do here)

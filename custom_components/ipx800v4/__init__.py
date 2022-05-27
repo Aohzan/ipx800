@@ -22,12 +22,13 @@ from homeassistant.const import (
     CONF_UNIT_OF_MEASUREMENT,
     CONF_USERNAME,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.debounce import Debouncer
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
@@ -111,7 +112,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the IPX800 from config file."""
     hass.data.setdefault(DOMAIN, {})
 
@@ -126,7 +127,7 @@ async def async_setup(hass: HomeAssistantType, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the IPX800v4."""
     hass.data.setdefault(DOMAIN, {})
 
@@ -224,7 +225,7 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
     devices = build_device_list(config[CONF_DEVICES])
 
     for component in CONF_COMPONENT_ALLOWED:
-        _LOGGER.debug("Load component %s.", component)
+        _LOGGER.debug("Load component %s", component)
         hass.data[DOMAIN][entry.entry_id][CONF_DEVICES][component] = filter_device_list(
             devices, component
         )
@@ -240,16 +241,21 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool
         hass.http.register_view(
             IpxRequestDataView(config[CONF_HOST], config[CONF_PUSH_PASSWORD])
         )
+        hass.http.register_view(
+            IpxRequestRefreshView(
+                config[CONF_HOST], config[CONF_PUSH_PASSWORD], coordinator
+            )
+        )
     else:
         _LOGGER.info(
-            "No %s parameter provided in configuration, skip API call handling for IPX800 PUSH.",
+            "No %s parameter provided in configuration, skip API call handling for IPX800 PUSH",
             CONF_PUSH_PASSWORD,
         )
 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistantType, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     for component in CONF_COMPONENT_ALLOWED:
         await hass.config_entries.async_forward_entry_unload(entry, component)
@@ -275,7 +281,7 @@ def build_device_list(devices_config: list) -> list:
         # Check if component is supported
         if device_config[CONF_COMPONENT] not in CONF_COMPONENT_ALLOWED:
             _LOGGER.error(
-                "Device %s skipped: %s %s not correct or supported.",
+                "Device %s skipped: %s %s not correct or supported",
                 device_config[CONF_NAME],
                 CONF_COMPONENT,
                 device_config[CONF_COMPONENT],
@@ -285,7 +291,7 @@ def build_device_list(devices_config: list) -> list:
         # Check if type is supported
         if device_config[CONF_TYPE] not in CONF_TYPE_ALLOWED:
             _LOGGER.error(
-                "Device %s skipped: %s %s not correct or supported.",
+                "Device %s skipped: %s %s not correct or supported",
                 device_config[CONF_NAME],
                 CONF_TYPE,
                 device_config[CONF_TYPE],
@@ -298,7 +304,7 @@ def build_device_list(devices_config: list) -> list:
             or device_config[CONF_TYPE] == TYPE_X4VR_BSO
         ) and CONF_EXT_ID not in device_config:
             _LOGGER.error(
-                "Device %s skipped: %s must have %s set.",
+                "Device %s skipped: %s must have %s set",
                 device_config[CONF_NAME],
                 TYPE_X4VR,
                 CONF_EXT_ID,
@@ -312,7 +318,7 @@ def build_device_list(devices_config: list) -> list:
             or device_config[CONF_TYPE] == TYPE_XPWM_RGBW
         ):
             _LOGGER.error(
-                "Device %s skipped: %s must be set only for XPWM types.",
+                "Device %s skipped: %s must be set only for XPWM types",
                 device_config[CONF_NAME],
                 CONF_DEFAULT_BRIGHTNESS,
             )
@@ -324,7 +330,7 @@ def build_device_list(devices_config: list) -> list:
             or device_config[CONF_DEFAULT_BRIGHTNESS] > 255
         ):
             _LOGGER.error(
-                "Device %s skipped: %s must be between 1 and 255.",
+                "Device %s skipped: %s must be between 1 and 255",
                 device_config[CONF_NAME],
                 CONF_DEFAULT_BRIGHTNESS,
             )
@@ -340,7 +346,7 @@ def build_device_list(devices_config: list) -> list:
             )
         ) and CONF_IDS not in device_config:
             _LOGGER.error(
-                "Device %s skipped: RGB/RGBW must have %s set.",
+                "Device %s skipped: RGB/RGBW must have %s set",
                 device_config[CONF_NAME],
                 CONF_IDS,
             )
@@ -357,7 +363,7 @@ def build_device_list(devices_config: list) -> list:
             and CONF_ID not in device_config
         ):
             _LOGGER.error(
-                "Device %s skipped: must have %s set.",
+                "Device %s skipped: must have %s set",
                 device_config[CONF_NAME],
                 CONF_ID,
             )
@@ -365,7 +371,7 @@ def build_device_list(devices_config: list) -> list:
 
         devices.append(device_config)
         _LOGGER.info(
-            "Device %s added (component: %s).",
+            "Device %s added (component: %s)",
             device_config[CONF_NAME],
             device_config[CONF_COMPONENT],
         )
@@ -387,8 +393,8 @@ def check_api_auth(request, host, password) -> bool:
     split = header_auth.strip().split(" ")
     if len(split) != 2 or split[0].strip().lower() != "basic":
         raise ApiCallNotAuthorized("Malformed Authorization header")
-    username, password = b64decode(split[1]).decode().split(":", 1)
-    if username != PUSH_USERNAME or password != password:
+    header_username, header_password = b64decode(split[1]).decode().split(":", 1)
+    if header_username != PUSH_USERNAME or header_password != password:
         raise ApiCallNotAuthorized("API call authentication invalid.")
     return True
 
@@ -411,7 +417,7 @@ class IpxRequestView(HomeAssistantView):
         if check_api_auth(request, self.host, self.password):
             hass = request.app["hass"]
             old_state = hass.states.get(entity_id)
-            _LOGGER.debug("Update %s to state %s.", entity_id, state)
+            _LOGGER.debug("Update %s to state %s", entity_id, state)
             if old_state:
                 hass.states.async_set(entity_id, state, old_state.attributes)
                 return web.Response(status=HTTPStatus.OK, text="OK")
@@ -443,7 +449,7 @@ class IpxRequestDataView(HomeAssistantView):
                 )
 
                 old_state = hass.states.get(entity_id)
-                _LOGGER.debug("Update %s to state %s.", entity_id, state)
+                _LOGGER.debug("Update %s to state %s", entity_id, state)
                 if old_state:
                     hass.states.async_set(entity_id, state, old_state.attributes)
                 else:
@@ -451,6 +457,29 @@ class IpxRequestDataView(HomeAssistantView):
                         "Entity not found for state updating: %s", entity_id
                     )
 
+            return web.Response(status=HTTPStatus.OK, text="OK")
+
+
+class IpxRequestRefreshView(HomeAssistantView):
+    """Provide a page for the device to call for send multiple data at once."""
+
+    requires_auth = False
+    url = "/api/ipx800v4_refresh"
+    name = "api:ipx800v4_refresh"
+
+    def __init__(
+        self, host: str, password: str, coordinator: DataUpdateCoordinator
+    ) -> None:
+        """Init the IPX view."""
+        self.host = host
+        self.password = password
+        self.coordinator = coordinator
+        super().__init__()
+
+    async def get(self, request, data):
+        """Respond to requests from the device."""
+        if check_api_auth(request, self.host, self.password):
+            self.coordinator.async_request_refresh()
             return web.Response(status=HTTPStatus.OK, text="OK")
 
 
@@ -467,7 +496,7 @@ class IpxEntity(CoordinatorEntity):
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
         suffix_name: str = "",
-    ):
+    ) -> None:
         """Initialize the device."""
         super().__init__(coordinator)
 
