@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.0
+
+- Replace deprecated `async_get_registry` method
+
 ## 3.2.0
 
 - Add API to ask a full state refresh
