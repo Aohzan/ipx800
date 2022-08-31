@@ -211,7 +211,7 @@ default_brightness:
 First, if you want to push data from your IPX800, you have to set a password on `push_password` config parameter.
 Then in your IPX800 PUSH configuration, in the `Identifiant` field, set : `ipx800:mypassword`.
 
-By calling the URL `/api/ipx800v4_refresh/` from the IPX800, you ask a state refresh from all IPX800 entities.
+By calling the URL `/api/ipx800v4_refresh/on` from the IPX800, you ask a state refresh from all IPX800 entities.
 
 You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
 In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:

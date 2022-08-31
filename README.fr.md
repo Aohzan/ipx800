@@ -44,7 +44,7 @@ Vous pouvez contrôller ces types d'appareil :
 Premièrement, si vous souhaitez poussez des états depuis votre IPX800, vous devez choisir un mot de passe et le préciser dans le paramètre `push_password` de votre configuration.
 Ensuite, dans la configuration PUSH de l'IPX800, dans le champ `Identifiant`, mettez `ipx800:monmotdepasse` (avec la même valeur que le paramètre défini après le `:`).
 
-En faisant un appel PUSH depuis l'IPX sur l'URL `/api/ipx800v4_refresh/`, vous demandez à Home-Assistant de rafraichir l'état de toutes les entités de l'IPX800 V4.
+En faisant un appel PUSH depuis l'IPX sur l'URL `/api/ipx800v4_refresh/on`, vous demandez à Home-Assistant de rafraichir l'état de toutes les entités de l'IPX800 V4.
 
 Vous pouvez mettre à jour la valeur d'une entité en définissant une commande Push dans l'IPX800 via un scénario.
 Utile pour mettre à jour directement un binary_sensor ou un  switch sans attendre la prochaine récupération d'état.

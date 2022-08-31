@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.4.0
+
+- Fix global refresh from push. Update your URL by: `/api/ipx800v4_refresh/on`
+
 ## 3.3.0
 
 - Replace deprecated `async_get_registry` method
