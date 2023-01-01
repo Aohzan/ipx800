@@ -2,7 +2,6 @@
   "config": {
     "step": {
       "user": {
-        "title": "GCE IPX800 V4",
         "description": "Setup have to be done from configuration.yaml. See documentation: https://github.com/Aohzan/ipx800."
       }
     }
