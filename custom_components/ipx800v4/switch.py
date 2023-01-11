@@ -65,7 +65,9 @@ class RelaySwitch(IpxEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"R{self._id}"] == 1
+        if value := self.coordinator.data.get(f"R{self._id}") is not None:
+            return value == 1
+        return None
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on the switch."""
@@ -110,7 +112,9 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"VO{self._id}"] == 1
+        if value := self.coordinator.data.get(f"VO{self._id}") is not None:
+            return value == 1
+        return None
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on the switch."""
@@ -157,7 +161,9 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"VI{self._id}"] == 1
+        if value := self.coordinator.data.get(f"VI{self._id}") is not None:
+            return value == 1
+        return None
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on the switch."""

@@ -95,7 +95,7 @@ class AnalogInSensor(IpxEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the current value."""
-        return self.coordinator.data[f"A{self._id}"]
+        return self.coordinator.data.get(f"A{self._id}")
 
 
 class CounterSensor(IpxEntity, SensorEntity):
@@ -104,7 +104,7 @@ class CounterSensor(IpxEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the current value."""
-        return self.coordinator.data[f"C{self._id}"]
+        return self.coordinator.data.get(f"C{self._id}")
 
 
 class VirtualAnalogInSensor(IpxEntity, SensorEntity):
@@ -113,7 +113,7 @@ class VirtualAnalogInSensor(IpxEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the current value."""
-        return self.coordinator.data[f"VA{self._id}"]
+        return self.coordinator.data.get(f"VA{self._id}")
 
 
 class XTHLSensor(IpxEntity, SensorEntity):
@@ -139,4 +139,4 @@ class XTHLSensor(IpxEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the current value."""
-        return round(self.coordinator.data[f"THL{self._id}-{self._req_type}"], 1)
+        return round(self.coordinator.data.get(f"THL{self._id}-{self._req_type}"), 1)

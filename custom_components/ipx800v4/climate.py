@@ -90,21 +90,25 @@ class X4FPClimate(IpxEntity, ClimateEntity):
     def hvac_mode(self):
         """Return current mode if heating or not."""
         if (
-            self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
-            == IPX_PRESET_NONE
+            value := self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")
+            is not None
         ):
-            return HVAC_MODE_OFF
-        return HVAC_MODE_HEAT
+            if value == IPX_PRESET_NONE:
+                return HVAC_MODE_OFF
+            return HVAC_MODE_HEAT
+        return None
 
     @property
     def hvac_action(self):
         """Return current action if heating or not."""
         if (
-            self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
-            == IPX_PRESET_NONE
+            value := self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")
+            is not None
         ):
-            return CURRENT_HVAC_OFF
-        return CURRENT_HVAC_HEAT
+            if value == IPX_PRESET_NONE:
+                return CURRENT_HVAC_OFF
+            return CURRENT_HVAC_HEAT
+        return None
 
     @property
     def preset_mode(self):
@@ -180,35 +184,36 @@ class RelayClimate(IpxEntity, ClimateEntity):
     @property
     def hvac_mode(self):
         """Return current mode if heating or not."""
-        if (
-            int(self.coordinator.data[f"R{self._ids[0]}"]) == 0
-            and int(self.coordinator.data[f"R{self._ids[1]}"]) == 1
-        ):
-            return HVAC_MODE_OFF
-        return HVAC_MODE_HEAT
+        if state_minus := self.coordinator.data.get(f"R{self._ids[0]}") is not None:
+            if state_plus := self.coordinator.data.get(f"R{self._ids[1]}") is not None:
+                if int(state_minus) == 0 and int(state_plus) == 1:
+                    return HVAC_MODE_OFF
+                return HVAC_MODE_HEAT
+        return None
 
     @property
     def hvac_action(self):
         """Return current action if heating or not."""
-        if (
-            int(self.coordinator.data[f"R{self._ids[0]}"]) == 0
-            and int(self.coordinator.data[f"R{self._ids[1]}"]) == 1
-        ):
-            return CURRENT_HVAC_OFF
-        return CURRENT_HVAC_HEAT
+        if state_minus := self.coordinator.data.get(f"R{self._ids[0]}") is not None:
+            if state_plus := self.coordinator.data.get(f"R{self._ids[1]}") is not None:
+                if int(state_minus) == 0 and int(state_plus) == 1:
+                    return CURRENT_HVAC_OFF
+                return CURRENT_HVAC_HEAT
+        return None
 
     @property
     def preset_mode(self):
         """Return current preset mode from 2 relay states."""
-        state_minus = int(self.coordinator.data[f"R{self._ids[0]}"])
-        state_plus = int(self.coordinator.data[f"R{self._ids[1]}"])
-        switcher = {
-            (0, 0): PRESET_COMFORT,
-            (0, 1): PRESET_NONE,
-            (1, 0): PRESET_AWAY,
-            (1, 1): PRESET_ECO,
-        }
-        return switcher.get((state_minus, state_plus))
+        if state_minus := self.coordinator.data.get(f"R{self._ids[0]}") is not None:
+            if state_plus := self.coordinator.data.get(f"R{self._ids[1]}") is not None:
+                switcher = {
+                    (0, 0): PRESET_COMFORT,
+                    (0, 1): PRESET_NONE,
+                    (1, 0): PRESET_AWAY,
+                    (1, 1): PRESET_ECO,
+                }
+                return switcher.get((state_minus, state_plus))
+        return None
 
     async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         """Set hvac mode."""

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.0
+
+- Don't raise error or return value if the IPX don't send the key for the entity
+
 ## 3.4.0
 
 - Fix global refresh from push. Update your URL by: `/api/ipx800v4_refresh/on`

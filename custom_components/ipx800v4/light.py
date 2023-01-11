@@ -98,7 +98,9 @@ class RelayLight(IpxEntity, LightEntity):
     @property
     def is_on(self) -> bool:
         """Return if the light is on."""
-        return self.coordinator.data[f"R{self._id}"] == 1
+        if value := self.coordinator.data.get(f"R{self._id}") is not None:
+            return value == 1
+        return None
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on the light."""
@@ -152,12 +154,16 @@ class XDimmerLight(IpxEntity, LightEntity):
     @property
     def is_on(self) -> bool:
         """Return if the light is on."""
-        return self.coordinator.data[f"G{self._id}"]["Etat"] == "ON"
+        if value := self.coordinator.data.get(f"G{self._id}") is not None:
+            return value["Etat"] == "ON"
+        return None
 
     @property
     def brightness(self) -> int:
         """Return the brightness of the light."""
-        return scaleto255(self.coordinator.data[f"G{self._id}"]["Valeur"])
+        if value := self.coordinator.data.get(f"G{self._id}") is not None:
+            return scaleto255(value["Valeur"])
+        return None
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on the light."""
@@ -223,12 +229,16 @@ class XPWMLight(IpxEntity, LightEntity):
     @property
     def is_on(self) -> bool:
         """Return if the light is on."""
-        return self.coordinator.data[f"PWM{self._id}"] > 0
+        if value := self.coordinator.data.get(f"PWM{self._id}") is not None:
+            return value > 0
+        return None
 
     @property
     def brightness(self) -> int:
         """Return the brightness of the light."""
-        return scaleto255(self.coordinator.data[f"PWM{self._id}"])
+        if value := self.coordinator.data.get(f"PWM{self._id}") is not None:
+            return scaleto255(value)
+        return None
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on the light."""
