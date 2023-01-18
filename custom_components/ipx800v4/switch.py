@@ -65,7 +65,7 @@ class RelaySwitch(IpxEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        if value := self.coordinator.data.get(f"R{self._id}") is not None:
+        if (value := self.coordinator.data.get(f"R{self._id}")) is not None:
             return value == 1
         return None
 
@@ -112,7 +112,7 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        if value := self.coordinator.data.get(f"VO{self._id}") is not None:
+        if (value := self.coordinator.data.get(f"VO{self._id}")) is not None:
             return value == 1
         return None
 
@@ -161,7 +161,7 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        if value := self.coordinator.data.get(f"VI{self._id}") is not None:
+        if (value := self.coordinator.data.get(f"VI{self._id}")) is not None:
             return value == 1
         return None
 

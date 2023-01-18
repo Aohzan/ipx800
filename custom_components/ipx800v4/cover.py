@@ -74,14 +74,14 @@ class X4VRCover(IpxEntity, CoverEntity):
     @property
     def is_closed(self) -> bool:
         """Return the state."""
-        if value := self.coordinator.data.get(f"VR{self._ext_id}-{self._id}") is not None:
+        if (value := self.coordinator.data.get(f"VR{self._ext_id}-{self._id}")) is not None:
             return value == 100
         return None
 
     @property
     def current_cover_position(self) -> int:
         """Return the current cover position."""
-        if value := self.coordinator.data.get(f"VR{self._ext_id}-{self._id}") is not None:
+        if (value := self.coordinator.data.get(f"VR{self._ext_id}-{self._id}")) is not None:
             return 100 - int(value)
 
     async def async_open_cover(self, **kwargs) -> None:

@@ -90,7 +90,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
     def hvac_mode(self):
         """Return current mode if heating or not."""
         if (
-            value := self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")
+            (value := self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}"))
             is not None
         ):
             if value == IPX_PRESET_NONE:
@@ -102,7 +102,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
     def hvac_action(self):
         """Return current action if heating or not."""
         if (
-            value := self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")
+            (value := self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}"))
             is not None
         ):
             if value == IPX_PRESET_NONE:
