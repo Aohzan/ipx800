@@ -163,7 +163,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def async_update_data():
         """Fetch data from API."""
         try:
-            return await ipx.global_get()
+            data = await ipx.global_get()
+            _LOGGER.debug("Data received by the IPX800", data)
+            return data
         except Ipx800InvalidAuthError as err:
             raise UpdateFailed("Authentication error on IPX800") from err
         except Ipx800CannotConnectError as err:
