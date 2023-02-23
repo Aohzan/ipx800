@@ -1,12 +1,18 @@
 {
   "domain": "ipx800v4",
   "name": "GCE IPX800 V4",
-  "documentation": "https://github.com/Aohzan/ipx800",
-  "issue_tracker": "https://github.com/Aohzan/ipx800/issues",
-  "requirements": ["pypx800==2.4.0"],
-  "dependencies": ["http"],
+  "codeowners": [
+    "@Aohzan"
+  ],
   "config_flow": true,
-  "codeowners": ["@Aohzan"],
-  "version": "3.4.0",
-  "iot_class": "local_polling"
+  "dependencies": [
+    "http"
+  ],
+  "documentation": "https://github.com/Aohzan/ipx800",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Aohzan/ipx800/issues",
+  "requirements": [
+    "pypx800==2.4.0"
+  ],
+  "version": "3.4.0"
 }
