@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.4.1
+
+- Fix API auth check method
+
 ## 3.4.0
 
 - Fix global refresh from push. Update your URL by: `/api/ipx800v4_refresh/on`
