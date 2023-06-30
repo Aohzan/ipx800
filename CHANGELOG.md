@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.4.2
+
+- Fix global push
+
 ## 3.4.1
 
 - Fix API auth check method

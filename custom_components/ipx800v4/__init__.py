@@ -482,7 +482,7 @@ class IpxRequestRefreshView(HomeAssistantView):
         """Respond to requests from the device."""
         if not check_api_auth(request, self.host, self.password):
             return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
-        self.coordinator.async_request_refresh()
+        await self.coordinator.async_request_refresh()
         return web.Response(status=HTTPStatus.OK, text="OK")
 
 
