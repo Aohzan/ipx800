@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.6.0
+
+- Add number entity for VA and counter
+
 ## 3.5.0
 
 - Update code according to deprecations

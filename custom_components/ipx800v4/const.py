@@ -45,6 +45,7 @@ CONF_COMPONENT_ALLOWED = [
     "binary_sensor",
     "cover",
     "climate",
+    "number",
 ]
 
 CONF_TYPE_ALLOWED = [

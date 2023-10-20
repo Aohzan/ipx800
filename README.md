@@ -28,8 +28,8 @@ You can control by setting the type of the device:
 - `virtualout` as switch and binarysensor
 - `virtualin` as switch
 - `digitalin` as binarysensor
-- `analogin` in as sensor
-- `virtualanalogin` in as sensor
+- `analogin` as sensor
+- `virtualanalogin` as sensor or number
 - `xdimmer` as light
 - `xpwm` as light
 - `xpwm_rgb` as light (use 3 xpwm channels)
@@ -38,7 +38,7 @@ You can control by setting the type of the device:
 - `x4vr_bso` as cover with BSO/tilt support
 - `xthl` as sensors
 - `x4fp` as climate
-- `counter` as sensor
+- `counter` as sensor or number
 
 ## Example
 
@@ -106,7 +106,7 @@ ipx800v4:
         name: Radiateur Salle de Bains
         type: relay
         ids: [7, 8]
-      - component: sensor
+      - component: number
         name: Compteur
         type: counter
         id: 1
