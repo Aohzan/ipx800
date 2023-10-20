@@ -3,20 +3,18 @@ import logging
 
 from pypx800 import IPX800, X4FP, Ipx800RequestError, Relay
 
-from homeassistant.components.climate import ClimateEntity
-from homeassistant.components.climate.const import (
-    CURRENT_HVAC_HEAT,
-    CURRENT_HVAC_OFF,
-    HVAC_MODE_HEAT,
-    HVAC_MODE_OFF,
+from homeassistant.components.climate import (
     PRESET_AWAY,
     PRESET_COMFORT,
     PRESET_ECO,
     PRESET_NONE,
-    SUPPORT_PRESET_MODE,
+    ClimateEntity,
+    ClimateEntityFeature,
+    HVACAction,
+    HVACMode,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import TEMP_CELSIUS
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -74,9 +72,9 @@ class X4FPClimate(IpxEntity, ClimateEntity):
         """Initialize the X4FPClimate."""
         super().__init__(device_config, ipx, coordinator)
         self.control = X4FP(ipx, self._ext_id, self._id)
-        self._attr_supported_features = SUPPORT_PRESET_MODE
-        self._attr_temperature_unit = TEMP_CELSIUS
-        self._attr_hvac_modes = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
+        self._attr_supported_features = ClimateEntityFeature.PRESET_MODE
+        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
+        self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
         self._attr_preset_modes = [
             PRESET_COMFORT,
             PRESET_ECO,
@@ -87,27 +85,27 @@ class X4FPClimate(IpxEntity, ClimateEntity):
         ]
 
     @property
-    def hvac_mode(self):
+    def hvac_mode(self) -> HVACMode | None:
         """Return current mode if heating or not."""
         if (
             self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
             == IPX_PRESET_NONE
         ):
-            return HVAC_MODE_OFF
-        return HVAC_MODE_HEAT
+            return HVACMode.OFF
+        return HVACMode.HEAT
 
     @property
-    def hvac_action(self):
+    def hvac_action(self) -> HVACAction | None:
         """Return current action if heating or not."""
         if (
             self.coordinator.data[f"FP{self._ext_id} Zone {self._id}"]
             == IPX_PRESET_NONE
         ):
-            return CURRENT_HVAC_OFF
-        return CURRENT_HVAC_HEAT
+            return HVACAction.OFF
+        return HVACAction.HEATING
 
     @property
-    def preset_mode(self):
+    def preset_mode(self) -> str | None:
         """Return current preset mode."""
         switcher = {
             IPX_PRESET_NONE: PRESET_NONE,
@@ -142,12 +140,12 @@ class X4FPClimate(IpxEntity, ClimateEntity):
                 "An error occurred while set IPX800 climate preset mode: %s", self.name
             )
 
-    async def async_set_hvac_mode(self, hvac_mode: str) -> None:
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
         try:
-            if hvac_mode == HVAC_MODE_HEAT:
+            if hvac_mode == HVACMode.HEAT:
                 await self.control.set_mode(0)
-            elif hvac_mode == HVAC_MODE_OFF:
+            elif hvac_mode == HVACMode.OFF:
                 await self.control.set_mode(3)
             else:
                 _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
@@ -172,33 +170,33 @@ class RelayClimate(IpxEntity, ClimateEntity):
         super().__init__(device_config, ipx, coordinator)
         self.control_minus = Relay(ipx, self._ids[0])
         self.control_plus = Relay(ipx, self._ids[1])
-        self._attr_supported_features = SUPPORT_PRESET_MODE
-        self._attr_temperature_unit = TEMP_CELSIUS
-        self._attr_hvac_modes = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
+        self._attr_supported_features = ClimateEntityFeature.PRESET_MODE
+        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
+        self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
         self._attr_preset_modes = [PRESET_COMFORT, PRESET_ECO, PRESET_AWAY, PRESET_NONE]
 
     @property
-    def hvac_mode(self):
+    def hvac_mode(self) -> HVACMode | None:
         """Return current mode if heating or not."""
         if (
             int(self.coordinator.data[f"R{self._ids[0]}"]) == 0
             and int(self.coordinator.data[f"R{self._ids[1]}"]) == 1
         ):
-            return HVAC_MODE_OFF
-        return HVAC_MODE_HEAT
+            return HVACMode.OFF
+        return HVACMode.HEAT
 
     @property
-    def hvac_action(self):
+    def hvac_action(self) -> HVACAction | None:
         """Return current action if heating or not."""
         if (
             int(self.coordinator.data[f"R{self._ids[0]}"]) == 0
             and int(self.coordinator.data[f"R{self._ids[1]}"]) == 1
         ):
-            return CURRENT_HVAC_OFF
-        return CURRENT_HVAC_HEAT
+            return HVACAction.OFF
+        return HVACAction.HEATING
 
     @property
-    def preset_mode(self):
+    def preset_mode(self) -> str | None:
         """Return current preset mode from 2 relay states."""
         state_minus = int(self.coordinator.data[f"R{self._ids[0]}"])
         state_plus = int(self.coordinator.data[f"R{self._ids[1]}"])
@@ -210,13 +208,13 @@ class RelayClimate(IpxEntity, ClimateEntity):
         }
         return switcher.get((state_minus, state_plus))
 
-    async def async_set_hvac_mode(self, hvac_mode: str) -> None:
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
         try:
-            if hvac_mode == HVAC_MODE_HEAT:
+            if hvac_mode == HVACMode.HEAT:
                 await self.control_minus.off()
                 await self.control_plus.off()
-            elif hvac_mode == HVAC_MODE_OFF:
+            elif hvac_mode == HVACMode.OFF:
                 await self.control_minus.off()
                 await self.control_plus.on()
             else:

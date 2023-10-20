@@ -1,18 +1,14 @@
 """Support for IPX800 V4 covers."""
 import logging
+from typing import Any
 
 from pypx800 import IPX800, X4VR, Ipx800RequestError
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
-    DEVICE_CLASS_SHUTTER,
-    SUPPORT_CLOSE,
-    SUPPORT_CLOSE_TILT,
-    SUPPORT_OPEN,
-    SUPPORT_OPEN_TILT,
-    SUPPORT_SET_POSITION,
-    SUPPORT_STOP,
+    CoverDeviceClass,
     CoverEntity,
+    CoverEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -64,12 +60,17 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Initialize the X4VRCover."""
         super().__init__(device_config, ipx, coordinator)
         self.control = X4VR(ipx, self._ext_id, self._id)
-        self._attr_device_class = DEVICE_CLASS_SHUTTER
+        self._attr_device_class = CoverDeviceClass.SHUTTER
         self._attr_supported_features = (
-            SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+            CoverEntityFeature.OPEN
+            | CoverEntityFeature.CLOSE
+            | CoverEntityFeature.STOP
+            | CoverEntityFeature.SET_POSITION
         )
         if device_config[CONF_TYPE] == TYPE_X4VR_BSO:
-            self._attr_supported_features += SUPPORT_CLOSE_TILT | SUPPORT_OPEN_TILT
+            self._attr_supported_features |= (
+                CoverEntityFeature.CLOSE_TILT | CoverEntityFeature.OPEN_TILT
+            )
 
     @property
     def is_closed(self) -> bool:
@@ -81,7 +82,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Return the current cover position."""
         return 100 - int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"])
 
-    async def async_open_cover(self, **kwargs) -> None:
+    async def async_open_cover(self, **kwargs: Any) -> None:
         """Open cover."""
         try:
             await self.control.on()
@@ -89,7 +90,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         except Ipx800RequestError:
             _LOGGER.error("An error occurred while open IPX800 cover: %s", self.name)
 
-    async def async_close_cover(self, **kwargs) -> None:
+    async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover."""
         try:
             await self.control.off()
@@ -97,7 +98,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         except Ipx800RequestError:
             _LOGGER.error("An error occurred while close IPX800 cover: %s", self.name)
 
-    async def async_stop_cover(self, **kwargs) -> None:
+    async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
         try:
             await self.control.stop()
@@ -105,17 +106,17 @@ class X4VRCover(IpxEntity, CoverEntity):
         except Ipx800RequestError:
             _LOGGER.error("An error occurred while stop IPX800 cover: %s", self.name)
 
-    async def async_set_cover_position(self, **kwargs) -> None:
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Set the cover to a specific position."""
         try:
-            await self.control.set_level(kwargs.get(ATTR_POSITION))
+            await self.control.set_level(kwargs[ATTR_POSITION])
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
             _LOGGER.error(
                 "An error occurred while set IPX800 cover position: %s", self.name
             )
 
-    async def async_open_cover_tilt(self, **kwargs):
+    async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         """Open the cover tilt."""
         try:
             await self.control.set_pulse_up(1)
@@ -125,7 +126,7 @@ class X4VRCover(IpxEntity, CoverEntity):
                 "An error occurred while set IPX800 tilt position: %s", self.name
             )
 
-    async def async_close_cover_tilt(self, **kwargs):
+    async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         """Close the cover tilt."""
         try:
             await self.control.set_pulse_down(1)

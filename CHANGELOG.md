@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.5.0
+
+- Update code according to deprecations
+- Set type for sensor values
+
 ## 3.4.2
 
 - Fix global push
