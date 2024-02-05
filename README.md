@@ -206,7 +206,7 @@ default_brightness:
   description: default brightness for xpwm, xpwm_rgb and xpwm_rgbw only for turn on command (must be between 1 and 255)
   required: false
   type: int
-invert:
+invert_value:
   description: invert the value returned for binary_sensors (on become off and vice versa)
   required: false
   type: bool

@@ -12,7 +12,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from . import IpxEntity
 from .const import (
     CONF_DEVICES,
-    CONF_INVERT,
+    CONF_INVERT_VALUE,
     CONF_TYPE,
     CONTROLLER,
     COORDINATOR,
@@ -40,11 +40,9 @@ async def async_setup_entry(
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_VIRTUALOUT:
-            on_value = 0 if device.get(CONF_INVERT) else 1
-            entities.append(VirtualOutBinarySensor(device, controller, coordinator, on_value))
+            entities.append(VirtualOutBinarySensor(device, controller, coordinator))
         elif device.get(CONF_TYPE) == TYPE_DIGITALIN:
-            on_value = 0 if device.get(CONF_INVERT) else 1
-            entities.append(DigitalInBinarySensor(device, controller, coordinator, on_value))
+            entities.append(DigitalInBinarySensor(device, controller, coordinator))
 
     async_add_entities(entities, True)
 
@@ -57,33 +55,31 @@ class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-        on_value: int
     ) -> None:
         """Initialize the VirtualOutBinarySensor."""
         super().__init__(device_config, ipx, coordinator)
-        self.on_value = on_value
+        self._invert_value = device_config[CONF_INVERT_VALUE]
 
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"VO{self._id}"] == self.on_value
+        return self.coordinator.data[f"VO{self._id}"] == 1 if not self._invert_value else 0
 
 
 class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual In."""
 
-     def __init__(
+    def __init__(
         self,
         device_config: dict,
         ipx: IPX800,
         coordinator: DataUpdateCoordinator,
-        on_value: int
     ) -> None:
         """Initialize the DigitalInBinarySensor."""
         super().__init__(device_config, ipx, coordinator)
-        self.on_value = on_value
+        self._invert_value = device_config[CONF_INVERT_VALUE]
 
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"D{self._id}"] == self.on_value
+        return self.coordinator.data[f"D{self._id}"] == 1 if not self._invert_value else 0
