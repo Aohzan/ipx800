@@ -82,7 +82,7 @@ DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
         vol.Required(CONF_TYPE): cv.string,
         vol.Optional(CONF_ID): cv.positive_int,
         vol.Optional(CONF_IDS): cv.ensure_list,
-        vol.Optional(CONF_INVERT): cv.boolean,
+        vol.Optional(CONF_INVERT, default=False): cv.boolean,
         vol.Optional(CONF_EXT_ID): cv.positive_int,
         vol.Optional(CONF_DEFAULT_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_ICON): cv.icon,
