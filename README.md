@@ -210,6 +210,7 @@ invert_value:
   description: invert the value returned for binary_sensors (on become off and vice versa)
   required: false
   type: bool
+  default: false
 ```
 
 ## Push data from the IPX800
