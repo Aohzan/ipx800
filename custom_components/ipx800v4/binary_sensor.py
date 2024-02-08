@@ -63,7 +63,7 @@ class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"VO{self._id}"] == 1 if not self._invert_value else 0
+        return self.coordinator.data[f"VO{self._id}"] == (1 if not self._invert_value else 0)
 
 
 class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
@@ -82,4 +82,4 @@ class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"D{self._id}"] == 1 if not self._invert_value else 0
+        return self.coordinator.data[f"D{self._id}"] == (1 if not self._invert_value else 0)
