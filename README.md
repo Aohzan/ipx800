@@ -81,6 +81,12 @@ ipx800v4:
         type: digitalin
         icon: mdi:bell-circle-outline
         id: 1
+      - component: binary_sensor
+        name: Porte garage
+        type: digitalin
+        icon: mdi:garage
+        id: 2
+        invert_value: true
       - component: sensor
         device_class: illuminance
         name: Luminosité Cuisine
