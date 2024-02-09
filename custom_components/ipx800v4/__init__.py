@@ -510,6 +510,7 @@ class IpxEntity(CoordinatorEntity):
         self._id = device_config.get(CONF_ID)
         self._ext_id = device_config.get(CONF_EXT_ID)
         self._ids = device_config.get(CONF_IDS, [])
+        self._invert_value = device_config[CONF_INVERT_VALUE]
 
         self._attr_name: str = device_config[CONF_NAME]
         if suffix_name:

@@ -12,7 +12,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from . import IpxEntity
 from .const import (
     CONF_DEVICES,
-    CONF_INVERT_VALUE,
     CONF_TYPE,
     CONTROLLER,
     COORDINATOR,
@@ -50,16 +49,6 @@ async def async_setup_entry(
 class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual Out."""
 
-    def __init__(
-        self,
-        device_config: dict,
-        ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
-    ) -> None:
-        """Initialize the VirtualOutBinarySensor."""
-        super().__init__(device_config, ipx, coordinator)
-        self._invert_value = device_config[CONF_INVERT_VALUE]
-
     @property
     def is_on(self) -> bool:
         """Return the state."""
@@ -68,16 +57,6 @@ class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
 
 class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual In."""
-
-    def __init__(
-        self,
-        device_config: dict,
-        ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
-    ) -> None:
-        """Initialize the DigitalInBinarySensor."""
-        super().__init__(device_config, ipx, coordinator)
-        self._invert_value = device_config[CONF_INVERT_VALUE]
 
     @property
     def is_on(self) -> bool:
