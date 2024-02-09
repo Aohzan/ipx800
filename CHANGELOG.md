@@ -1,6 +1,6 @@
 # Changelog
 
-## next (unreleased)
+## 3.6.1
 
 - Add an option to invert the value read from a binary sensor
 
