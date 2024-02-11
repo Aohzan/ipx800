@@ -35,6 +35,7 @@ TYPE_VIRTUALANALOGIN = "virtualanalogin"
 TYPE_DIGITALIN = "digitalin"
 TYPE_X4VR = "x4vr"
 TYPE_X4VR_BSO = "x4vr_bso"
+TYPE_XENO = "xeno"
 TYPE_XTHL = "xthl"
 TYPE_X4FP = "x4fp"
 TYPE_COUNTER = "counter"
@@ -62,6 +63,7 @@ CONF_TYPE_ALLOWED = [
     TYPE_DIGITALIN,
     TYPE_X4VR,
     TYPE_X4VR_BSO,
+    TYPE_XENO,
     TYPE_XTHL,
     TYPE_X4FP,
     TYPE_COUNTER,
