@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.6.1
+
+- Add an option to invert the value read from a binary sensor
+
 ## 3.6.0
 
 - Add number entity for VA and counter

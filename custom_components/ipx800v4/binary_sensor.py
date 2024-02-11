@@ -1,10 +1,13 @@
 """Support for IPX800 V4 binary sensors."""
 import logging
 
+from pypx800 import IPX800
+
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import IpxEntity
 from .const import (
@@ -49,7 +52,7 @@ class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"VO{self._id}"] == 1
+        return self.coordinator.data[f"VO{self._id}"] == (1 if not self._invert_value else 0)
 
 
 class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
@@ -58,4 +61,4 @@ class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return the state."""
-        return self.coordinator.data[f"D{self._id}"] == 1
+        return self.coordinator.data[f"D{self._id}"] == (1 if not self._invert_value else 0)

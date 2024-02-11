@@ -44,6 +44,7 @@ from .const import (
     CONF_EXT_ID,
     CONF_ID,
     CONF_IDS,
+    CONF_INVERT_VALUE,
     CONF_PUSH_PASSWORD,
     CONF_TRANSITION,
     CONF_TYPE,
@@ -81,6 +82,7 @@ DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
         vol.Required(CONF_TYPE): cv.string,
         vol.Optional(CONF_ID): cv.positive_int,
         vol.Optional(CONF_IDS): cv.ensure_list,
+        vol.Optional(CONF_INVERT_VALUE, default=False): cv.boolean,
         vol.Optional(CONF_EXT_ID): cv.positive_int,
         vol.Optional(CONF_DEFAULT_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_ICON): cv.icon,
@@ -508,6 +510,7 @@ class IpxEntity(CoordinatorEntity):
         self._id = device_config.get(CONF_ID)
         self._ext_id = device_config.get(CONF_EXT_ID)
         self._ids = device_config.get(CONF_IDS, [])
+        self._invert_value = device_config[CONF_INVERT_VALUE]
 
         self._attr_name: str = device_config[CONF_NAME]
         if suffix_name:

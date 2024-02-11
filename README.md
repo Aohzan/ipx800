@@ -81,6 +81,12 @@ ipx800v4:
         type: digitalin
         icon: mdi:bell-circle-outline
         id: 1
+      - component: binary_sensor
+        name: Porte garage
+        type: digitalin
+        icon: mdi:garage
+        id: 2
+        invert_value: true
       - component: sensor
         device_class: illuminance
         name: Luminosité Cuisine
@@ -206,6 +212,11 @@ default_brightness:
   description: default brightness for xpwm, xpwm_rgb and xpwm_rgbw only for turn on command (must be between 1 and 255)
   required: false
   type: int
+invert_value:
+  description: invert the value returned for binary_sensors (on become off and vice versa)
+  required: false
+  type: bool
+  default: false
 ```
 
 ## Push data from the IPX800
