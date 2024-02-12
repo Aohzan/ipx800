@@ -155,4 +155,4 @@ class XENOSensor(IpxEntity, SensorEntity):
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        return round(self.coordinator.data[f"ENO ANALOG{self._id - 121 + 17}"], 1)
+        return round(self.coordinator.data[f"ENO ANALOG{int(self._id) - 121 + 17}"], 1)
