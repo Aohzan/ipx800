@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.7.0
+
+- Add support for analog X-ENO sensors
+
 ## 3.6.1
 
 - Add an option to invert the value read from a binary sensor

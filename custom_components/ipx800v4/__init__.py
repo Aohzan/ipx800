@@ -66,6 +66,7 @@ from .const import (
     TYPE_X4VR,
     TYPE_X4VR_BSO,
     TYPE_XDIMMER,
+    TYPE_XENO,
     TYPE_XPWM,
     TYPE_XPWM_RGB,
     TYPE_XPWM_RGBW,

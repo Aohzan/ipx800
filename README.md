@@ -31,6 +31,7 @@ You can control by setting the type of the device:
 - `analogin` as sensor
 - `virtualanalogin` as sensor or number
 - `xdimmer` as light
+- `xeno` as sensor
 - `xpwm` as light
 - `xpwm_rgb` as light (use 3 xpwm channels)
 - `xpwm_rgbw` as light (use 4 xpwm channels)
@@ -116,6 +117,18 @@ ipx800v4:
         name: Compteur
         type: counter
         id: 1
+      - component: sensor
+        device_class: humidity
+        name: Humidité Salle de Bains
+        type: xeno
+        id: 123
+        unit_of_measurement: "%"
+      - component: sensor
+        device_class: temperature
+        name: Température Salle de Bains
+        type: xeno
+        id: 124
+        unit_of_measurement: "C"
 ```
 
 ## List of configuration parameters
