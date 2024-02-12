@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.6.2
+## 3.7.0
 
 - Add support for analog X-ENO sensors
 
