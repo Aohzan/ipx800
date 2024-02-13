@@ -239,14 +239,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Provide endpoints for the IPX to call to push states
     if CONF_PUSH_PASSWORD in config:
         hass.http.register_view(
-            IpxRequestView(config[CONF_HOST], config[CONF_PUSH_PASSWORD])
+            IpxRequestView(config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD])
         )
         hass.http.register_view(
-            IpxRequestDataView(config[CONF_HOST], config[CONF_PUSH_PASSWORD])
+            IpxRequestDataView(config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD])
         )
         hass.http.register_view(
             IpxRequestRefreshView(
-                config[CONF_HOST], config[CONF_PUSH_PASSWORD], coordinator
+                config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD], coordinator
             )
         )
     else:
@@ -413,8 +413,9 @@ class IpxRequestView(HomeAssistantView):
     url = "/api/ipx800v4/{entity_id}/{state}"
     name = "api:ipx800v4"
 
-    def __init__(self, host: str, password: str) -> None:
+    def __init__(self, name: str, host: str, password: str) -> None:
         """Init the IPX view."""
+        self.extra_urls = [f"/api/ipx800v4/{name}/{{entity_id}}/{{state}}"]
         self.host = host
         self.password = password
         super().__init__()
@@ -439,8 +440,9 @@ class IpxRequestDataView(HomeAssistantView):
     url = "/api/ipx800v4_data/{data}"
     name = "api:ipx800v4_data"
 
-    def __init__(self, host: str, password: str) -> None:
+    def __init__(self, name: str, host: str, password: str) -> None:
         """Init the IPX view."""
+        self.extra_urls = [f"/api/ipx800v4_data/{name}/{{data}}"]
         self.host = host
         self.password = password
         super().__init__()
@@ -473,9 +475,10 @@ class IpxRequestRefreshView(HomeAssistantView):
     name = "api:ipx800v4_refresh"
 
     def __init__(
-        self, host: str, password: str, coordinator: DataUpdateCoordinator
+        self, name: str, host: str, password: str, coordinator: DataUpdateCoordinator
     ) -> None:
         """Init the IPX view."""
+        self.extra_urls = [f"/api/ipx800v4_refresh/{name}/{{data}}"]
         self.host = host
         self.password = password
         self.coordinator = coordinator
