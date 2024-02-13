@@ -256,7 +256,7 @@ Finally, you can also push the states of all IPX entities directly and without n
 
 The labels tested are as follows:
 
--  Relays: `/api/ipx800v4_bulk/relay/$R`
+- Relays: `/api/ipx800v4_bulk/relay/$R`
 - Digital In: `/api/ipx800v4_bulk/digitalin/$D`
 - Virtual In: `/api/ipx800v4_bulk/virtualin/$VI`
 - Virtual Out: `/api/ipx800v4_bulk/virtualout/$VO`
