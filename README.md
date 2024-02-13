@@ -244,11 +244,33 @@ In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
 
 ![PUSH configuration example](ipx800_push_configuration_example.jpg)
 
-You can update values of multiple entities with one request (see official wiki: http://gce.ovh/wiki/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
+You can update values of multiple entities with one request (see official wiki: https://wiki.gce-electronics.com/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
 
 You have to set the `entity_id=$XXYY` separate by a `&`, example : `/api/ipx800v4_data/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06`.
 
 ![PUSH data configuration example](ipx800_push_data_configuration_example.jpg)
+
+Finally, you can also push the states of all IPX entities directly and without naming them using bulk update. For example to update all relays from the IPX800v4 : `/api/ipx800v4_bulk/relay/$R`.
+
+![PUSH bulk configuration example](ipx800_push_bulk_configuration_example.jpg)
+
+The labels tested are as follows:
+
+-  Relays: `/api/ipx800v4_bulk/relay/$R`
+- Digital In: `/api/ipx800v4_bulk/digitalin/$D`
+- Virtual In: `/api/ipx800v4_bulk/virtualin/$VI`
+- Virtual Out: `/api/ipx800v4_bulk/virtualout/$VO`
+
+See official wiki for [more information](https://wiki.gce-electronics.com/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29).
+
+In case you have multiple IPX entries in your configuration, you can specify the name of the IPX in the route: `/api/ipx800v4_bulk/<MY_IPX_NAME>/relay/$R`.
+
+This parameter in the URL is also available for each routes described above:
+
+- `/api/ipx800v4_refresh/<MY_IPX_NAME>/on` : you request a status update to all entities of the IPX800 named "MY_IPX_NAME"
+-  `/api/ipx800v4/<MY_IPX_NAME>/entity_id/state` : you update the status of the "entity_id" on the IPX named "MY_IPX_NAME"
+- `/api/ipx800v4_data/<MY_IPX_NAME>/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06` : you update the statuses of several entities on the IPX named MY_IPX_NAME
+- `/api/ipx800v4_bulk/<MY_IPX_NAME>/relay/$R` : you update the statuses of all relays on the IPX named MY_IPX_NAME
 
 ## Dependency
 

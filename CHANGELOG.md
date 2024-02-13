@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.8.0
+
+- Add new API endpoint to push all states at once from the IPX800 (bulk update). See README for more information
+- Add extra_url for each API endpoint with the IPX name to support push from multiple IPX entries
+
 ## 3.7.0
 
 - Add support for analog X-ENO sensors
