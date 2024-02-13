@@ -239,14 +239,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Provide endpoints for the IPX to call to push states
     if CONF_PUSH_PASSWORD in config:
         hass.http.register_view(
-            IpxRequestView(config[CONF_HOST], config[CONF_PUSH_PASSWORD])
+            IpxRequestView(config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD])
         )
         hass.http.register_view(
-            IpxRequestDataView(config[CONF_HOST], config[CONF_PUSH_PASSWORD])
+            IpxRequestDataView(config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD])
+        )
+        hass.http.register_view(
+            IpxRequestBulkUpdateView(
+                config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD], devices
+            )
         )
         hass.http.register_view(
             IpxRequestRefreshView(
-                config[CONF_HOST], config[CONF_PUSH_PASSWORD], coordinator
+                config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD], coordinator
             )
         )
     else:
@@ -413,8 +418,9 @@ class IpxRequestView(HomeAssistantView):
     url = "/api/ipx800v4/{entity_id}/{state}"
     name = "api:ipx800v4"
 
-    def __init__(self, host: str, password: str) -> None:
+    def __init__(self, name: str, host: str, password: str) -> None:
         """Init the IPX view."""
+        self.extra_urls = [f"/api/ipx800v4/{name}/{{entity_id}}/{{state}}"]
         self.host = host
         self.password = password
         super().__init__()
@@ -439,8 +445,9 @@ class IpxRequestDataView(HomeAssistantView):
     url = "/api/ipx800v4_data/{data}"
     name = "api:ipx800v4_data"
 
-    def __init__(self, host: str, password: str) -> None:
+    def __init__(self, name: str, host: str, password: str) -> None:
         """Init the IPX view."""
+        self.extra_urls = [f"/api/ipx800v4_data/{name}/{{data}}"]
         self.host = host
         self.password = password
         super().__init__()
@@ -464,6 +471,42 @@ class IpxRequestDataView(HomeAssistantView):
 
         return web.Response(status=HTTPStatus.OK, text="OK")
 
+class IpxRequestBulkUpdateView(HomeAssistantView):
+    """Provide a page for the device to call for bulk update all states at once."""
+
+    requires_auth = False
+    url = "/api/ipx800v4_bulk/{device_type}/{data}"
+    name = "api:ipx800v4_bulk"
+
+    def __init__(self, name: str, host: str, password: str, devices : list) -> None:
+        """Init the IPX view."""
+        self.extra_urls = [f"/api/ipx800v4_bulk/{name}/{{device_type}}/{{data}}"]
+        self.host = host
+        self.password = password
+        self.devices = devices
+        super().__init__()
+
+    async def get(self, request, device_type, data):
+        """Respond to requests from the device."""
+        if not check_api_auth(request, self.host, self.password):
+            return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
+        hass = request.app["hass"]
+
+        _LOGGER.debug("Bulk update %s : %s", device_type, data)
+        for device_config in self.devices:
+            index = int(device_config[CONF_ID]) - 1
+            if device_config[CONF_TYPE] == device_type and index >= 0 and index < len(data):
+                entity_id = ".".join([device_config[CONF_COMPONENT], slugify(device_config[CONF_NAME])])
+                state = "on" if data[index] in ["1", "on", "true"] else "off"
+                old_state = hass.states.get(entity_id)
+                if old_state:
+                    if state != old_state.state:
+                        _LOGGER.debug("Update %s to state %s", entity_id, state)
+                        hass.states.async_set(entity_id, state, old_state.attributes)
+                else:
+                    _LOGGER.warning("Entity not found for state updating: %s", entity_id)
+
+        return web.Response(status=HTTPStatus.OK, text="OK")
 
 class IpxRequestRefreshView(HomeAssistantView):
     """Provide a page for the device to force refresh data from coordinator."""
@@ -473,9 +516,10 @@ class IpxRequestRefreshView(HomeAssistantView):
     name = "api:ipx800v4_refresh"
 
     def __init__(
-        self, host: str, password: str, coordinator: DataUpdateCoordinator
+        self, name: str, host: str, password: str, coordinator: DataUpdateCoordinator
     ) -> None:
         """Init the IPX view."""
+        self.extra_urls = [f"/api/ipx800v4_refresh/{name}/{{data}}"]
         self.host = host
         self.password = password
         self.coordinator = coordinator

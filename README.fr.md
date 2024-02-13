@@ -54,11 +54,33 @@ Dans `URL ON` et `URL_OFF` mettre `/api/ipx800/entity_id/state`:
 
 ![PUSH configuration example](ipx800_push_configuration_example.jpg)
 
-Vous pouvez également mettre à jour plusieurs entités depuis une seule commande push (voir le wiki officiel : http://gce.ovh/wiki/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
+Vous pouvez également mettre à jour plusieurs entités depuis une seule commande push (voir le wiki officiel : https://wiki.gce-electronics.com/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29)
 
 Vous devez mettre au format `entity_id=$XXYY` séparé par un `&`, exemple : `/api/ipx800v4_data/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06`.
 
 ![PUSH data configuration example](ipx800_push_data_configuration_example.jpg)
+
+Enfin, vous pouvez également mettre à jour les états de toutes les entités d'un seul bloc. Par exemple pour mettre à jour les états de tous les relais à partir de l'IPX800v4 : `/api/ipx800v4_bulk/relay/$R`.
+
+![Exemple de configuration groupée PUSH](ipx800_push_bulk_configuration_example.jpg)
+
+Les étiquettes testées sont les suivantes :
+
+- Relais : `/api/ipx800v4_bulk/relay/$R`
+- Entrée numérique : `/api/ipx800v4_bulk/digitalin/$D`
+- Entrée virtuelle : `/api/ipx800v4_bulk/virtualin/$VI`
+- Sortie virtuelle : `/api/ipx800v4_bulk/virtualout/$VO`
+
+Voir le wiki officiel pour [plus d'informations](https://wiki.gce-electronics.com/index.php?title=API_V4#Inclure_des_.C3.A9tiquettes_dans_les_notifications_.28mail.2C_push_et_GSM.29).
+
+Si vous avez plusieurs entrées IPX dans votre configuration, vous pouvez spécifier le nom de l'IPX dans la route : `/api/ipx800v4_bulk/<MY_IPX_NAME>/relay/$R`.
+
+Ce paramètre dans l'URL est également disponible pour chaque route décrite ci-dessus :
+
+- `/api/ipx800v4_refresh/<MY_IPX_NAME>/on` : vous demandez une mise à jour du statut de toutes les entités de l'IPX800 nommées "MY_IPX_NAME"
+- `/api/ipx800v4/<MY_IPX_NAME>/entity_id/state` : vous mettez à jour le statut de l'"entity_id" sur l'IPX nommé "MY_IPX_NAME"
+- `/api/ipx800v4_data/<MY_IPX_NAME>/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06` : vous mettez à jour les statuts de plusieurs entités sur l'IPX nommée MY_IPX_NAME
+- `/api/ipx800v4_bulk/<MY_IPX_NAME>/relay/$R` : vous mettez à jour les statuts de tous les relais sur l'IPX nommé MY_IPX_NAME
 
 ## Exemple et paramètres de configuration
 
