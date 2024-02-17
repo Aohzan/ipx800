@@ -492,12 +492,13 @@ class IpxRequestBulkUpdateView(HomeAssistantView):
             return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
         hass = request.app["hass"]
 
-        _LOGGER.debug("Bulk update %s : %s", device_type, data)
+        _LOGGER.debug("Bulk update %s from %s : %s", device_type, self.host, data)
         for device_config in self.devices:
             index = int(device_config[CONF_ID]) - 1
             if device_config[CONF_TYPE] == device_type and index >= 0 and index < len(data):
                 entity_id = ".".join([device_config[CONF_COMPONENT], slugify(device_config[CONF_NAME])])
-                state = "on" if data[index] in ["1", "on", "true"] else "off"
+                invert_value = device_config[CONF_INVERT_VALUE] if CONF_INVERT_VALUE in device_config else False
+                state = "on" if data[index] == ("0" if invert_value else "1") else "off"
                 old_state = hass.states.get(entity_id)
                 if old_state:
                     if state != old_state.state:
