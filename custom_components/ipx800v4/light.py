@@ -1,4 +1,5 @@
 """Support for IPX800 V4 lights."""
+
 from asyncio import gather as async_gather
 import logging
 from typing import Any
@@ -19,7 +20,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxEntity
 from .const import (
     CONF_DEFAULT_BRIGHTNESS,
     CONF_DEVICES,
@@ -36,6 +36,7 @@ from .const import (
     TYPE_XPWM_RGB,
     TYPE_XPWM_RGBW,
 )
+from .entity import IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -107,7 +108,7 @@ class RelayLight(IpxEntity, LightEntity):
             _LOGGER.error(
                 "An error occurred while turning on IPX800 light: %s", self.name
             )
-            return None
+            return
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
@@ -118,7 +119,7 @@ class RelayLight(IpxEntity, LightEntity):
             _LOGGER.error(
                 "An error occurred while turning off IPX800 light: %s", self.name
             )
-            return None
+            return
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the light."""
@@ -127,7 +128,7 @@ class RelayLight(IpxEntity, LightEntity):
             await self.coordinator.async_request_refresh()
         except Ipx800RequestError:
             _LOGGER.error("An error occurred while toggle IPX800 light: %s", self.name)
-            return None
+            return
 
 
 class XDimmerLight(IpxEntity, LightEntity):

@@ -1,4 +1,5 @@
 """Support for the GCE IPX800 V4."""
+
 from base64 import b64decode
 from datetime import timedelta
 from http import HTTPStatus
@@ -21,6 +22,7 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_UNIT_OF_MEASUREMENT,
     CONF_USERNAME,
+    Platform,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -29,22 +31,15 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-    UpdateFailed,
-)
-from homeassistant.util import slugify
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     CONF_COMPONENT,
-    CONF_COMPONENT_ALLOWED,
     CONF_DEFAULT_BRIGHTNESS,
     CONF_DEVICES,
     CONF_EXT_ID,
     CONF_ID,
     CONF_IDS,
-    CONF_INVERT_VALUE,
     CONF_PUSH_PASSWORD,
     CONF_TRANSITION,
     CONF_TYPE,
@@ -56,25 +51,28 @@ from .const import (
     DOMAIN,
     PUSH_USERNAME,
     REQUEST_REFRESH_DELAY,
-    TYPE_ANALOGIN,
     TYPE_COUNTER,
-    TYPE_DIGITALIN,
     TYPE_RELAY,
-    TYPE_VIRTUALANALOGIN,
-    TYPE_VIRTUALIN,
-    TYPE_VIRTUALOUT,
     TYPE_X4VR,
     TYPE_X4VR_BSO,
-    TYPE_XDIMMER,
-    TYPE_XENO,
     TYPE_XPWM,
     TYPE_XPWM_RGB,
     TYPE_XPWM_RGBW,
-    TYPE_XTHL,
     UNDO_UPDATE_LISTENER,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.CLIMATE,
+    Platform.COVER,
+    Platform.LIGHT,
+    Platform.NUMBER,
+    Platform.SENSOR,
+    Platform.SWITCH,
+]
 
 DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
     {
@@ -83,7 +81,6 @@ DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
         vol.Required(CONF_TYPE): cv.string,
         vol.Optional(CONF_ID): cv.positive_int,
         vol.Optional(CONF_IDS): cv.ensure_list,
-        vol.Optional(CONF_INVERT_VALUE, default=False): cv.boolean,
         vol.Optional(CONF_EXT_ID): cv.positive_int,
         vol.Optional(CONF_DEFAULT_BRIGHTNESS): cv.positive_int,
         vol.Optional(CONF_ICON): cv.icon,
@@ -153,9 +150,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         session=session,
     )
 
-    try:
+    async def check_connection():
         if not await ipx.ping():
-            raise Ipx800CannotConnectError()
+            raise Ipx800CannotConnectError
+
+    try:
+        await check_connection()
     except Ipx800CannotConnectError as exception:
         _LOGGER.error(
             "Cannot connect to the IPX800 named %s, check host, port or api_key",
@@ -227,31 +227,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Load each supported component entities from their devices
     devices = build_device_list(config[CONF_DEVICES])
 
-    for component in CONF_COMPONENT_ALLOWED:
+    for component in PLATFORMS:
         _LOGGER.debug("Load component %s", component)
         hass.data[DOMAIN][entry.entry_id][CONF_DEVICES][component] = filter_device_list(
             devices, component
         )
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Provide endpoints for the IPX to call to push states
     if CONF_PUSH_PASSWORD in config:
         hass.http.register_view(
-            IpxRequestView(config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD])
+            IpxRequestView(config[CONF_HOST], config[CONF_PUSH_PASSWORD])
         )
         hass.http.register_view(
-            IpxRequestDataView(config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD])
-        )
-        hass.http.register_view(
-            IpxRequestBulkUpdateView(
-                config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD], devices
-            )
+            IpxRequestDataView(config[CONF_HOST], config[CONF_PUSH_PASSWORD])
         )
         hass.http.register_view(
             IpxRequestRefreshView(
-                config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD], coordinator
+                config[CONF_HOST], config[CONF_PUSH_PASSWORD], coordinator
             )
         )
     else:
@@ -265,7 +259,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    for component in CONF_COMPONENT_ALLOWED:
+    for component in PLATFORMS:
         await hass.config_entries.async_forward_entry_unload(entry, component)
 
     del hass.data[DOMAIN]
@@ -287,7 +281,7 @@ def build_device_list(devices_config: list) -> list:
         _LOGGER.debug("Read device name: %s", device_config.get(CONF_NAME))
 
         # Check if component is supported
-        if device_config[CONF_COMPONENT] not in CONF_COMPONENT_ALLOWED:
+        if device_config[CONF_COMPONENT] not in PLATFORMS:
             _LOGGER.error(
                 "Device %s skipped: %s %s not correct or supported",
                 device_config[CONF_NAME],
@@ -418,9 +412,8 @@ class IpxRequestView(HomeAssistantView):
     url = "/api/ipx800v4/{entity_id}/{state}"
     name = "api:ipx800v4"
 
-    def __init__(self, name: str, host: str, password: str) -> None:
+    def __init__(self, host: str, password: str) -> None:
         """Init the IPX view."""
-        self.extra_urls = [f"/api/ipx800v4/{name}/{{entity_id}}/{{state}}"]
         self.host = host
         self.password = password
         super().__init__()
@@ -436,6 +429,7 @@ class IpxRequestView(HomeAssistantView):
             hass.states.async_set(entity_id, state, old_state.attributes)
             return web.Response(status=HTTPStatus.OK, text="OK")
         _LOGGER.warning("Entity not found for state updating: %s", entity_id)
+        return None
 
 
 class IpxRequestDataView(HomeAssistantView):
@@ -445,9 +439,8 @@ class IpxRequestDataView(HomeAssistantView):
     url = "/api/ipx800v4_data/{data}"
     name = "api:ipx800v4_data"
 
-    def __init__(self, name: str, host: str, password: str) -> None:
+    def __init__(self, host: str, password: str) -> None:
         """Init the IPX view."""
-        self.extra_urls = [f"/api/ipx800v4_data/{name}/{{data}}"]
         self.host = host
         self.password = password
         super().__init__()
@@ -471,43 +464,6 @@ class IpxRequestDataView(HomeAssistantView):
 
         return web.Response(status=HTTPStatus.OK, text="OK")
 
-class IpxRequestBulkUpdateView(HomeAssistantView):
-    """Provide a page for the device to call for bulk update all states at once."""
-
-    requires_auth = False
-    url = "/api/ipx800v4_bulk/{device_type}/{data}"
-    name = "api:ipx800v4_bulk"
-
-    def __init__(self, name: str, host: str, password: str, devices : list) -> None:
-        """Init the IPX view."""
-        self.extra_urls = [f"/api/ipx800v4_bulk/{name}/{{device_type}}/{{data}}"]
-        self.host = host
-        self.password = password
-        self.devices = devices
-        super().__init__()
-
-    async def get(self, request, device_type, data):
-        """Respond to requests from the device."""
-        if not check_api_auth(request, self.host, self.password):
-            return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
-        hass = request.app["hass"]
-
-        _LOGGER.debug("Bulk update %s from %s : %s", device_type, self.host, data)
-        for device_config in self.devices:
-            index = int(device_config[CONF_ID]) - 1
-            if device_config[CONF_TYPE] == device_type and index >= 0 and index < len(data):
-                entity_id = ".".join([device_config[CONF_COMPONENT], slugify(device_config[CONF_NAME])])
-                invert_value = device_config[CONF_INVERT_VALUE] if CONF_INVERT_VALUE in device_config else False
-                state = "on" if data[index] == ("0" if invert_value else "1") else "off"
-                old_state = hass.states.get(entity_id)
-                if old_state:
-                    if state != old_state.state:
-                        _LOGGER.debug("Update %s to state %s", entity_id, state)
-                        hass.states.async_set(entity_id, state, old_state.attributes)
-                else:
-                    _LOGGER.warning("Entity not found for state updating: %s", entity_id)
-
-        return web.Response(status=HTTPStatus.OK, text="OK")
 
 class IpxRequestRefreshView(HomeAssistantView):
     """Provide a page for the device to force refresh data from coordinator."""
@@ -517,10 +473,9 @@ class IpxRequestRefreshView(HomeAssistantView):
     name = "api:ipx800v4_refresh"
 
     def __init__(
-        self, name: str, host: str, password: str, coordinator: DataUpdateCoordinator
+        self, host: str, password: str, coordinator: DataUpdateCoordinator
     ) -> None:
         """Init the IPX view."""
-        self.extra_urls = [f"/api/ipx800v4_refresh/{name}/{{data}}"]
         self.host = host
         self.password = password
         self.coordinator = coordinator
@@ -532,81 +487,3 @@ class IpxRequestRefreshView(HomeAssistantView):
             return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
         await self.coordinator.async_request_refresh()
         return web.Response(status=HTTPStatus.OK, text="OK")
-
-
-class IpxEntity(CoordinatorEntity):
-    """Representation of a IPX800 generic device entity."""
-
-    def __init__(
-        self,
-        device_config: dict,
-        ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
-        suffix_name: str = "",
-    ) -> None:
-        """Initialize the device."""
-        super().__init__(coordinator)
-
-        self.ipx = ipx
-        self._transition = int(
-            device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION) * 1000
-        )
-        self._ipx_type = device_config[CONF_TYPE]
-        self._component = device_config[CONF_COMPONENT]
-        self._id = device_config.get(CONF_ID)
-        self._ext_id = device_config.get(CONF_EXT_ID)
-        self._ids = device_config.get(CONF_IDS, [])
-        self._invert_value = device_config[CONF_INVERT_VALUE]
-
-        self._attr_name: str = device_config[CONF_NAME]
-        if suffix_name:
-            self._attr_name = f"{self._attr_name} {suffix_name}"
-        self._attr_device_class = device_config.get(CONF_DEVICE_CLASS)
-        self._attr_native_unit_of_measurement = device_config.get(
-            CONF_UNIT_OF_MEASUREMENT
-        )
-        self._attr_icon = device_config.get(CONF_ICON)
-        self._attr_unique_id = "_".join(
-            [DOMAIN, self.ipx.host, self._component, slugify(self._attr_name)]
-        )
-
-        configuration_url = f"http://{self.ipx.host}:{self.ipx.port}/admin/"
-        if self._ipx_type == TYPE_RELAY:
-            if self._id:
-                if self._id <= 8:
-                    configuration_url += "output.htm"
-                else:
-                    configuration_url += "8out.htm"
-        elif self._ipx_type in [TYPE_X4VR, TYPE_X4VR_BSO]:
-            configuration_url += "volet.htm"
-        elif self._ipx_type in [TYPE_XPWM, TYPE_XPWM_RGB, TYPE_XPWM_RGBW]:
-            configuration_url += "pwm.htm"
-        elif self._ipx_type == TYPE_XDIMMER:
-            configuration_url += "dimmer.htm"
-        elif self._ipx_type == TYPE_VIRTUALOUT:
-            configuration_url += "virtualout.htm"
-        elif self._ipx_type == TYPE_VIRTUALIN:
-            configuration_url += "virtualin.htm"
-        elif self._ipx_type == TYPE_ANALOGIN:
-            configuration_url += "analog.htm"
-        elif self._ipx_type == TYPE_VIRTUALANALOGIN:
-            configuration_url += "analogVirt.htm"
-        elif self._ipx_type == TYPE_DIGITALIN:
-            if self._id:
-                if self._id <= 8:
-                    configuration_url += "input.htm"
-                else:
-                    configuration_url += "24in.htm"
-        elif self._ipx_type == TYPE_XTHL:
-            configuration_url += "rht.htm"
-        else:
-            configuration_url += "periph.htm"
-
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, slugify(device_config[CONF_NAME]))},
-            "name": device_config[CONF_NAME],
-            "manufacturer": "GCE",
-            "model": "IPX800 V4",
-            "via_device": (DOMAIN, self.ipx.host),
-            "configuration_url": configuration_url,
-        }

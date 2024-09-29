@@ -1,4 +1,5 @@
 """Support for IPX800 V4 covers."""
+
 import logging
 from typing import Any
 
@@ -15,7 +16,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -25,6 +25,7 @@ from .const import (
     GLOBAL_PARALLEL_UPDATES,
     TYPE_X4VR_BSO,
 )
+from .entity import IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -43,7 +44,7 @@ async def async_setup_entry(
     entities: list[CoverEntity] = []
 
     for device in devices:
-        entities.append(X4VRCover(device, controller, coordinator))
+        entities.append(X4VRCover(device, controller, coordinator))  # noqa: PERF401
 
     async_add_entities(entities, True)
 

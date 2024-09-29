@@ -1,4 +1,5 @@
 """Constants for the ipx800v4 integration."""
+
 DOMAIN = "ipx800v4"
 
 CONTROLLER = "controller"
@@ -17,7 +18,6 @@ CONF_COMPONENT = "component"
 CONF_DEFAULT_BRIGHTNESS = "default_brightness"
 CONF_ID = "id"
 CONF_IDS = "ids"
-CONF_INVERT_VALUE = "invert_value"
 CONF_EXT_ID = "ext_id"
 CONF_PUSH_PASSWORD = "push_password"
 CONF_TRANSITION = "transition"
@@ -35,20 +35,9 @@ TYPE_VIRTUALANALOGIN = "virtualanalogin"
 TYPE_DIGITALIN = "digitalin"
 TYPE_X4VR = "x4vr"
 TYPE_X4VR_BSO = "x4vr_bso"
-TYPE_XENO = "xeno"
 TYPE_XTHL = "xthl"
 TYPE_X4FP = "x4fp"
 TYPE_COUNTER = "counter"
-
-CONF_COMPONENT_ALLOWED = [
-    "light",
-    "switch",
-    "sensor",
-    "binary_sensor",
-    "cover",
-    "climate",
-    "number",
-]
 
 CONF_TYPE_ALLOWED = [
     TYPE_RELAY,
@@ -63,7 +52,6 @@ CONF_TYPE_ALLOWED = [
     TYPE_DIGITALIN,
     TYPE_X4VR,
     TYPE_X4VR_BSO,
-    TYPE_XENO,
     TYPE_XTHL,
     TYPE_X4FP,
     TYPE_COUNTER,

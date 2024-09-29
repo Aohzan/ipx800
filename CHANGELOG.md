@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.8.2
+
+- Fix deprecated code
+
 ## 3.8.1
 
 - Fix bulk update API endpoint introduced in previous version with the invert_value option for binary sensor introduced in version 3.6.1

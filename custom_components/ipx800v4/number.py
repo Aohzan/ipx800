@@ -1,4 +1,5 @@
 """Support for IPX800 V4 numbers."""
+
 import logging
 
 from pypx800 import IPX800, Counter, VAInput
@@ -9,7 +10,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -20,6 +20,7 @@ from .const import (
     TYPE_COUNTER,
     TYPE_VIRTUALANALOGIN,
 )
+from .entity import IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -38,10 +39,11 @@ async def async_setup_entry(
     entities: list[NumberEntity] = []
 
     for device in devices:
-        if device.get(CONF_TYPE) == TYPE_VIRTUALANALOGIN:
-            entities.append(VirtualAnalogInNumber(device, controller, coordinator))
-        elif device.get(CONF_TYPE) == TYPE_COUNTER:
-            entities.append(VirtualAnalogInNumber(device, controller, coordinator))
+        if (
+            device.get(CONF_TYPE) == TYPE_VIRTUALANALOGIN
+            or device.get(CONF_TYPE) == TYPE_COUNTER
+        ):
+            entities.append(VirtualAnalogInNumber(device, controller, coordinator))  # noqa: PERF401
 
     async_add_entities(entities, True)
 

@@ -1,4 +1,5 @@
 """Support for IPX800 V4 sensors."""
+
 import logging
 
 from pypx800 import IPX800
@@ -13,7 +14,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -24,9 +24,9 @@ from .const import (
     TYPE_ANALOGIN,
     TYPE_COUNTER,
     TYPE_VIRTUALANALOGIN,
-    TYPE_XENO,
     TYPE_XTHL,
 )
+from .entity import IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -85,14 +85,6 @@ async def async_setup_entry(
                     suffix_name="Luminance",
                 )
             )
-        elif device.get(CONF_TYPE) == TYPE_XENO:
-            entities.append(
-                XENOSensor(
-                    device,
-                    controller,
-                    coordinator,
-                )
-            )
 
     async_add_entities(entities, True)
 
@@ -148,11 +140,3 @@ class XTHLSensor(IpxEntity, SensorEntity):
     def native_value(self) -> float:
         """Return the current value."""
         return round(self.coordinator.data[f"THL{self._id}-{self._req_type}"], 1)
-
-class XENOSensor(IpxEntity, SensorEntity):
-    """Representation of an Enocean sensor."""
-
-    @property
-    def native_value(self) -> float:
-        """Return the current value."""
-        return round(self.coordinator.data[f"ENO ANALOG{int(self._id) - 121 + 17}"], 1)

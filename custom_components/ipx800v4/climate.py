@@ -1,4 +1,5 @@
 """Support for IPX800 V4 climates."""
+
 import logging
 
 from pypx800 import IPX800, X4FP, Ipx800RequestError, Relay
@@ -19,7 +20,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from . import IpxEntity
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -34,6 +34,7 @@ from .const import (
     TYPE_RELAY,
     TYPE_X4FP,
 )
+from .entity import IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -116,7 +117,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
             f"{IPX_PRESET_COMFORT} -2": f"{PRESET_COMFORT} -2",
         }
         return switcher.get(
-            self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")
+            self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")  # type: ignore[arg-type]
         )
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
