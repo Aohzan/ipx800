@@ -460,6 +460,7 @@ class IpxRequestDataView(HomeAssistantView):
 
     def __init__(self, name: str, host: str, password: str) -> None:
         """Init the IPX view."""
+        self.extra_urls = [f"/api/ipx800v4_data/{name}/{{data}}"]
         self.host = host
         self.password = password
         super().__init__()
