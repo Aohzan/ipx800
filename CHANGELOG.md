@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.8.3
+
+- Fix regression introduced in 3.8.2
+
 ## 3.8.2
 
 - Fix deprecated code
@@ -136,7 +140,7 @@
 ## 1.8
 
 - Add X-4FP support
-- Add Fil Pilote through relay support https://www.gce-electronics.com/fr/nos-produits/314-module-diode-fil-pilote-.html
+- Add Fil Pilote through relay support <https://www.gce-electronics.com/fr/nos-produits/314-module-diode-fil-pilote-.html>
 - Fix user/password as optional parameters
 
 ## 1.7

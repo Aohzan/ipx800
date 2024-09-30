@@ -39,10 +39,7 @@ async def async_setup_entry(
     entities: list[NumberEntity] = []
 
     for device in devices:
-        if (
-            device.get(CONF_TYPE) == TYPE_VIRTUALANALOGIN
-            or device.get(CONF_TYPE) == TYPE_COUNTER
-        ):
+        if device.get(CONF_TYPE) in [TYPE_VIRTUALANALOGIN, TYPE_COUNTER]:
             entities.append(VirtualAnalogInNumber(device, controller, coordinator))  # noqa: PERF401
 
     async_add_entities(entities, True)

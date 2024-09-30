@@ -24,6 +24,7 @@ from .const import (
     TYPE_ANALOGIN,
     TYPE_COUNTER,
     TYPE_VIRTUALANALOGIN,
+    TYPE_XENO,
     TYPE_XTHL,
 )
 from .entity import IpxEntity
@@ -85,6 +86,14 @@ async def async_setup_entry(
                     suffix_name="Luminance",
                 )
             )
+        elif device.get(CONF_TYPE) == TYPE_XENO:
+            entities.append(
+                XENOSensor(
+                    device,
+                    controller,
+                    coordinator,
+                )
+            )
 
     async_add_entities(entities, True)
 
@@ -140,3 +149,13 @@ class XTHLSensor(IpxEntity, SensorEntity):
     def native_value(self) -> float:
         """Return the current value."""
         return round(self.coordinator.data[f"THL{self._id}-{self._req_type}"], 1)
+
+
+class XENOSensor(IpxEntity, SensorEntity):
+    """Representation of an Enocean sensor."""
+
+    @property
+    def native_value(self) -> float:
+        """Return the current value."""
+        analog_id = int(str(self._id)) - 121 + 17
+        return round(self.coordinator.data[f"ENO ANALOG{analog_id!s}"], 1)
