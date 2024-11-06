@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.8.4
+
+- Bump pypx800 to 2.5.1
+
 ## 3.8.3
 
 - Fix regression introduced in 3.8.2
