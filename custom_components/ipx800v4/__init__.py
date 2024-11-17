@@ -405,9 +405,6 @@ def filter_device_list(devices: list, component: str) -> list:
 
 def check_api_auth(request, host, password) -> bool:
     """Check authentication on API call."""
-    if request.remote != host:
-        _LOGGER.warning("API call not coming from IPX800 IP")
-        return False
     if "Authorization" not in request.headers:
         _LOGGER.warning("API call no authentication provided")
         return False
