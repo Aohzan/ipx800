@@ -1,0 +1,18 @@
+{
+  "entity": {
+    "climate": {
+      "ipx800v4_climate": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "none": "mdi:power",
+              "away": "mdi:snowflake",
+              "comfort -1": "mdi:circle-slice-5",
+              "comfort -2": "mdi:circle-slice-3"
+            }
+          }
+        }
+      }
+    }
+  }
+}
