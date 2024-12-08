@@ -7,8 +7,8 @@
             "state": {
               "none": "mdi:power",
               "away": "mdi:snowflake",
-              "comfort -1": "mdi:circle-slice-5",
-              "comfort -2": "mdi:circle-slice-3"
+              "comfort -1": "mdi:thermometer-chevron-down",
+              "comfort -2": "mdi:thermometer-minus"
             }
           }
         }
