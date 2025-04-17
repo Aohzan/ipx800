@@ -64,6 +64,8 @@ async def async_setup_entry(
 class X4FPClimate(IpxEntity, ClimateEntity):
     """Representation of a IPX Climate through X4FP."""
 
+    _attr_translation_key = "ipx800v4_climate"
+
     def __init__(
         self,
         device_config: dict,
