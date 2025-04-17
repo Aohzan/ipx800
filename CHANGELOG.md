@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.10.0
+
+- Add capacity to disable check host on push
+
 ## 3.9.1
 
 - Fix translation key and json files
