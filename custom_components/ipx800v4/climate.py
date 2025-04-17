@@ -31,6 +31,8 @@ from .const import (
     IPX_PRESET_COMFORT,
     IPX_PRESET_ECO,
     IPX_PRESET_NONE,
+    PRESET_COMFORT_MINUS_1,
+    PRESET_COMFORT_MINUS_2,
     TYPE_RELAY,
     TYPE_X4FP,
 )
@@ -115,8 +117,8 @@ class X4FPClimate(IpxEntity, ClimateEntity):
             IPX_PRESET_ECO: PRESET_ECO,
             IPX_PRESET_AWAY: PRESET_AWAY,
             IPX_PRESET_COMFORT: PRESET_COMFORT,
-            f"{IPX_PRESET_COMFORT} -1": f"{PRESET_COMFORT} -1",
-            f"{IPX_PRESET_COMFORT} -2": f"{PRESET_COMFORT} -2",
+            f"{IPX_PRESET_COMFORT} -1": PRESET_COMFORT_MINUS_1,
+            f"{IPX_PRESET_COMFORT} -2": PRESET_COMFORT_MINUS_2,
         }
         return switcher.get(
             self.coordinator.data.get(f"FP{self._ext_id} Zone {self._id}")  # type: ignore[arg-type]
