@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.9.0
+
+- Add icon for climate custom preset_mode
+
 ## 3.8.4
 
 - Bump pypx800 to 2.5.1
