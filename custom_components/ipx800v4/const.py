@@ -21,6 +21,7 @@ CONF_IDS = "ids"
 CONF_EXT_ID = "ext_id"
 CONF_INVERT_VALUE = "invert_value"
 CONF_PUSH_PASSWORD = "push_password"
+CONF_PUSH_CHECK_HOST = "push_check_host"
 CONF_TRANSITION = "transition"
 CONF_TYPE = "type"
 

@@ -168,6 +168,11 @@ push_password:
   description: Define a password to allow API calls from IPX800 PUSH
   required: false
   type: string
+push_check_host:
+  description: Check the host of the IPX800 when receiving a push command
+  required: false
+  default: true
+  type: bool
 devices:
   description: List of your devices configuration (switch of relays, light of X-Dimmer...), see below
   required: true
@@ -268,7 +273,7 @@ In case you have multiple IPX entries in your configuration, you can specify the
 This parameter in the URL is also available for each routes described above:
 
 - `/api/ipx800v4_refresh/<MY_IPX_NAME>/on` : you request a status update to all entities of the IPX800 named "MY_IPX_NAME"
--  `/api/ipx800v4/<MY_IPX_NAME>/entity_id/state` : you update the status of the "entity_id" on the IPX named "MY_IPX_NAME"
+- `/api/ipx800v4/<MY_IPX_NAME>/entity_id/state` : you update the status of the "entity_id" on the IPX named "MY_IPX_NAME"
 - `/api/ipx800v4_data/<MY_IPX_NAME>/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06` : you update the statuses of several entities on the IPX named MY_IPX_NAME
 - `/api/ipx800v4_bulk/<MY_IPX_NAME>/relay/$R` : you update the statuses of all relays on the IPX named MY_IPX_NAME
 

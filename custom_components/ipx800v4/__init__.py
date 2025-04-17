@@ -42,6 +42,7 @@ from .const import (
     CONF_ID,
     CONF_IDS,
     CONF_INVERT_VALUE,
+    CONF_PUSH_CHECK_HOST,
     CONF_PUSH_PASSWORD,
     CONF_TRANSITION,
     CONF_TYPE,
@@ -102,6 +103,8 @@ GATEWAY_CONFIG = vol.Schema(
         vol.Optional(CONF_USERNAME): cv.string,
         vol.Optional(CONF_PASSWORD): cv.string,
         vol.Optional(CONF_SCAN_INTERVAL): cv.positive_int,
+        vol.Optional(CONF_PUSH_PASSWORD): cv.string,
+        vol.Optional(CONF_PUSH_CHECK_HOST, default=True): cv.boolean,
         vol.Optional(CONF_DEVICES, default=[]): vol.All(
             cv.ensure_list, [DEVICE_CONFIG_SCHEMA_ENTRY]
         ),
@@ -242,12 +245,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if CONF_PUSH_PASSWORD in config:
         hass.http.register_view(
             IpxRequestView(
-                config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD]
+                config[CONF_NAME],
+                config[CONF_HOST],
+                config[CONF_PUSH_PASSWORD],
+                config[CONF_PUSH_CHECK_HOST],
             )
         )
         hass.http.register_view(
             IpxRequestDataView(
-                config[CONF_NAME], config[CONF_HOST], config[CONF_PUSH_PASSWORD]
+                config[CONF_NAME],
+                config[CONF_HOST],
+                config[CONF_PUSH_PASSWORD],
+                config[CONF_PUSH_CHECK_HOST],
             )
         )
         hass.http.register_view(
@@ -255,6 +264,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 config[CONF_NAME],
                 config[CONF_HOST],
                 config[CONF_PUSH_PASSWORD],
+                config[CONF_PUSH_CHECK_HOST],
                 devices,
             )
         )
@@ -263,6 +273,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 config[CONF_NAME],
                 config[CONF_HOST],
                 config[CONF_PUSH_PASSWORD],
+                config[CONF_PUSH_CHECK_HOST],
                 coordinator,
             )
         )
@@ -403,9 +414,9 @@ def filter_device_list(devices: list, component: str) -> list:
     return list(filter(lambda d: d[CONF_COMPONENT] == component, devices))
 
 
-def check_api_auth(request, host, password) -> bool:
+def check_api_auth(request, host, password, check_host) -> bool:
     """Check authentication on API call."""
-    if request.remote != host:
+    if check_host and request.remote != host:
         _LOGGER.warning("API call not coming from IPX800 IP")
         return False
     if "Authorization" not in request.headers:
@@ -430,16 +441,17 @@ class IpxRequestView(HomeAssistantView):
     url = "/api/ipx800v4/{entity_id}/{state}"
     name = "api:ipx800v4"
 
-    def __init__(self, name: str, host: str, password: str) -> None:
+    def __init__(self, name: str, host: str, password: str, check_host: bool) -> None:
         """Init the IPX view."""
         self.extra_urls = [f"/api/ipx800v4/{name}/{{entity_id}}/{{state}}"]
         self.host = host
         self.password = password
+        self.check_host = check_host
         super().__init__()
 
     async def get(self, request, entity_id, state):
         """Respond to requests from the device."""
-        if not check_api_auth(request, self.host, self.password):
+        if not check_api_auth(request, self.host, self.password, self.check_host):
             return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
         hass = request.app["hass"]
         old_state = hass.states.get(entity_id)
@@ -458,16 +470,17 @@ class IpxRequestDataView(HomeAssistantView):
     url = "/api/ipx800v4_data/{data}"
     name = "api:ipx800v4_data"
 
-    def __init__(self, name: str, host: str, password: str) -> None:
+    def __init__(self, name: str, host: str, password: str, check_host: bool) -> None:
         """Init the IPX view."""
         self.extra_urls = [f"/api/ipx800v4_data/{name}/{{data}}"]
         self.host = host
         self.password = password
+        self.check_host = check_host
         super().__init__()
 
     async def get(self, request, data):
         """Respond to requests from the device."""
-        if not check_api_auth(request, self.host, self.password):
+        if not check_api_auth(request, self.host, self.password, self.check_host):
             return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
         hass = request.app["hass"]
         entities_data = data.split("&")
@@ -492,17 +505,20 @@ class IpxRequestBulkUpdateView(HomeAssistantView):
     url = "/api/ipx800v4_bulk/{device_type}/{data}"
     name = "api:ipx800v4_bulk"
 
-    def __init__(self, name: str, host: str, password: str, devices: list) -> None:
+    def __init__(
+        self, name: str, host: str, password: str, check_host: bool, devices: list
+    ) -> None:
         """Init the IPX view."""
         self.extra_urls = [f"/api/ipx800v4_bulk/{name}/{{device_type}}/{{data}}"]
         self.host = host
         self.password = password
+        self.check_host = check_host
         self.devices = devices
         super().__init__()
 
     async def get(self, request, device_type, data):
         """Respond to requests from the device."""
-        if not check_api_auth(request, self.host, self.password):
+        if not check_api_auth(request, self.host, self.password, self.check_host):
             return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
         hass = request.app["hass"]
         _LOGGER.debug("Bulk update %s from %s : %s", device_type, self.host, data)
@@ -534,18 +550,24 @@ class IpxRequestRefreshView(HomeAssistantView):
     name = "api:ipx800v4_refresh"
 
     def __init__(
-        self, name: str, host: str, password: str, coordinator: DataUpdateCoordinator
+        self,
+        name: str,
+        host: str,
+        password: str,
+        check_host: bool,
+        coordinator: DataUpdateCoordinator,
     ) -> None:
         """Init the IPX view."""
         self.extra_urls = [f"/api/ipx800v4_refresh/{name}/{{data}}"]
         self.host = host
         self.password = password
+        self.check_host = check_host
         self.coordinator = coordinator
         super().__init__()
 
     async def get(self, request, data):
         """Respond to requests from the device."""
-        if not check_api_auth(request, self.host, self.password):
+        if not check_api_auth(request, self.host, self.password, self.check_host):
             return web.Response(status=HTTPStatus.UNAUTHORIZED, text="Unauthorized")
         await self.coordinator.async_request_refresh()
         return web.Response(status=HTTPStatus.OK, text="OK")
