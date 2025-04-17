@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.10.1
+
+- Fix change on climate feature
+
 ## 3.10.0
 
 - Add capacity to disable check host on push

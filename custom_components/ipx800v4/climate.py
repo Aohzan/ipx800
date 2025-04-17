@@ -175,7 +175,12 @@ class RelayClimate(IpxEntity, ClimateEntity):
         super().__init__(device_config, ipx, coordinator)
         self.control_minus = Relay(ipx, self._ids[0])
         self.control_plus = Relay(ipx, self._ids[1])
-        self._attr_supported_features = ClimateEntityFeature.PRESET_MODE
+        self._enable_turn_on_off_backwards_compatibility = False
+        self._attr_supported_features = (
+            ClimateEntityFeature.PRESET_MODE
+            | ClimateEntityFeature.TURN_OFF
+            | ClimateEntityFeature.TURN_ON
+        )
         self._attr_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
         self._attr_preset_modes = [PRESET_COMFORT, PRESET_ECO, PRESET_AWAY, PRESET_NONE]
@@ -212,6 +217,14 @@ class RelayClimate(IpxEntity, ClimateEntity):
             (1, 1): PRESET_ECO,
         }
         return switcher.get((state_minus, state_plus))
+
+    async def async_turn_off(self) -> None:
+        """Turn the climate off."""
+        await self.async_set_hvac_mode(HVACMode.OFF)
+
+    async def async_turn_on(self) -> None:
+        """Turn the climate on."""
+        await self.async_set_hvac_mode(HVACMode.HEAT)
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
