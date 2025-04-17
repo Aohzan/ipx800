@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.9.1
+
+- Fix translation key and json files
+
 ## 3.9.0
 
 - Add icon for climate custom preset_mode

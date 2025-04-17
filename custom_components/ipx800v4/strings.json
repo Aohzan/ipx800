@@ -15,5 +15,19 @@
         "title": "Options IPX800 V4"
       }
     }
+  },
+  "entity": {
+    "climate": {
+      "ipx800v4_climate": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "comfort_minus_1": "Comfort -1",
+              "comfort_minus_2": "Comfort -2"
+            }
+          }
+        }
+      }
+    }
   }
 }

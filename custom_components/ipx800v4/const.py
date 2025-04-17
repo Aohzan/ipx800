@@ -64,3 +64,6 @@ IPX_PRESET_NONE = "Arret"
 IPX_PRESET_ECO = "Eco"
 IPX_PRESET_AWAY = "Hors Gel"
 IPX_PRESET_COMFORT = "Confort"
+
+PRESET_COMFORT_MINUS_1 = "comfort_minus_1"
+PRESET_COMFORT_MINUS_2 = "comfort_minus_2"
