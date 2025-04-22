@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.10.2
+
+- Fix climate preset mode
+
 ## 3.10.1
 
 - Fix change on climate feature

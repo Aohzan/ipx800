@@ -85,8 +85,8 @@ class X4FPClimate(IpxEntity, ClimateEntity):
             PRESET_ECO,
             PRESET_AWAY,
             PRESET_NONE,
-            f"{PRESET_COMFORT} -1",
-            f"{PRESET_COMFORT} -2",
+            PRESET_COMFORT_MINUS_1,
+            PRESET_COMFORT_MINUS_2,
         ]
 
     @property
@@ -111,7 +111,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
 
     @property
     def preset_mode(self) -> str | None:
-        """Return current preset mode."""
+        """Return current preset mode from IPX specific preset name."""
         switcher = {
             IPX_PRESET_NONE: PRESET_NONE,
             IPX_PRESET_ECO: PRESET_ECO,
@@ -131,8 +131,8 @@ class X4FPClimate(IpxEntity, ClimateEntity):
             PRESET_ECO: 1,
             PRESET_AWAY: 2,
             PRESET_NONE: 3,
-            f"{PRESET_COMFORT} -1": 4,
-            f"{PRESET_COMFORT} -2": 5,
+            PRESET_COMFORT_MINUS_1: 4,
+            PRESET_COMFORT_MINUS_2: 5,
         }
         _LOGGER.debug(
             "set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode)
