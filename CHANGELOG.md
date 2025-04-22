@@ -1,8 +1,11 @@
 # Changelog
 
-## 3.10.2
+# [3.11.0](https://github.com/Aohzan/ipx800/compare/3.10.1...3.11.0) (2025-04-22)
 
-- Fix climate preset mode
+
+### Features
+
+* add release ([#69](https://github.com/Aohzan/ipx800/issues/69)) ([f04127f](https://github.com/Aohzan/ipx800/commit/f04127fef103787af7ad00c00588c72d684156a8))
 
 ## 3.10.1
 
