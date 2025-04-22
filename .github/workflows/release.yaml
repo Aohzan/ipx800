@@ -1,12 +1,7 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows:
-      - Validate
-      - Validate with hassfest
-    types:
-      - completed
+  push:
 
 jobs:
   release:
