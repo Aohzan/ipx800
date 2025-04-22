@@ -3,6 +3,18 @@
 # [3.11.0](https://github.com/Aohzan/ipx800/compare/3.10.1...3.11.0) (2025-04-22)
 
 
+### Bug Fixes
+
+* change on climate preset ([b7cb85c](https://github.com/Aohzan/ipx800/commit/b7cb85c5f41f2bee262ab7cc2d53d96fa295988d))
+
+
+### Features
+
+* add release ([#69](https://github.com/Aohzan/ipx800/issues/69)) ([9038385](https://github.com/Aohzan/ipx800/commit/90383850ebfbcb49ad062b5b0457fcae6654e331))
+
+# [3.11.0](https://github.com/Aohzan/ipx800/compare/3.10.1...3.11.0) (2025-04-22)
+
+
 ### Features
 
 * add release ([#69](https://github.com/Aohzan/ipx800/issues/69)) ([f04127f](https://github.com/Aohzan/ipx800/commit/f04127fef103787af7ad00c00588c72d684156a8))
