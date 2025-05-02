@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any
+import asyncio
 
 from pypx800 import IPX800, X4VR, Ipx800RequestError
 
@@ -87,7 +88,9 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Open cover."""
         try:
             await self.control.on()
-            await self.coordinator.async_request_refresh()
+            for i in range(15):
+                await self.coordinator.async_request_refresh()
+                await asyncio.sleep(5)
         except Ipx800RequestError:
             _LOGGER.error("An error occurred while open IPX800 cover: %s", self.name)
 
@@ -95,7 +98,9 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Close cover."""
         try:
             await self.control.off()
-            await self.coordinator.async_request_refresh()
+            for i in range(15):
+                await self.coordinator.async_request_refresh()
+                await asyncio.sleep(5)
         except Ipx800RequestError:
             _LOGGER.error("An error occurred while close IPX800 cover: %s", self.name)
 
@@ -111,7 +116,9 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Set the cover to a specific position."""
         try:
             await self.control.set_level(kwargs[ATTR_POSITION])
-            await self.coordinator.async_request_refresh()
+            for i in range(15):
+                await self.coordinator.async_request_refresh()
+                await asyncio.sleep(5)
         except Ipx800RequestError:
             _LOGGER.error(
                 "An error occurred while set IPX800 cover position: %s", self.name
@@ -121,7 +128,9 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Open the cover tilt."""
         try:
             await self.control.set_pulse_up(1)
-            await self.coordinator.async_request_refresh()
+            for i in range(3):
+                await self.coordinator.async_request_refresh()
+                await asyncio.sleep(5)
         except Ipx800RequestError:
             _LOGGER.error(
                 "An error occurred while set IPX800 tilt position: %s", self.name
@@ -131,7 +140,9 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Close the cover tilt."""
         try:
             await self.control.set_pulse_down(1)
-            await self.coordinator.async_request_refresh()
+            for i in range(3):
+                await self.coordinator.async_request_refresh()
+                await asyncio.sleep(5)
         except Ipx800RequestError:
             _LOGGER.error(
                 "An error occurred while set IPX800 cover position: %s", self.name
