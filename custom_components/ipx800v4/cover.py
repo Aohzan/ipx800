@@ -145,5 +145,5 @@ class X4VRCover(IpxEntity, CoverEntity):
                 await asyncio.sleep(5)
         except Ipx800RequestError:
             _LOGGER.error(
-                "An error occurred while set IPX800 cover position: %s", self.name
+                "An error occurred while set IPX800 cover tilt position: %s", self.name
             )
