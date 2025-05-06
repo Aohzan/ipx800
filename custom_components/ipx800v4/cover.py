@@ -137,7 +137,8 @@ class X4VRCover(IpxEntity, CoverEntity):
                 "An error occurred while set IPX800 cover position: %s", self.name
             )
 
-    async def async_refresh_cover_state(self,repeat:int = 20) -> None:
+    async def async_refresh_cover_state(self,repeat: int = 20) -> None:
+        """Refresh state during the cover operation."""
         if repeat > 20:
             repeat = 20
         if repeat < 1:
