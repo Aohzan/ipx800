@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.12.0](https://github.com/Aohzan/ipx800/compare/3.11.0...3.12.0) (2025-05-06)
+
+### Features
+
+* add state refresh during cover operations ([#71](https://github.com/Aohzan/ipx800/issues/71)) ([555ec3e](https://github.com/Aohzan/ipx800/commit/555ec3ec375d185b83643034a480462437be4734))
+
 ## [3.11.0](https://github.com/Aohzan/ipx800/compare/3.10.1...3.11.0) (2025-04-22)
 
 ### Bug Fixes
