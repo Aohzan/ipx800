@@ -31,8 +31,6 @@ from .entity import IpxEntity
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
-current_task_refresh_state = None
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -90,7 +88,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Open cover."""
         try:
             await self.control.on()
-            await self.async_launch_refresh_state(20)
+            asyncio.create_task(self.async_refresh_cover_state(20))
         except Ipx800RequestError:
             _LOGGER.error("An error occurred while open IPX800 cover: %s", self.name)
 
@@ -98,7 +96,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Close cover."""
         try:
             await self.control.off()
-            await self.async_launch_refresh_state(20)
+            asyncio.create_task(self.async_refresh_cover_state(20))
         except Ipx800RequestError:
             _LOGGER.error("An error occurred while close IPX800 cover: %s", self.name)
 
@@ -114,7 +112,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Set the cover to a specific position."""
         try:
             await self.control.set_level(kwargs[ATTR_POSITION])
-            await self.async_launch_refresh_state(20)
+            asyncio.create_task(self.async_refresh_cover_state(20))
         except Ipx800RequestError:
             _LOGGER.error(
                 "An error occurred while set IPX800 cover position: %s", self.name
@@ -124,7 +122,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Open the cover tilt."""
         try:
             await self.control.set_pulse_up(1)
-            await self.async_launch_refresh_state(3)
+            asyncio.create_task(self.async_refresh_cover_state(3))
         except Ipx800RequestError:
             _LOGGER.error(
                 "An error occurred while set IPX800 tilt position: %s", self.name
@@ -134,19 +132,13 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Close the cover tilt."""
         try:
             await self.control.set_pulse_down(1)
-            await self.async_launch_refresh_state(3)
+            asyncio.create_task(self.async_refresh_cover_state(3))
         except Ipx800RequestError:
             _LOGGER.error(
                 "An error occurred while set IPX800 cover position: %s", self.name
             )
 
-    async def async_launch_refresh_state(self,repeat:int = 20) -> None:
-        global current_task_refresh_state
-        if current_task_refresh_state and not current_task_refresh_state.done():
-            current_task_refresh_state.cancel()
-        current_task_refresh_state = asyncio.create_task(self.async_refresh_cover_state(repeat))
-
-    async def async_refresh_cover_state(self,repeat:int = 20) -> None:
+    async def async_refresh_cover_state(self, repeat: int = 20) -> None:
         if repeat > 20:
             repeat = 20
         if repeat < 1:
