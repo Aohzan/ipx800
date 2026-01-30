@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.12.1](https://github.com/Aohzan/ipx800/compare/3.12.0...3.12.1) (2026-01-30)
+
+### Bug Fixes
+
+* remove URL from translations files ([3366a46](https://github.com/Aohzan/ipx800/commit/3366a46032945486556336e874cc47dbee69bbf5))
+
 ## [3.12.0](https://github.com/Aohzan/ipx800/compare/3.11.0...3.12.0) (2025-05-06)
 
 ### Features
