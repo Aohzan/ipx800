@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.12.3](https://github.com/Aohzan/ipx800/compare/3.12.2...3.12.3) (2026-01-30)
+
+### Bug Fixes
+
+* new error when opening option configflow ([0558e95](https://github.com/Aohzan/ipx800/commit/0558e95a615883cf4c2c0d5202b8a2b3bf71d108))
+
 ## [3.12.2](https://github.com/Aohzan/ipx800/compare/3.12.1...3.12.2) (2026-01-30)
 
 ### Bug Fixes
