@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "description": "Setup have to be done from configuration.yaml. See documentation: https://github.com/Aohzan/ipx800."
+        "description": "Setup have to be done from configuration.yaml, see documentation for more details."
       }
     }
   },

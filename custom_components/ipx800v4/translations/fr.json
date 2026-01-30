@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "description": "Configuration depuis le fichier configuration.yaml. Voir la documentation : https://github.com/Aohzan/ipx800."
+        "description": "Configuration depuis le fichier configuration.yaml, voir la documentation pour plus de détails."
       }
     }
   },
