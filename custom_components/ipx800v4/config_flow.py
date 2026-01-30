@@ -61,10 +61,6 @@ class IpxConfigFlow(ConfigFlow, domain=DOMAIN):
 class Ipx800OptionsFlowHandler(OptionsFlow):
     """Handle a IPX800 options flow."""
 
-    def __init__(self, config_entry) -> None:
-        """Initialize."""
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input=None) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
