@@ -55,7 +55,7 @@ class IpxConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> OptionsFlow:
         """Define the config flow to handle options."""
-        return Ipx800OptionsFlowHandler(config_entry)
+        return Ipx800OptionsFlowHandler()
 
 
 class Ipx800OptionsFlowHandler(OptionsFlow):
