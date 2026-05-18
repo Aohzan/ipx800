@@ -1,0 +1,10 @@
+[project]
+name = "ipx800"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "homeassistant>=2026.2.3",
+    "pypx800>=2.5.1",
+]
