@@ -9,7 +9,8 @@ from aiohttp import web
 from pypx800 import IPX800, Ipx800CannotConnectError, Ipx800InvalidAuthError
 import voluptuous as vol
 
-from homeassistant.components.http import HomeAssistantView
+from homeassistant.helpers.device_registry import DeviceEntry
+from homeassistant.helpers.http import HomeAssistantView
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
     CONF_API_KEY,
@@ -27,6 +28,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.debounce import Debouncer
@@ -299,6 +301,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def _async_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
     """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    """Remove a config entry from a device."""
+    entity_registry = er.async_get(hass)
+    entities = er.async_entries_for_device(entity_registry, device_entry.id)
+    if entities:
+        return False
+
+    device_registry = dr.async_get(hass)
+    device_registry.async_remove_device(device_entry.id)
+    return True
 
 
 def build_device_list(devices_config: list) -> list:
