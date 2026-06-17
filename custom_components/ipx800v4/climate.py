@@ -90,6 +90,11 @@ class X4FPClimate(IpxEntity, ClimateEntity):
         ]
 
     @property
+    def available(self) -> bool:
+        """Return True if the zone data is present in the last update."""
+        return self._data_available(f"FP{self._ext_id} Zone {self._id}")
+
+    @property
     def hvac_mode(self) -> HVACMode | None:
         """Return current mode if heating or not."""
         if (
@@ -184,6 +189,11 @@ class RelayClimate(IpxEntity, ClimateEntity):
         self._attr_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
         self._attr_preset_modes = [PRESET_COMFORT, PRESET_ECO, PRESET_AWAY, PRESET_NONE]
+
+    @property
+    def available(self) -> bool:
+        """Return True if both relay states are present in the last update."""
+        return self._data_available(f"R{self._ids[0]}", f"R{self._ids[1]}")
 
     @property
     def hvac_mode(self) -> HVACMode | None:

@@ -116,3 +116,15 @@ class IpxEntity(CoordinatorEntity):
             "via_device": (DOMAIN, self.ipx.host),
             "configuration_url": configuration_url,
         }
+
+    def _data_available(self, *keys: str) -> bool:
+        """Return True if the last update succeeded and contains all keys.
+
+        Extension data (X4VR, X4FP, X-THL, X-PWM, X-Dimmer...) can be
+        transiently absent from the IPX800 global response. In that case the
+        entity is marked unavailable for the cycle instead of raising a
+        KeyError when its state is computed.
+        """
+        return self.coordinator.last_update_success and all(
+            key in self.coordinator.data for key in keys
+        )
