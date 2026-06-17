@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.13.1](https://github.com/Aohzan/ipx800/compare/3.13.0...3.13.1) (2026-06-17)
+
+### Bug Fixes
+
+* handle missing X4VR key in cover state to avoid KeyError ([f0c89b9](https://github.com/Aohzan/ipx800/commit/f0c89b9f4d1b6dd0fcce242e997cc18d3f9946e7))
+* mark entities unavailable instead of crashing when extension data is missing ([919a1d8](https://github.com/Aohzan/ipx800/commit/919a1d8dc867540e2e67db179bac8eafc4c66b39))
+* mark entities unavailable on missing key for all extensions ([21d10b1](https://github.com/Aohzan/ipx800/commit/21d10b1a58794706cf62d9e8aaa88e3f1f7e49fa))
+
 ## [3.13.0](https://github.com/Aohzan/ipx800/compare/3.12.3...3.13.0) (2026-06-17)
 
 ### Features
