@@ -48,6 +48,11 @@ class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual Out."""
 
     @property
+    def available(self) -> bool:
+        """Return True if the virtual output is present in the last update."""
+        return self._data_available(f"VO{self._id}")
+
+    @property
     def is_on(self) -> bool:
         """Return the state."""
         return self.coordinator.data[f"VO{self._id}"] == (
@@ -57,6 +62,11 @@ class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
 
 class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual In."""
+
+    @property
+    def available(self) -> bool:
+        """Return True if the digital input is present in the last update."""
+        return self._data_available(f"D{self._id}")
 
     @property
     def is_on(self) -> bool:

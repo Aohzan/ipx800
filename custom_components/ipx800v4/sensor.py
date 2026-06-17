@@ -102,6 +102,11 @@ class AnalogInSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through analog input."""
 
     @property
+    def available(self) -> bool:
+        """Return True if the analog input is present in the last update."""
+        return self._data_available(f"A{self._id}")
+
+    @property
     def native_value(self) -> float:
         """Return the current value."""
         return self.coordinator.data[f"A{self._id}"]
@@ -111,6 +116,11 @@ class CounterSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through analog input."""
 
     @property
+    def available(self) -> bool:
+        """Return True if the counter is present in the last update."""
+        return self._data_available(f"C{self._id}")
+
+    @property
     def native_value(self) -> float:
         """Return the current value."""
         return self.coordinator.data[f"C{self._id}"]
@@ -118,6 +128,11 @@ class CounterSensor(IpxEntity, SensorEntity):
 
 class VirtualAnalogInSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through virtual analog input."""
+
+    @property
+    def available(self) -> bool:
+        """Return True if the virtual analog input is present in the last update."""
+        return self._data_available(f"VA{self._id}")
 
     @property
     def native_value(self) -> float:
@@ -146,6 +161,11 @@ class XTHLSensor(IpxEntity, SensorEntity):
         self._req_type = req_type
 
     @property
+    def available(self) -> bool:
+        """Return True if the sensor value is present in the last update."""
+        return self._data_available(f"THL{self._id}-{self._req_type}")
+
+    @property
     def native_value(self) -> float:
         """Return the current value."""
         return round(self.coordinator.data[f"THL{self._id}-{self._req_type}"], 1)
@@ -153,6 +173,12 @@ class XTHLSensor(IpxEntity, SensorEntity):
 
 class XENOSensor(IpxEntity, SensorEntity):
     """Representation of an Enocean sensor."""
+
+    @property
+    def available(self) -> bool:
+        """Return True if the sensor value is present in the last update."""
+        analog_id = int(str(self._id)) - 121 + 17
+        return self._data_available(f"ENO ANALOG{analog_id!s}")
 
     @property
     def native_value(self) -> float:

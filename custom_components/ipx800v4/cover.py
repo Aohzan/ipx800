@@ -76,23 +76,17 @@ class X4VRCover(IpxEntity, CoverEntity):
     @property
     def available(self) -> bool:
         """Return True if the cover level is present in the last update."""
-        return super().available and self.control.key in self.coordinator.data
+        return self._data_available(f"VR{self._ext_id}-{self._id}")
 
     @property
-    def is_closed(self) -> bool | None:
+    def is_closed(self) -> bool:
         """Return the state."""
-        level = self.coordinator.data.get(self.control.key)
-        if level is None:
-            return None
-        return int(level) == 100
+        return int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"]) == 100
 
     @property
-    def current_cover_position(self) -> int | None:
+    def current_cover_position(self) -> int:
         """Return the current cover position."""
-        level = self.coordinator.data.get(self.control.key)
-        if level is None:
-            return None
-        return 100 - int(level)
+        return 100 - int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"])
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open cover."""
