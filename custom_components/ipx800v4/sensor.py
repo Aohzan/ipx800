@@ -177,11 +177,11 @@ class XENOSensor(IpxEntity, SensorEntity):
     @property
     def available(self) -> bool:
         """Return True if the sensor value is present in the last update."""
-        analog_id = int(str(self._id)) - 121 + 17
-        return self._data_available(f"ENO ANALOG{analog_id!s}")
+        analog_id = int(self._id) - 121 + 17
+        return self._data_available(f"ENO ANALOG{analog_id}")
 
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        analog_id = int(str(self._id)) - 121 + 17
-        return round(self.coordinator.data[f"ENO ANALOG{analog_id!s}"], 1)
+        analog_id = int(self._id) - 121 + 17
+        return round(self.coordinator.data[f"ENO ANALOG{analog_id}"], 1)
