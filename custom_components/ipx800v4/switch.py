@@ -65,6 +65,11 @@ class RelaySwitch(IpxEntity, SwitchEntity):
         self.control = Relay(ipx, self._id)
 
     @property
+    def available(self) -> bool:
+        """Return True if the relay state is present in the last update."""
+        return self._data_available(f"R{self._id}")
+
+    @property
     def is_on(self) -> bool:
         """Return the state."""
         return self.coordinator.data[f"R{self._id}"] == 1
@@ -108,6 +113,11 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
         """Initialize the VirtualOutSwitch."""
         super().__init__(device_config, ipx, coordinator)
         self.control = VOutput(ipx, self._id)
+
+    @property
+    def available(self) -> bool:
+        """Return True if the virtual output is present in the last update."""
+        return self._data_available(f"VO{self._id}")
 
     @property
     def is_on(self) -> bool:
@@ -155,6 +165,11 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
         """Initialize the VirtualInSwitch."""
         super().__init__(device_config, ipx, coordinator)
         self.control = VInput(ipx, self._id)
+
+    @property
+    def available(self) -> bool:
+        """Return True if the virtual input is present in the last update."""
+        return self._data_available(f"VI{self._id}")
 
     @property
     def is_on(self) -> bool:

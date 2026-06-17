@@ -95,6 +95,11 @@ class RelayLight(IpxEntity, LightEntity):
         self._attr_color_mode = ColorMode.ONOFF
 
     @property
+    def available(self) -> bool:
+        """Return True if the relay state is present in the last update."""
+        return self._data_available(f"R{self._id}")
+
+    @property
     def is_on(self) -> bool:
         """Return if the light is on."""
         return self.coordinator.data[f"R{self._id}"] == 1
@@ -147,6 +152,11 @@ class XDimmerLight(IpxEntity, LightEntity):
         self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         self._attr_color_mode = ColorMode.BRIGHTNESS
         self._attr_supported_features = LightEntityFeature.TRANSITION
+
+    @property
+    def available(self) -> bool:
+        """Return True if the dimmer data is present in the last update."""
+        return self._data_available(f"G{self._id}")
 
     @property
     def is_on(self) -> bool:
@@ -218,6 +228,11 @@ class XPWMLight(IpxEntity, LightEntity):
         self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         self._attr_color_mode = ColorMode.BRIGHTNESS
         self._attr_supported_features = LightEntityFeature.TRANSITION
+
+    @property
+    def available(self) -> bool:
+        """Return True if the PWM channel is present in the last update."""
+        return self._data_available(f"PWM{self._id}")
 
     @property
     def is_on(self) -> bool:
@@ -293,6 +308,13 @@ class XPWMRGBLight(IpxEntity, LightEntity):
         self._attr_supported_color_modes = {ColorMode.RGB}
         self._attr_color_mode = ColorMode.RGB
         self._attr_supported_features = LightEntityFeature.TRANSITION
+
+    @property
+    def available(self) -> bool:
+        """Return True if all PWM channels are present in the last update."""
+        return self._data_available(
+            f"PWM{self._ids[0]}", f"PWM{self._ids[1]}", f"PWM{self._ids[2]}"
+        )
 
     @property
     def is_on(self) -> bool:
@@ -429,6 +451,16 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
         self._attr_supported_color_modes = {ColorMode.RGBW}
         self._attr_color_mode = ColorMode.RGBW
         self._attr_supported_features = LightEntityFeature.TRANSITION
+
+    @property
+    def available(self) -> bool:
+        """Return True if all PWM channels are present in the last update."""
+        return self._data_available(
+            f"PWM{self._ids[0]}",
+            f"PWM{self._ids[1]}",
+            f"PWM{self._ids[2]}",
+            f"PWM{self._ids[3]}",
+        )
 
     @property
     def is_on(self) -> bool:

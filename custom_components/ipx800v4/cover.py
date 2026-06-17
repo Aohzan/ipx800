@@ -74,6 +74,11 @@ class X4VRCover(IpxEntity, CoverEntity):
             )
 
     @property
+    def available(self) -> bool:
+        """Return True if the cover level is present in the last update."""
+        return self._data_available(f"VR{self._ext_id}-{self._id}")
+
+    @property
     def is_closed(self) -> bool:
         """Return the state."""
         return int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"]) == 100

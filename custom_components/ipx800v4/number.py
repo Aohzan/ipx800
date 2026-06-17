@@ -63,6 +63,11 @@ class CounterNumber(IpxEntity, NumberEntity):
         self.control = Counter(ipx, self._id)
 
     @property
+    def available(self) -> bool:
+        """Return True if the counter is present in the last update."""
+        return self._data_available(f"C{self._id}")
+
+    @property
     def native_value(self) -> float:
         """Return the current value."""
         return self.coordinator.data[f"C{self._id}"]
@@ -84,6 +89,11 @@ class VirtualAnalogInNumber(IpxEntity, NumberEntity):
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
         self.control = VAInput(ipx, self._id)
+
+    @property
+    def available(self) -> bool:
+        """Return True if the virtual analog input is present in the last update."""
+        return self._data_available(f"VA{self._id}")
 
     @property
     def native_value(self) -> float:
