@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.13.0](https://github.com/Aohzan/ipx800/compare/3.12.3...3.13.0) (2026-06-17)
+
+### Features
+
+* allow to delete devices ([#81](https://github.com/Aohzan/ipx800/issues/81)) ([0158058](https://github.com/Aohzan/ipx800/commit/01580585340c3ac5531511001186225823cd3af9))
+
 ## [3.12.3](https://github.com/Aohzan/ipx800/compare/3.12.2...3.12.3) (2026-01-30)
 
 ### Bug Fixes
