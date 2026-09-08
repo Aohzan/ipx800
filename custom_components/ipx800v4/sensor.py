@@ -1,5 +1,6 @@
 """Support for IPX800 V4 sensors."""
 
+from datetime import datetime
 import logging
 
 from pypx800 import IPX800
@@ -27,7 +28,7 @@ from .const import (
     TYPE_XENO,
     TYPE_XTHL,
 )
-from .entity import IpxEntity
+from .entity import IpxDiagnosticEntity, IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -43,7 +44,10 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["sensor"]
 
-    entities: list[SensorEntity] = []
+    entities: list[SensorEntity] = [
+        IpxLastBootSensor(controller, coordinator, "last_boot"),
+        IpxLoadSensor(controller, coordinator, "load"),
+    ]
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_ANALOGIN:
@@ -185,3 +189,26 @@ class XENOSensor(IpxEntity, SensorEntity):
         """Return the current value."""
         analog_id = int(self._id) - 121 + 17
         return round(self.coordinator.data[f"ENO ANALOG{analog_id}"], 1)
+
+
+class IpxLastBootSensor(IpxDiagnosticEntity, SensorEntity):
+    """Controller boot time calculated from its uptime."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return a stable, timezone-aware last boot timestamp."""
+        return self.system_data.get(self._key)
+
+
+class IpxLoadSensor(IpxDiagnosticEntity, SensorEntity):
+    """Controller processing capacity in loops per second."""
+
+    _attr_native_unit_of_measurement = "loops/s"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the raw load indicator; lower values mean higher load."""
+        return self.system_data.get(self._key)

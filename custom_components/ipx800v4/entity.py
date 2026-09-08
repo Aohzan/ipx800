@@ -7,6 +7,7 @@ from homeassistant.const import (
     CONF_ICON,
     CONF_NAME,
     CONF_UNIT_OF_MEASUREMENT,
+    EntityCategory,
 )
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -128,3 +129,30 @@ class IpxEntity(CoordinatorEntity):
         return self.coordinator.last_update_success and all(
             key in self.coordinator.data for key in keys
         )
+
+
+class IpxDiagnosticEntity(CoordinatorEntity):
+    """Diagnostic entity attached directly to the existing controller device."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, ipx: IPX800, coordinator: DataUpdateCoordinator, key: str
+    ) -> None:
+        """Initialize a controller diagnostic."""
+        super().__init__(coordinator)
+        self._key = key
+        self._attr_translation_key = key
+        self._attr_unique_id = f"{DOMAIN}_{ipx.host}_diagnostic_{key}"
+        self._attr_device_info = {"identifiers": {(DOMAIN, ipx.host)}}
+
+    @property
+    def available(self) -> bool:
+        """Return whether this field was present and valid in the last poll."""
+        return super().available and self.system_data.get(self._key) is not None
+
+    @property
+    def system_data(self) -> dict:
+        """Return the latest system snapshot, including failed initial refreshes."""
+        return (self.coordinator.data or {}).get("system", {})

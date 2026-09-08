@@ -28,6 +28,19 @@
           }
         }
       }
+    },
+    "sensor": {
+      "last_boot": {
+        "name": "Last boot"
+      },
+      "load": {
+        "name": "Load"
+      }
+    },
+    "binary_sensor": {
+      "clock_in_sync": {
+        "name": "Clock in sync"
+      }
     }
   }
 }

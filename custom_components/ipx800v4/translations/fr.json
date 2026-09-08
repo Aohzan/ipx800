@@ -28,6 +28,19 @@
           }
         }
       }
+    },
+    "sensor": {
+      "last_boot": {
+        "name": "Dernier démarrage"
+      },
+      "load": {
+        "name": "Charge"
+      }
+    },
+    "binary_sensor": {
+      "clock_in_sync": {
+        "name": "À l’heure"
+      }
     }
   }
 }

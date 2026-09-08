@@ -17,7 +17,7 @@ from .const import (
     TYPE_DIGITALIN,
     TYPE_VIRTUALOUT,
 )
-from .entity import IpxEntity
+from .entity import IpxDiagnosticEntity, IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -33,7 +33,9 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["binary_sensor"]
 
-    entities: list[BinarySensorEntity] = []
+    entities: list[BinarySensorEntity] = [
+        IpxClockBinarySensor(controller, coordinator, "clock_in_sync")
+    ]
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_VIRTUALOUT:
@@ -74,3 +76,17 @@ class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
         return self.coordinator.data[f"D{self._id}"] == (
             1 if not self._invert_value else 0
         )
+
+
+class IpxClockBinarySensor(IpxDiagnosticEntity, BinarySensorEntity):
+    """Whether the controller clock agrees with Home Assistant's local time."""
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True when the clock differs by no more than 60 seconds."""
+        return self.system_data.get(self._key)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Expose the signed clock offset in seconds (IPX minus HA)."""
+        return {"clock_offset_seconds": self.system_data.get("clock_offset")}

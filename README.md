@@ -20,6 +20,20 @@ Add the `ipx800v4` entry in your `configuration.yml` (see example below).
 
 The IPX800 must be available during Home Assistant start. If you have an other home automation system which query the IPX800, like Jeedom, disable it during start to ensure it will respond to requests.
 
+## Controller diagnostics
+
+The general IPX800 device automatically contains three diagnostic entities:
+
+- **Last boot**: a timestamp calculated from the `wuc0` uptime in seconds, using Home Assistant's clock. It does not depend on the IPX clock being correct. The timestamp is kept stable within five seconds of polling jitter and recalculated after an uptime reset or a larger discrepancy.
+- **Load**: the raw `lps0` value in loops per second. Lower values indicate higher load; this is **not a CPU percentage**.
+- **Clock in sync**: on when the IPX date and time differ from Home Assistant's configured local time by no more than 60 seconds. The signed difference is available as `clock_offset_seconds`. Configure both devices for the same time zone. This checks the actual clock, not NTP configuration.
+
+The MAC address is added to the general device's network connections.
+
+These values use one additional `/user/status.xml` request per shared coordinator refresh, after the existing JSON requests. They follow the existing YAML `scan_interval` (or its integration-options override), including requested refreshes through the existing debouncer. No separate polling timer or YAML device entries are needed.
+
+If the IPX web interface is protected, set its `username` and `password` in the gateway YAML configuration; the JSON API key alone does not grant XML access. Missing or invalid XML fields make only the corresponding diagnostic entities unavailable. An XML request failure makes all three diagnostics unavailable for that refresh without discarding successful I/O data; the next refresh retries automatically.
+
 ## Description
 
 You can control by setting the type of the device:
@@ -152,11 +166,11 @@ api_key:
   required: true
   type: string
 username:
-  description: Username (for X-PWM control only)
+  description: Web interface username (for system diagnostics and X-PWM control)
   required: false
   type: string
 password:
-  description: User's password (for X-PWM control only)
+  description: Web interface password (for system diagnostics and X-PWM control)
   required: false
   type: string
 scan_interval:

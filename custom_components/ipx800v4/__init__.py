@@ -66,6 +66,8 @@ from .const import (
     UNDO_UPDATE_LISTENER,
 )
 
+from .system import IpxSystemData
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -171,14 +173,43 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         raise ConfigEntryNotReady from exception
 
+    system = IpxSystemData(
+        session,
+        config[CONF_HOST],
+        config[CONF_PORT],
+        config.get(CONF_USERNAME),
+        config.get(CONF_PASSWORD),
+    )
+    device_registry = dr.async_get(hass)
+    controller_device = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, ipx.host)},
+        manufacturer="GCE",
+        model="IPX800 V4",
+        name=config[CONF_NAME],
+        configuration_url=f"http://{config[CONF_HOST]}:{config[CONF_PORT]}",
+    )
+    controller_mac = None
+
     async def async_update_data():
         """Fetch data from API."""
+        nonlocal controller_mac
         try:
-            return await ipx.global_get()
+            data = await ipx.global_get()
         except Ipx800InvalidAuthError as err:
             raise UpdateFailed("Authentication error on IPX800") from err
         except Ipx800CannotConnectError as err:
             raise UpdateFailed(f"Failed to communicating with API: {err}") from err
+
+        # Sequential requests share the configured scan interval and debouncer.
+        data["system"] = await system.async_get()
+        if (mac := data["system"].get("mac")) and mac != controller_mac:
+            device_registry.async_update_device(
+                controller_device.id,
+                merge_connections={(dr.CONNECTION_NETWORK_MAC, mac)},
+            )
+            controller_mac = mac
+        return data
 
     scan_interval = options.get(
         CONF_SCAN_INTERVAL, config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
@@ -214,17 +245,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         CONF_DEVICES: {},
         UNDO_UPDATE_LISTENER: undo_listener,
     }
-
-    # Create the IPX800 device
-    device_registry = dr.async_get(hass)
-    device_registry.async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers={(DOMAIN, ipx.host)},
-        manufacturer="GCE",
-        model="IPX800 V4",
-        name=config[CONF_NAME],
-        configuration_url=f"http://{config[CONF_HOST]}:{config[CONF_PORT]}",
-    )
 
     if CONF_DEVICES not in config:
         _LOGGER.warning(

@@ -13,6 +13,19 @@
           }
         }
       }
+    },
+    "sensor": {
+      "last_boot": {
+        "default": "mdi:restart"
+      },
+      "load": {
+        "default": "mdi:chip"
+      }
+    },
+    "binary_sensor": {
+      "clock_in_sync": {
+        "default": "mdi:clock-check-outline"
+      }
     }
   }
 }

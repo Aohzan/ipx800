@@ -5,6 +5,20 @@
 Il s'agit d'un _custom component_ pour [Home Assistant](https://www.home-assistant.io/).
 L'intégration `ipx800v4` vous permet de contrôler et d'obtenir des informations de votre [IPX800 v4 et de ses extensions](http://gce-electronics.com/).
 
+## Diagnostic de l’IPX800
+
+L’équipement général IPX800 contient automatiquement trois entités de diagnostic :
+
+- **Dernier démarrage** : date calculée à partir de l’uptime `wuc0` en secondes et de l’horloge de Home Assistant, indépendamment de l’heure de l’IPX. Elle reste stable dans une tolérance de cinq secondes liée aux requêtes et est recalculée lorsque l’uptime diminue ou que l’écart dépasse cette tolérance.
+- **Charge** : valeur brute `lps0`, en cycles par seconde (`loops/s`). Plus elle est basse, plus l’IPX est chargé. Ce n’est **pas un pourcentage CPU**.
+- **À l’heure** : activée lorsque la date et l’heure de l’IPX diffèrent de l’heure locale configurée dans Home Assistant de 60 secondes maximum. L’attribut `clock_offset_seconds` donne l’écart signé (IPX moins HA). Les deux appareils doivent utiliser le même fuseau horaire. Il s’agit d’une comparaison des horloges, pas de l’état de la configuration NTP.
+
+L’adresse MAC est également ajoutée aux informations réseau de cet équipement.
+
+Une seule requête supplémentaire à `/user/status.xml` est effectuée après les requêtes JSON, à chaque rafraîchissement du coordinateur existant. Ces informations suivent le `scan_interval` du YAML (ou sa surcharge dans les options de l’intégration), ainsi que les demandes de rafraîchissement temporisées existantes. Aucun minuteur séparé ni ajout à la liste YAML des équipements n’est nécessaire.
+
+Si l’interface web de l’IPX est protégée, renseigner ses identifiants `username` et `password` dans le YAML de la passerelle : la clé API JSON ne suffit pas pour accéder au XML. Un champ XML absent ou invalide rend uniquement l’entité concernée indisponible. Un échec de lecture XML rend les trois diagnostics indisponibles pour ce cycle sans invalider les données d’entrées/sorties déjà récupérées. La lecture est retentée au rafraîchissement suivant.
+
 ## Installation
 
 ### HACS
