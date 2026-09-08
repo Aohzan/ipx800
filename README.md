@@ -32,7 +32,7 @@ The MAC address is added to the general device's network connections.
 
 These values use one additional `/user/status.xml` request per shared coordinator refresh, after the existing JSON requests. They follow the existing YAML `scan_interval` (or its integration-options override), including requested refreshes through the existing debouncer. No separate polling timer or YAML device entries are needed.
 
-If the IPX web interface is protected, set its `username` and `password` in the gateway YAML configuration; the JSON API key alone does not grant XML access. Missing or invalid XML fields make only the corresponding diagnostic entities unavailable. An XML request failure makes all three diagnostics unavailable for that refresh without discarding successful I/O data; the next refresh retries automatically.
+If the IPX web interface is protected, set its `username` and `password` in the gateway YAML configuration; the JSON API key alone does not grant XML access. Missing or invalid XML fields make only the corresponding diagnostic entities unavailable. An XML request failure makes all three diagnostics unavailable for that refresh without discarding successful I/O data; the next refresh retries automatically. Without credentials, requests stop after five consecutive XML access failures until the integration is reloaded or Home Assistant is restarted. A successful XML read resets the failure count.
 
 ## Description
 

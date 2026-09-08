@@ -11,6 +11,7 @@ from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 CLOCK_TOLERANCE = 60
+MAX_UNAUTHENTICATED_FAILURES = 5
 
 
 class IpxSystemData:
@@ -30,9 +31,13 @@ class IpxSystemData:
         self._last_boot: datetime | None = None
         self._last_uptime: int | None = None
         self._failed = False
+        self._unauthenticated_failures = 0
 
     async def async_get(self) -> dict:
         """Read diagnostics without making I/O entities unavailable on failure."""
+        if self._unauthenticated_failures >= MAX_UNAUTHENTICATED_FAILURES:
+            return {}
+
         try:
             async with self._session.get(
                 self._url, auth=self._auth, timeout=ClientTimeout(total=5)
@@ -50,8 +55,19 @@ class IpxSystemData:
                     err,
                 )
             self._failed = True
+            if self._auth is None:
+                self._unauthenticated_failures += 1
+                if self._unauthenticated_failures == MAX_UNAUTHENTICATED_FAILURES:
+                    _LOGGER.warning(
+                        "Stopping IPX800 system diagnostics requests to %s after "
+                        "%s consecutive failures without credentials. Configure "
+                        "YAML username/password if required and reload the integration",
+                        self._url,
+                        MAX_UNAUTHENTICATED_FAILURES,
+                    )
             return {}
         self._failed = False
+        self._unauthenticated_failures = 0
 
         now = dt_util.utcnow()
         data = {}

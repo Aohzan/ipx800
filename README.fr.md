@@ -17,7 +17,7 @@ L’adresse MAC est également ajoutée aux informations réseau de cet équipem
 
 Une seule requête supplémentaire à `/user/status.xml` est effectuée après les requêtes JSON, à chaque rafraîchissement du coordinateur existant. Ces informations suivent le `scan_interval` du YAML (ou sa surcharge dans les options de l’intégration), ainsi que les demandes de rafraîchissement temporisées existantes. Aucun minuteur séparé ni ajout à la liste YAML des équipements n’est nécessaire.
 
-Si l’interface web de l’IPX est protégée, renseigner ses identifiants `username` et `password` dans le YAML de la passerelle : la clé API JSON ne suffit pas pour accéder au XML. Un champ XML absent ou invalide rend uniquement l’entité concernée indisponible. Un échec de lecture XML rend les trois diagnostics indisponibles pour ce cycle sans invalider les données d’entrées/sorties déjà récupérées. La lecture est retentée au rafraîchissement suivant.
+Si l’interface web de l’IPX est protégée, renseigner ses identifiants `username` et `password` dans le YAML de la passerelle : la clé API JSON ne suffit pas pour accéder au XML. Un champ XML absent ou invalide rend uniquement l’entité concernée indisponible. Un échec de lecture XML rend les trois diagnostics indisponibles pour ce cycle sans invalider les données d’entrées/sorties déjà récupérées. La lecture est retentée au rafraîchissement suivant. Sans identifiants, les requêtes sont arrêtées après cinq échecs consécutifs d’accès au XML, jusqu’au rechargement de l’intégration ou au redémarrage de Home Assistant. Une lecture XML réussie remet le compteur d’échecs à zéro.
 
 ## Installation
 
