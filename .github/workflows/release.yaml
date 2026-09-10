@@ -5,6 +5,7 @@ on:
 
 jobs:
   release:
+    if: github.repository == 'Aohzan/ipx800'
     runs-on: ubuntu-latest
 
     steps:
