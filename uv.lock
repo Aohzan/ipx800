@@ -1605,11 +1605,19 @@ dependencies = [
     { name = "pypx800" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "async-timeout" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "homeassistant", specifier = ">=2026.2.3" },
     { name = "pypx800", specifier = ">=2.5.1" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "async-timeout", specifier = ">=4.0.3" }]
 
 [[package]]
 name = "jinja2"
