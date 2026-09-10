@@ -44,7 +44,42 @@ The MAC address is added to the general device's network connections.
 
 These values use `/user/status.xml` once at setup, then on a separate timer following the YAML `scan_interval` (or its integration-options override). Pushes, I/O commands and read-recovery attempts do not refresh diagnostics or postpone their timer. XML failures or slow responses do not delay ongoing I/O updates. No additional YAML device entries are needed.
 
-If the IPX web interface is protected, set its `username` and `password` in the gateway YAML configuration; the JSON API key alone does not grant XML access. Missing or invalid XML fields make only the corresponding diagnostic entities unavailable. An XML request failure makes all three diagnostics unavailable for that refresh without discarding successful I/O data; the next refresh retries automatically. Without credentials, requests stop after five consecutive XML access failures until the integration is reloaded or Home Assistant is restarted. A successful XML read resets the failure count.
+### Credentials for controller information
+
+If the IPX web interface is password-protected, **set both `username` and `password` to the credentials you use to open that interface in your browser**. The JSON API key alone cannot authenticate requests to `/user/status.xml`, which supplies the boot time, load, clock and MAC information.
+
+| Parameter | Purpose |
+| --- | --- |
+| `api_key` | Access to the IPX JSON API for I/O data and API commands. |
+| `username` / `password` | IPX web interface credentials, required for protected XML diagnostics; also used for X-PWM control. |
+| `push_password` | Separate password chosen for IPX-to-Home Assistant pushes. It does not authenticate XML diagnostics. |
+
+Add the credentials to your **existing IPX gateway entry**, at the same indentation as `host` and `api_key`, not under `devices`:
+
+```yaml
+ipx800v4:
+  - name: IPX800
+    host: "192.168.1.240"
+    api_key: "your_ipx_api_key"
+    username: "your_ipx_web_username"
+    password: "your_ipx_web_password"
+    scan_interval: 300
+    devices: []  # Keep your existing device list here
+```
+
+Keep your existing gateway name and device list. After editing `configuration.yaml` (or its included file), **restart Home Assistant** to import the updated YAML configuration. The diagnostic entities are created automatically on the general IPX device; do not add them under `devices`.
+
+With `scan_interval: 300`, diagnostics are read at setup, then approximately every five minutes. An interval set in the integration options takes precedence over YAML. Pushes do not trigger XML reads.
+
+### Missing or unavailable information
+
+- If the XML endpoint is accessible without authentication, `username` and `password` can be omitted.
+- If XML access fails, the three diagnostic entities become unavailable without invalidating I/O data. The next diagnostics cycle retries; with no username configured, requests stop after five consecutive failures until the integration is reloaded or Home Assistant is restarted. A successful XML read resets that counter.
+- With a username configured, failed XML requests continue to be retried at the diagnostics polling interval. Check the web credentials if the information stays unavailable.
+- An absent or invalid XML field makes only its corresponding diagnostic entity unavailable. The MAC address is added to the device information when a valid value is received.
+
+If relays and inputs work but controller information is unavailable, first check `username` / `password` and the integration logs for XML access failures. `api_key` and `push_password` cannot replace those web credentials.
+
 
 ## Description
 
@@ -75,6 +110,9 @@ ipx800v4:
   - name: IPX800
     host: "192.168.1.240"
     api_key: "apikey"
+    # Required for diagnostics if the IPX web interface is protected
+    username: "your_ipx_web_username"
+    password: "your_ipx_web_password"
     devices:
       - name: Chaudière
         icon: mdi:water-boiler
@@ -178,11 +216,11 @@ api_key:
   required: true
   type: string
 username:
-  description: Web interface username (for system diagnostics and X-PWM control)
+  description: IPX web interface username; required with password for protected XML diagnostics, also used for X-PWM control
   required: false
   type: string
 password:
-  description: Web interface password (for system diagnostics and X-PWM control)
+  description: IPX web interface password paired with username, not the API key or push_password
   required: false
   type: string
 scan_interval:

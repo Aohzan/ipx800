@@ -17,7 +17,42 @@ L’adresse MAC est également ajoutée aux informations réseau de cet équipem
 
 Une requête à `/user/status.xml` est effectuée au chargement, puis sur un minuteur séparé suivant le `scan_interval` du YAML (ou sa surcharge dans les options de l’intégration). Les push, commandes et tentatives de récupération des entrées/sorties ne rafraîchissent pas les diagnostics et ne repoussent pas leur minuteur. Une réponse XML lente ou en échec ne retarde pas les mises à jour courantes des entrées/sorties. Aucun ajout à la liste YAML des équipements n’est nécessaire.
 
-Si l’interface web de l’IPX est protégée, renseigner ses identifiants `username` et `password` dans le YAML de la passerelle : la clé API JSON ne suffit pas pour accéder au XML. Un champ XML absent ou invalide rend uniquement l’entité concernée indisponible. Un échec de lecture XML rend les trois diagnostics indisponibles pour ce cycle sans invalider les données d’entrées/sorties déjà récupérées. La lecture est retentée au rafraîchissement suivant. Sans identifiants, les requêtes sont arrêtées après cinq échecs consécutifs d’accès au XML, jusqu’au rechargement de l’intégration ou au redémarrage de Home Assistant. Une lecture XML réussie remet le compteur d’échecs à zéro.
+### Identifiants pour les informations du contrôleur
+
+Si l’interface web de l’IPX est protégée par un mot de passe, **renseigner `username` et `password` avec les identifiants utilisés pour ouvrir cette interface dans le navigateur**. La clé API JSON seule ne permet pas d’authentifier les requêtes à `/user/status.xml`, qui fournit les informations de démarrage, de charge, d’horloge et d’adresse MAC.
+
+| Paramètre | Utilisation |
+| --- | --- |
+| `api_key` | Accès à l’API JSON de l’IPX pour les données d’entrées/sorties et les commandes API. |
+| `username` / `password` | Identifiants de l’interface web de l’IPX, nécessaires aux diagnostics XML protégés ; également utilisés pour le contrôle X-PWM. |
+| `push_password` | Mot de passe distinct choisi pour les push de l’IPX vers Home Assistant. Il n’authentifie pas les diagnostics XML. |
+
+Ajouter les identifiants dans **l’entrée existante de la passerelle IPX**, au même niveau que `host` et `api_key`, et non dans `devices` :
+
+```yaml
+ipx800v4:
+  - name: IPX800
+    host: "192.168.1.240"
+    api_key: "votre_cle_api_ipx"
+    username: "votre_identifiant_web_ipx"
+    password: "votre_mot_de_passe_web_ipx"
+    scan_interval: 300
+    devices: []  # Conserver ici votre liste d’équipements existante
+```
+
+Conserver le nom de la passerelle et la liste des équipements existants. Après modification de `configuration.yaml` (ou du fichier inclus), **redémarrer Home Assistant** pour importer la configuration YAML mise à jour. Les entités de diagnostic sont créées automatiquement sur l’équipement général IPX ; il ne faut pas les ajouter dans `devices`.
+
+Avec `scan_interval: 300`, les diagnostics sont lus au chargement, puis environ toutes les cinq minutes. Un intervalle défini dans les options de l’intégration est prioritaire sur le YAML. Les push ne déclenchent aucune lecture XML.
+
+### Informations absentes ou indisponibles
+
+- Si l’URL XML est accessible sans authentification, `username` et `password` peuvent être omis.
+- Si l’accès XML échoue, les trois entités de diagnostic deviennent indisponibles sans invalider les données d’entrées/sorties. La lecture est retentée au prochain cycle de diagnostic ; sans `username` configuré, les requêtes s’arrêtent après cinq échecs consécutifs, jusqu’au rechargement de l’intégration ou au redémarrage de Home Assistant. Une lecture XML réussie remet ce compteur à zéro.
+- Avec un `username` configuré, les lectures XML en échec continuent d’être retentées au rythme du minuteur des diagnostics. Vérifier les identifiants web si les informations restent indisponibles.
+- Un champ XML absent ou invalide rend uniquement l’entité de diagnostic correspondante indisponible. L’adresse MAC est ajoutée aux informations de l’équipement lorsqu’une valeur valide est reçue.
+
+Si les relais et les entrées fonctionnent mais que les informations du contrôleur sont indisponibles, vérifier d’abord `username` / `password` et les erreurs d’accès XML dans les journaux de l’intégration. `api_key` et `push_password` ne remplacent pas ces identifiants web.
+
 
 ## Installation
 
