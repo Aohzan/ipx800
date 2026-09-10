@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.12.0](https://github.com/zoic21/ipx800/compare/3.11.0...3.12.0) (2026-09-10)
+
+### Features
+
+* add controller uptime, load and clock diagnostics ([a62b4d1](https://github.com/zoic21/ipx800/commit/a62b4d1c9a0f55a870ba0c6c2993ad6249308995))
+* add state refresh during cover operations ([#71](https://github.com/zoic21/ipx800/issues/71)) ([555ec3e](https://github.com/zoic21/ipx800/commit/555ec3ec375d185b83643034a480462437be4734))
+* allow to delete devices ([#81](https://github.com/zoic21/ipx800/issues/81)) ([0158058](https://github.com/zoic21/ipx800/commit/01580585340c3ac5531511001186225823cd3af9))
+
+### Bug Fixes
+
+* bound freshness of temporarily missing IPX response fields ([0e06a2a](https://github.com/zoic21/ipx800/commit/0e06a2ab57100bf428ecaabb072e0610dae6ff9b))
+* bound transient read recovery independently of scan interval ([4193d5f](https://github.com/zoic21/ipx800/commit/4193d5f92e2ce0e1e804cafe1555d79bd7bac946))
+* error when opening option configflow ([9c670b2](https://github.com/zoic21/ipx800/commit/9c670b29e59e8304e91122c4909cdaa971301c92))
+* handle missing X4VR key in cover state to avoid KeyError ([f0c89b9](https://github.com/zoic21/ipx800/commit/f0c89b9f4d1b6dd0fcce242e997cc18d3f9946e7))
+* mark entities unavailable instead of crashing when extension data is missing ([919a1d8](https://github.com/zoic21/ipx800/commit/919a1d8dc867540e2e67db179bac8eafc4c66b39))
+* mark entities unavailable on missing key for all extensions ([21d10b1](https://github.com/zoic21/ipx800/commit/21d10b1a58794706cf62d9e8aaa88e3f1f7e49fa))
+* new error when opening option configflow ([0558e95](https://github.com/zoic21/ipx800/commit/0558e95a615883cf4c2c0d5202b8a2b3bf71d108))
+* preserve field recovery, snapshot RGB targets and isolate XML polling ([8d2b891](https://github.com/zoic21/ipx800/commit/8d2b891b4f18d850bb286748ec4fe4e26028950b))
+* propagate IPX command failures to Home Assistant callers ([8d19819](https://github.com/zoic21/ipx800/commit/8d19819750fc31a3779e85dc920f4fa7f8acea90))
+* remove URL from translations files ([3366a46](https://github.com/zoic21/ipx800/commit/3366a46032945486556336e874cc47dbee69bbf5))
+* resolve push requests against live IPX entries ([235f1f6](https://github.com/zoic21/ipx800/commit/235f1f63b418096025ea86790c282c1f2b4693b4)), closes [#6](https://github.com/zoic21/ipx800/issues/6)
+* stop unauthenticated XML polling after five failures ([b55d668](https://github.com/zoic21/ipx800/commit/b55d6686c6cae1fb01c0483f3d58c236eda0dc89))
+* synchronize direct pushes with coordinator fields and availability ([7a494ee](https://github.com/zoic21/ipx800/commit/7a494eec533f9a9d841fcefa6c68afe88a02e995)), closes [#5](https://github.com/zoic21/ipx800/issues/5)
+
 ## [3.13.1](https://github.com/Aohzan/ipx800/compare/3.13.0...3.13.1) (2026-06-17)
 
 ### Bug Fixes
