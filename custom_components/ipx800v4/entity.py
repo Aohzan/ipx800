@@ -19,7 +19,7 @@ from homeassistant.const import (
     EntityCategory,
 )
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 from homeassistant.util import slugify
 
 from .const import (
@@ -207,7 +207,7 @@ class IpxDiagnosticEntity(CoordinatorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
-        self, ipx: IPX800, coordinator: IpxDataUpdateCoordinator, key: str
+        self, ipx: IPX800, coordinator: DataUpdateCoordinator, key: str
     ) -> None:
         """Initialize a controller diagnostic."""
         super().__init__(coordinator)
@@ -220,11 +220,11 @@ class IpxDiagnosticEntity(CoordinatorEntity):
     def available(self) -> bool:
         """Return whether this field was present and valid in the last poll."""
         return (
-            self.coordinator.data_available
+            self.coordinator.last_update_success
             and self.system_data.get(self._key) is not None
         )
 
     @property
     def system_data(self) -> dict:
         """Return the latest system snapshot, including failed initial refreshes."""
-        return (self.coordinator.data or {}).get("system", {})
+        return self.coordinator.data or {}

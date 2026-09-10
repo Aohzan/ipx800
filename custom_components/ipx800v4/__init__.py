@@ -29,6 +29,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CONF_COMPONENT,
@@ -45,6 +46,7 @@ from .const import (
     CONF_TYPE_ALLOWED,
     CONTROLLER,
     COORDINATOR,
+    SYSTEM_COORDINATOR,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TRANSITION,
     DOMAIN,
@@ -191,14 +193,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     controller_mac = None
 
-    async def async_update_data():
-        """Fetch data from API."""
+    async def async_update_system():
+        """Fetch optional diagnostics on their own polling schedule."""
         nonlocal controller_mac
-        data = await ipx.global_get()
-
-        # Sequential requests share the configured scan interval and debouncer.
-        data["system"] = await system.async_get()
-        if (mac := data["system"].get("mac")) and mac != controller_mac:
+        data = await system.async_get()
+        if (mac := data.get("mac")) and mac != controller_mac:
             device_registry.async_update_device(
                 controller_device.id,
                 merge_connections={(dr.CONNECTION_NETWORK_MAC, mac)},
@@ -220,7 +219,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER,
         config_entry=entry,
         name=f"{config[CONF_NAME]} ({config[CONF_HOST]})",
-        update_method=async_update_data,
+        update_method=ipx.global_get,
         update_interval=timedelta(seconds=scan_interval),
         request_refresh_debouncer=Debouncer(
             hass,
@@ -232,6 +231,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
 
+    system_coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        config_entry=entry,
+        name=f"{config[CONF_NAME]} diagnostics",
+        update_method=async_update_system,
+        update_interval=timedelta(seconds=scan_interval),
+    )
+    # Initial snapshot, then timer-only polling. I/O pushes, commands and
+    # recovery reads never request or postpone a diagnostics refresh.
+    await system_coordinator.async_refresh()
+
     undo_listener = entry.add_update_listener(_async_update_listener)
     entry.async_on_unload(undo_listener)
 
@@ -239,6 +250,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         CONF_NAME: config[CONF_NAME],
         CONTROLLER: command_ipx,
         COORDINATOR: coordinator,
+        SYSTEM_COORDINATOR: system_coordinator,
         CONF_DEVICES: {},
         UNDO_UPDATE_LISTENER: undo_listener,
     }
@@ -284,6 +296,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if entry_data is not None:
         _async_remove_entry_data(hass, entry.entry_id, entry_data)
         await entry_data[COORDINATOR].async_shutdown()
+        await entry_data[SYSTEM_COORDINATOR].async_shutdown()
     return True
 
 

@@ -42,7 +42,7 @@ The general IPX800 device automatically contains three diagnostic entities:
 
 The MAC address is added to the general device's network connections.
 
-These values use one additional `/user/status.xml` request per shared coordinator refresh, after the existing JSON requests. They follow the existing YAML `scan_interval` (or its integration-options override), including requested refreshes through the existing debouncer. No separate polling timer or YAML device entries are needed.
+These values use `/user/status.xml` once at setup, then on a separate timer following the YAML `scan_interval` (or its integration-options override). Pushes, I/O commands and read-recovery attempts do not refresh diagnostics or postpone their timer. XML failures or slow responses do not delay ongoing I/O updates. No additional YAML device entries are needed.
 
 If the IPX web interface is protected, set its `username` and `password` in the gateway YAML configuration; the JSON API key alone does not grant XML access. Missing or invalid XML fields make only the corresponding diagnostic entities unavailable. An XML request failure makes all three diagnostics unavailable for that refresh without discarding successful I/O data; the next refresh retries automatically. Without credentials, requests stop after five consecutive XML access failures until the integration is reloaded or Home Assistant is restarted. A successful XML read resets the failure count.
 
@@ -268,7 +268,7 @@ invert_value:
 First, if you want to push data from your IPX800, you have to set a password on `push_password` config parameter.
 Then in your IPX800 PUSH configuration, in the `Identifiant` field, set : `ipx800:mypassword`.
 
-By calling the URL `/api/ipx800v4_refresh/on` from the IPX800, you ask a state refresh from all IPX800 entities.
+By calling the URL `/api/ipx800v4_refresh/on` from the IPX800, you ask a state refresh of the IPX800 I/O entities (excluding XML diagnostics).
 
 You can update value of a entity by set a Push command in a IPX800 scenario. Usefull to update directly binary_sensor and switch.
 In `URL ON` and `URL_OFF` set `/api/ipx800v4/entity_id/state`:
@@ -298,7 +298,7 @@ In case you have multiple IPX entries in your configuration, you can specify the
 
 This parameter in the URL is also available for each routes described above:
 
-- `/api/ipx800v4_refresh/<MY_IPX_NAME>/on` : you request a status update to all entities of the IPX800 named "MY_IPX_NAME"
+- `/api/ipx800v4_refresh/<MY_IPX_NAME>/on` : you request a status update to the I/O entities of the IPX800 named "MY_IPX_NAME"
 - `/api/ipx800v4/<MY_IPX_NAME>/entity_id/state` : you update the status of the "entity_id" on the IPX named "MY_IPX_NAME"
 - `/api/ipx800v4_data/<MY_IPX_NAME>/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06` : you update the statuses of several entities on the IPX named MY_IPX_NAME
 - `/api/ipx800v4_bulk/<MY_IPX_NAME>/relay/$R` : you update the statuses of all relays on the IPX named MY_IPX_NAME
@@ -317,7 +317,7 @@ Direct pushes update the coordinator's raw fields and publish normal entity upda
 - Binary sensors, switches and relay lights accept `on/off`, `true/false` and `1/0` as entity states. Binary sensor inversion is reversed when storing the raw value, then applied normally when displaying it; switches and relay lights follow their existing non-inverted platform semantics.
 - Sensors and numbers accept finite numeric field values. Single-channel PWM lights accept the actual IPX percentage (0–100), or `off/false` for zero. An `on` value alone cannot supply a PWM level.
 - Bulk endpoints retain their existing raw bit-string format for relays, digital inputs, virtual inputs and virtual outputs. Bit positions identify hardware channels; binary sensor inversion is applied only by the entity.
-- Composite or ambiguous states (covers, climates, dimmers, RGB/RGBW lights and diagnostics) require the existing refresh endpoint: a state string alone cannot reliably reconstruct their raw data. Unsupported direct values return HTTP 400; unknown, unloaded or foreign entity targets return HTTP 404.
+- Composite or ambiguous states (covers, climates, dimmers, RGB/RGBW lights) require the existing refresh endpoint: a state string alone cannot reliably reconstruct their raw data. Unsupported direct values return HTTP 400; unknown, unloaded or foreign entity targets return HTTP 404.
 
 A valid push records freshness only for the included fields. It does not reset full-read failures, change API health, or postpone polling/recovery. During a read outage, an entity is available only while **all** its required fields have recent push data. Push freshness lasts one configured scan interval plus the two bounded recovery delays: `scan_interval + 2 × min(scan_interval, 15)` seconds (330 seconds for a 300-second scan). Expiry is published even if polling keeps failing.
 

@@ -15,7 +15,7 @@ MAX_UNAUTHENTICATED_FAILURES = 5
 
 
 class IpxSystemData:
-    """Fetch one system snapshot per coordinator refresh."""
+    """Fetch system snapshots for the independent diagnostics timer."""
 
     def __init__(
         self,

@@ -15,6 +15,7 @@ from custom_components.ipx800v4 import (
 from custom_components.ipx800v4.const import (
     CONF_DEVICES,
     COORDINATOR,
+    SYSTEM_COORDINATOR,
     DOMAIN,
     PUSH_CONFIG,
 )
@@ -80,6 +81,7 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
         runtime = {
             "name": name,
             "controller": object(),
+            SYSTEM_COORDINATOR: SimpleNamespace(async_shutdown=AsyncMock()),
             COORDINATOR: SimpleNamespace(
                 async_request_refresh=AsyncMock(), async_shutdown=AsyncMock(),
                 config_entry=SimpleNamespace(entry_id=entry_id),
@@ -126,6 +128,7 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
             old = self.hass.data[DOMAIN]["a"]
             self.assertTrue(await async_unload_entry(self.hass, SimpleNamespace(entry_id="a")))
             old[COORDINATOR].async_shutdown.assert_awaited_once()
+            old[SYSTEM_COORDINATOR].async_shutdown.assert_awaited_once()
             self.assertEqual(await self.get("/api/ipx800v4_refresh/A/on"), 401)
             password = f"new-{index}"
             current = self.add_entry("a", "A", password)

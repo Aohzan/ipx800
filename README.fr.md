@@ -15,7 +15,7 @@ L’équipement général IPX800 contient automatiquement trois entités de diag
 
 L’adresse MAC est également ajoutée aux informations réseau de cet équipement.
 
-Une seule requête supplémentaire à `/user/status.xml` est effectuée après les requêtes JSON, à chaque rafraîchissement du coordinateur existant. Ces informations suivent le `scan_interval` du YAML (ou sa surcharge dans les options de l’intégration), ainsi que les demandes de rafraîchissement temporisées existantes. Aucun minuteur séparé ni ajout à la liste YAML des équipements n’est nécessaire.
+Une requête à `/user/status.xml` est effectuée au chargement, puis sur un minuteur séparé suivant le `scan_interval` du YAML (ou sa surcharge dans les options de l’intégration). Les push, commandes et tentatives de récupération des entrées/sorties ne rafraîchissent pas les diagnostics et ne repoussent pas leur minuteur. Une réponse XML lente ou en échec ne retarde pas les mises à jour courantes des entrées/sorties. Aucun ajout à la liste YAML des équipements n’est nécessaire.
 
 Si l’interface web de l’IPX est protégée, renseigner ses identifiants `username` et `password` dans le YAML de la passerelle : la clé API JSON ne suffit pas pour accéder au XML. Un champ XML absent ou invalide rend uniquement l’entité concernée indisponible. Un échec de lecture XML rend les trois diagnostics indisponibles pour ce cycle sans invalider les données d’entrées/sorties déjà récupérées. La lecture est retentée au rafraîchissement suivant. Sans identifiants, les requêtes sont arrêtées après cinq échecs consécutifs d’accès au XML, jusqu’au rechargement de l’intégration ou au redémarrage de Home Assistant. Une lecture XML réussie remet le compteur d’échecs à zéro.
 
@@ -71,7 +71,7 @@ Vous pouvez contrôller ces types d'appareil :
 Premièrement, si vous souhaitez poussez des états depuis votre IPX800, vous devez choisir un mot de passe et le préciser dans le paramètre `push_password` de votre configuration.
 Ensuite, dans la configuration PUSH de l'IPX800, dans le champ `Identifiant`, mettez `ipx800:monmotdepasse` (avec la même valeur que le paramètre défini après le `:`).
 
-En faisant un appel PUSH depuis l'IPX sur l'URL `/api/ipx800v4_refresh/on`, vous demandez à Home-Assistant de rafraichir l'état de toutes les entités de l'IPX800 V4.
+En faisant un appel PUSH depuis l'IPX sur l'URL `/api/ipx800v4_refresh/on`, vous demandez à Home-Assistant de rafraichir l'état des entrées/sorties de l'IPX800 V4, hors diagnostics XML.
 
 Vous pouvez mettre à jour la valeur d'une entité en définissant une commande Push dans l'IPX800 via un scénario.
 Utile pour mettre à jour directement un binary_sensor ou un  switch sans attendre la prochaine récupération d'état.
@@ -102,7 +102,7 @@ Si vous avez plusieurs entrées IPX dans votre configuration, vous pouvez spéci
 
 Ce paramètre dans l'URL est également disponible pour chaque route décrite ci-dessus :
 
-- `/api/ipx800v4_refresh/<MY_IPX_NAME>/on` : vous demandez une mise à jour du statut de toutes les entités de l'IPX800 nommées "MY_IPX_NAME"
+- `/api/ipx800v4_refresh/<MY_IPX_NAME>/on` : vous demandez une mise à jour du statut des entrées/sorties de l'IPX800 nommé "MY_IPX_NAME"
 - `/api/ipx800v4/<MY_IPX_NAME>/entity_id/state` : vous mettez à jour le statut de l'"entity_id" sur l'IPX nommé "MY_IPX_NAME"
 - `/api/ipx800v4_data/<MY_IPX_NAME>/binary_sensor.presence_couloir=$VO005&light.spots_couloir=$XPWM06` : vous mettez à jour les statuts de plusieurs entités sur l'IPX nommée MY_IPX_NAME
 - `/api/ipx800v4_bulk/<MY_IPX_NAME>/relay/$R` : vous mettez à jour les statuts de tous les relais sur l'IPX nommé MY_IPX_NAME
@@ -121,7 +121,7 @@ Les push directs mettent à jour les champs du coordinateur puis publient normal
 - Les capteurs binaires, interrupteurs et lumières sur relais acceptent `on/off`, `true/false` et `1/0` comme états d’entité. L’inversion des capteurs binaires est convertie vers la valeur brute puis appliquée normalement à l’affichage. Les interrupteurs et lumières sur relais conservent leur fonctionnement sans inversion.
 - Les capteurs et nombres acceptent des valeurs numériques finies. Une lumière PWM à un canal accepte son pourcentage IPX réel (0–100), ou `off/false` pour zéro. La valeur `on` seule ne fournit pas le niveau PWM.
 - Les URL bulk conservent leurs chaînes de bits bruts pour les relais, entrées numériques, entrées virtuelles et sorties virtuelles. L’inversion des capteurs binaires est appliquée uniquement par l’entité.
-- Les états composites ou ambigus (volets, climats, dimmers, lumières RGB/RGBW et diagnostics) nécessitent l’URL de rafraîchissement existante. Une chaîne d’état seule ne permet pas de reconstruire fidèlement leurs données. Les valeurs non prises en charge renvoient HTTP 400 ; les entités inconnues, déchargées ou étrangères renvoient HTTP 404.
+- Les états composites ou ambigus (volets, climats, dimmers, lumières RGB/RGBW) nécessitent l’URL de rafraîchissement existante. Une chaîne d’état seule ne permet pas de reconstruire fidèlement leurs données. Les valeurs non prises en charge renvoient HTTP 400 ; les entités inconnues, déchargées ou étrangères renvoient HTTP 404.
 
 Un push valide actualise uniquement la fraîcheur des champs reçus. Il ne remet pas à zéro les erreurs de lecture et ne décale ni le polling ni les tentatives de récupération. Pendant une panne de lecture, une entité reste disponible uniquement si **tous** ses champs nécessaires ont reçu un push récent. Cette fraîcheur expire après `scan_interval + 2 × min(scan_interval, 15)` secondes, soit 330 secondes pour un intervalle de 300 secondes. L’expiration est publiée même si les lectures échouent toujours.
 

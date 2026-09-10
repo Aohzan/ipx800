@@ -224,6 +224,27 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(calls, names[:2])
                 entity.coordinator.async_request_refresh.assert_not_awaited()
 
+    async def test_color_targets_survive_updates_between_writes(self):
+        for cls, channels in ((XPWMRGBLight, 3), (XPWMRGBWLight, 4)):
+            for expire in (False, True):
+                with self.subTest(cls=cls.__name__, expire=expire):
+                    entity, write = make_entity(cls)
+                    entity.coordinator.data = {
+                        "PWM1": 100, "PWM2": 50, "PWM3": 25, "PWM4": 10,
+                    }
+                    levels = []
+
+                    async def update_during_write(value, transition):
+                        levels.append(value)
+                        if expire:
+                            entity.coordinator.data.clear()
+                        else:
+                            entity.coordinator.data[f"PWM{len(levels)}"] = value
+
+                    write.side_effect = update_during_write
+                    await entity.async_turn_on(brightness=128)
+                    self.assertEqual(levels, [50, 25, 13, 5][:channels])
+
     async def test_programming_errors_and_cancellation_are_not_disguised(self):
         for error in (ValueError("bug"), asyncio.CancelledError()):
             entity, write = make_entity(RelaySwitch, error)
@@ -272,6 +293,10 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                 return_value=coordinator,
             ),
             patch("custom_components.ipx800v4.Debouncer"),
+            patch(
+                "custom_components.ipx800v4.DataUpdateCoordinator",
+                return_value=Mock(async_refresh=AsyncMock()),
+            ),
             patch("custom_components.ipx800v4.IPX800", wraps=IPX800) as factory,
         ):
             await async_setup_entry(hass, entry)

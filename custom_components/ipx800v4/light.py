@@ -332,17 +332,25 @@ class XPWMRGBLight(IpxEntity, LightEntity):
                 )
             elif ATTR_BRIGHTNESS in kwargs:
                 brightness = kwargs[ATTR_BRIGHTNESS]
-                if self.is_on:
+                # Snapshot every target before I/O: push/poll updates may arrive
+                # between sequential writes, or expire the current fields.
+                colors = self.rgb_color
+                current_brightness = max(colors)
+                if current_brightness > 0:
+                    levels = tuple(
+                        scaleto100(channel * brightness / current_brightness)
+                        for channel in colors
+                    )
                     await self.xpwm_rgb_r.set_level(
-                        scaleto100(self.rgb_color[0] * brightness / self.brightness),
+                        levels[0],
                         self._transition * 1000,
                     )
                     await self.xpwm_rgb_g.set_level(
-                        scaleto100(self.rgb_color[1] * brightness / self.brightness),
+                        levels[1],
                         self._transition * 1000,
                     )
                     await self.xpwm_rgb_b.set_level(
-                        scaleto100(self.rgb_color[2] * brightness / self.brightness),
+                        levels[2],
                         self._transition * 1000,
                     )
                 else:
@@ -454,21 +462,29 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
                 )
             elif ATTR_BRIGHTNESS in kwargs:
                 brightness = kwargs[ATTR_BRIGHTNESS]
-                if self.is_on:
+                # Snapshot every target before I/O: push/poll updates may arrive
+                # between sequential writes, or expire the current fields.
+                colors = self.rgbw_color
+                current_brightness = max(colors)
+                if current_brightness > 0:
+                    levels = tuple(
+                        scaleto100(channel * brightness / current_brightness)
+                        for channel in colors
+                    )
                     await self.xpwm_rgbw_r.set_level(
-                        scaleto100(self.rgbw_color[0] * brightness / self.brightness),
+                        levels[0],
                         self._transition * 1000,
                     )
                     await self.xpwm_rgbw_g.set_level(
-                        scaleto100(self.rgbw_color[1] * brightness / self.brightness),
+                        levels[1],
                         self._transition * 1000,
                     )
                     await self.xpwm_rgbw_b.set_level(
-                        scaleto100(self.rgbw_color[2] * brightness / self.brightness),
+                        levels[2],
                         self._transition * 1000,
                     )
                     await self.xpwm_rgbw_w.set_level(
-                        scaleto100(self.rgbw_color[3] * brightness / self.brightness),
+                        levels[3],
                         self._transition * 1000,
                     )
                 else:

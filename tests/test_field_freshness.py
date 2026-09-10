@@ -104,6 +104,30 @@ class FieldFreshnessTests(unittest.IsolatedAsyncioTestCase):
         listener.assert_called_once()
         self.assert_next_read(coordinator, 15)  # Global recovery remains scheduled.
 
+    async def test_expiry_preserves_pending_recovery_read(self):
+        coordinator, reader = await self.setup_fields(keys=("R1", "D1"))
+        reader.return_value = {"D1": 0}
+        await coordinator.async_refresh()
+        started, _ = coordinator._missing_fields["R1"]
+        with patch(
+            "custom_components.ipx800v4.coordinator.monotonic",
+            return_value=started + 15,
+        ):
+            await coordinator.async_refresh()
+        pending = self.assert_next_read(coordinator, 15)
+        with patch(
+            "custom_components.ipx800v4.coordinator.monotonic",
+            return_value=started + 30,
+        ):
+            coordinator._expire_fields()
+        self.assertFalse(coordinator.fields_available("R1"))
+        self.assertFalse(pending.cancelled())
+        self.assertIs(coordinator._unsub_refresh.__self__, pending)
+        reader.return_value = {"R1": 1, "D1": 0}
+        await coordinator.async_refresh()
+        self.assertTrue(coordinator.fields_available("R1"))
+        self.assert_next_read(coordinator, 300)
+
     async def test_real_timer_expires_without_another_read(self):
         coordinator, reader = await self.setup_fields(interval=0.025, keys=("R1",))
         coordinator.config_entry.pref_disable_polling = True

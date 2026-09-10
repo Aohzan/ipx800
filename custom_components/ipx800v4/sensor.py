@@ -20,6 +20,7 @@ from .const import (
     CONF_TYPE,
     CONTROLLER,
     COORDINATOR,
+    SYSTEM_COORDINATOR,
     DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     TYPE_ANALOGIN,
@@ -42,12 +43,18 @@ async def async_setup_entry(
     """Set up the IPX800 sensors."""
     controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
+    system_coordinator = hass.data[DOMAIN][entry.entry_id][SYSTEM_COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["sensor"]
 
     entities: list[SensorEntity] = [
-        IpxLastBootSensor(controller, coordinator, "last_boot"),
-        IpxLoadSensor(controller, coordinator, "load"),
+        IpxLastBootSensor(controller, system_coordinator, "last_boot"),
+        IpxLoadSensor(controller, system_coordinator, "load"),
     ]
+
+    # The diagnostics snapshot was loaded during setup. Adding these entities
+    # must not request another XML read through update_before_add.
+    async_add_entities(entities)
+    entities = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_ANALOGIN:

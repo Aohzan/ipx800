@@ -12,6 +12,7 @@ from .const import (
     CONF_TYPE,
     CONTROLLER,
     COORDINATOR,
+    SYSTEM_COORDINATOR,
     DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     TYPE_DIGITALIN,
@@ -31,11 +32,17 @@ async def async_setup_entry(
     """Set up the IPX800 binary sensors."""
     controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
     coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
+    system_coordinator = hass.data[DOMAIN][entry.entry_id][SYSTEM_COORDINATOR]
     devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["binary_sensor"]
 
     entities: list[BinarySensorEntity] = [
-        IpxClockBinarySensor(controller, coordinator, "clock_in_sync")
+        IpxClockBinarySensor(controller, system_coordinator, "clock_in_sync")
     ]
+
+    # The diagnostics snapshot was loaded during setup. Adding these entities
+    # must not request another XML read through update_before_add.
+    async_add_entities(entities)
+    entities = []
 
     for device in devices:
         if device.get(CONF_TYPE) == TYPE_VIRTUALOUT:

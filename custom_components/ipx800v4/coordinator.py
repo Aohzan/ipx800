@@ -178,19 +178,8 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
                 self._missing_fields.pop(key)
                 self.field_receipt_times.pop(key, None)
                 self.field_push_times.pop(key, None)
-            if (
-                not self._missing_fields
-                and (
-                    self.last_update_success
-                    or (
-                        isinstance(self.last_exception, IpxTransientReadError)
-                        and not self._retain_data
-                    )
-                )
-                and not self._read_in_progress
-                and self._listeners
-            ):
-                self._schedule_refresh()
+            # Keep the pending recovery read: expiry changes availability, not
+            # the acquisition schedule. Its result restores the normal interval.
         self._schedule_freshness_expiry()
         self.async_update_listeners()
 

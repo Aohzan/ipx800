@@ -4,6 +4,7 @@ DOMAIN = "ipx800v4"
 
 CONTROLLER = "controller"
 COORDINATOR = "coordinator"
+SYSTEM_COORDINATOR = "system_coordinator"
 UNDO_UPDATE_LISTENER = "undo_update_listener"
 GLOBAL_PARALLEL_UPDATES = 1
 PUSH_USERNAME = "ipx800"
