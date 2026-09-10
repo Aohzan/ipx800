@@ -1,8 +1,15 @@
 """Generic IPX800V4 entity."""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from math import isfinite
 
-from pypx800 import IPX800
+from pypx800 import (
+    IPX800,
+    Ipx800CannotConnectError,
+    Ipx800InvalidAuthError,
+    Ipx800RequestError,
+)
 
 from homeassistant.const import (
     CONF_DEVICE_CLASS,
@@ -11,6 +18,7 @@ from homeassistant.const import (
     CONF_UNIT_OF_MEASUREMENT,
     EntityCategory,
 )
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
@@ -47,6 +55,24 @@ class IpxEntity(CoordinatorEntity):
     _push_prefix: str | None = None
     _push_binary = False
     _push_invert = False
+
+    @contextmanager
+    def _command_error(self, operation: str) -> Iterator[None]:
+        """Report expected write failures; keep refreshes outside this boundary."""
+        try:
+            yield
+        except Ipx800InvalidAuthError as err:
+            raise HomeAssistantError(
+                f"Cannot {operation} for {self.entity_id or self.name}: "
+                "IPX800 authentication failed. Check the configured credentials."
+            ) from err
+        except (Ipx800CannotConnectError, Ipx800RequestError, TimeoutError) as err:
+            # Do not include the original message: it may contain a secret URL.
+            # A missing response does not prove that the command was not executed.
+            raise HomeAssistantError(
+                f"Cannot confirm {operation} for {self.entity_id or self.name}: "
+                "IPX800 communication failed. Check connectivity and device state."
+            ) from err
 
     async def async_added_to_hass(self) -> None:
         """Register the live entity by its stable registry identity."""

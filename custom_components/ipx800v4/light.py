@@ -1,10 +1,8 @@
 """Support for IPX800 V4 lights."""
 
-from asyncio import gather as async_gather
-import logging
 from typing import Any
 
-from pypx800 import IPX800, XPWM, Ipx800RequestError, Relay, XDimmer
+from pypx800 import IPX800, XPWM, Relay, XDimmer
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
@@ -38,7 +36,6 @@ from .const import (
 )
 from .entity import IpxEntity
 
-_LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 
@@ -109,34 +106,21 @@ class RelayLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        try:
+        with self._command_error("turn on"):
             await self.control.on()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turning on IPX800 light: %s", self.name
-            )
-            return
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        try:
+        with self._command_error("turn off"):
             await self.control.off()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turning off IPX800 light: %s", self.name
-            )
-            return
+        await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the light."""
-        try:
+        with self._command_error("toggle"):
             await self.control.toggle()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error("An error occurred while toggle IPX800 light: %s", self.name)
-            return
+        await self.coordinator.async_request_refresh()
 
 
 class XDimmerLight(IpxEntity, LightEntity):
@@ -173,7 +157,7 @@ class XDimmerLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        try:
+        with self._command_error("turn on"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_BRIGHTNESS in kwargs:
@@ -182,33 +166,23 @@ class XDimmerLight(IpxEntity, LightEntity):
                 )
             else:
                 await self.control.on(self._transition * 1000)
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turning on IPX800 light: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        try:
+        with self._command_error("turn off"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             await self.control.off(self._transition * 1000)
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turning off IPX800 light: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the light."""
-        try:
+        with self._command_error("toggle"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             await self.control.toggle(self._transition * 1000)
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error("An error occurred while toggle IPX800 light: %s", self.name)
+        await self.coordinator.async_request_refresh()
 
 
 class XPWMLight(IpxEntity, LightEntity):
@@ -260,7 +234,7 @@ class XPWMLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        try:
+        with self._command_error("turn on"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_BRIGHTNESS in kwargs:
@@ -271,33 +245,23 @@ class XPWMLight(IpxEntity, LightEntity):
                 await self.control.set_level(
                     self._default_brightness, self._transition * 1000
                 )
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turning on IPX800 light: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        try:
+        with self._command_error("turn off"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             await self.control.off(self._transition * 1000)
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turning off IPX800 light: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the light."""
-        try:
+        with self._command_error("toggle"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             await self.control.toggle(self._transition * 1000)
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error("An error occurred while toggle IPX800 light: %s", self.name)
+        await self.coordinator.async_request_refresh()
 
 
 class XPWMRGBLight(IpxEntity, LightEntity):
@@ -352,96 +316,66 @@ class XPWMRGBLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        try:
+        with self._command_error("turn on"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_RGB_COLOR in kwargs:
                 colors = kwargs[ATTR_RGB_COLOR]
-                await async_gather(
-                    self.xpwm_rgb_r.set_level(
-                        scaleto100(colors[0]), self._transition * 1000
-                    ),
-                    self.xpwm_rgb_g.set_level(
-                        scaleto100(colors[1]), self._transition * 1000
-                    ),
-                    self.xpwm_rgb_b.set_level(
-                        scaleto100(colors[2]), self._transition * 1000
-                    ),
+                await self.xpwm_rgb_r.set_level(
+                    scaleto100(colors[0]), self._transition * 1000
+                )
+                await self.xpwm_rgb_g.set_level(
+                    scaleto100(colors[1]), self._transition * 1000
+                )
+                await self.xpwm_rgb_b.set_level(
+                    scaleto100(colors[2]), self._transition * 1000
                 )
             elif ATTR_BRIGHTNESS in kwargs:
                 brightness = kwargs[ATTR_BRIGHTNESS]
                 if self.is_on:
-                    await async_gather(
-                        self.xpwm_rgb_r.set_level(
-                            scaleto100(
-                                self.rgb_color[0] * brightness / self.brightness
-                            ),
-                            self._transition * 1000,
-                        ),
-                        self.xpwm_rgb_g.set_level(
-                            scaleto100(
-                                self.rgb_color[1] * brightness / self.brightness
-                            ),
-                            self._transition * 1000,
-                        ),
-                        self.xpwm_rgb_b.set_level(
-                            scaleto100(
-                                self.rgb_color[2] * brightness / self.brightness
-                            ),
-                            self._transition * 1000,
-                        ),
+                    await self.xpwm_rgb_r.set_level(
+                        scaleto100(self.rgb_color[0] * brightness / self.brightness),
+                        self._transition * 1000,
+                    )
+                    await self.xpwm_rgb_g.set_level(
+                        scaleto100(self.rgb_color[1] * brightness / self.brightness),
+                        self._transition * 1000,
+                    )
+                    await self.xpwm_rgb_b.set_level(
+                        scaleto100(self.rgb_color[2] * brightness / self.brightness),
+                        self._transition * 1000,
                     )
                 else:
-                    await async_gather(
-                        self.xpwm_rgb_r.set_level(
-                            scaleto100(brightness),
-                            self._transition * 1000,
-                        ),
-                        self.xpwm_rgb_g.set_level(
-                            scaleto100(brightness),
-                            self._transition * 1000,
-                        ),
-                        self.xpwm_rgb_b.set_level(
-                            scaleto100(brightness),
-                            self._transition * 1000,
-                        ),
+                    await self.xpwm_rgb_r.set_level(
+                        scaleto100(brightness), self._transition * 1000
+                    )
+                    await self.xpwm_rgb_g.set_level(
+                        scaleto100(brightness), self._transition * 1000
+                    )
+                    await self.xpwm_rgb_b.set_level(
+                        scaleto100(brightness), self._transition * 1000
                     )
             else:
-                await async_gather(
-                    self.xpwm_rgb_r.set_level(
-                        scaleto100(self._default_brightness),
-                        self._transition * 1000,
-                    ),
-                    self.xpwm_rgb_g.set_level(
-                        scaleto100(self._default_brightness),
-                        self._transition * 1000,
-                    ),
-                    self.xpwm_rgb_b.set_level(
-                        scaleto100(self._default_brightness),
-                        self._transition * 1000,
-                    ),
+                await self.xpwm_rgb_r.set_level(
+                    scaleto100(self._default_brightness), self._transition * 1000
                 )
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn off IPX800 light: %s", self.name
-            )
+                await self.xpwm_rgb_g.set_level(
+                    scaleto100(self._default_brightness), self._transition * 1000
+                )
+                await self.xpwm_rgb_b.set_level(
+                    scaleto100(self._default_brightness), self._transition * 1000
+                )
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        try:
+        with self._command_error("turn off"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await async_gather(
-                self.xpwm_rgb_r.off(self._transition * 1000),
-                self.xpwm_rgb_g.off(self._transition * 1000),
-                self.xpwm_rgb_b.off(self._transition * 1000),
-            )
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn off IPX800 light: %s", self.name
-            )
+            await self.xpwm_rgb_r.off(self._transition * 1000)
+            await self.xpwm_rgb_g.off(self._transition * 1000)
+            await self.xpwm_rgb_b.off(self._transition * 1000)
+        await self.coordinator.async_request_refresh()
 
 
 class XPWMRGBWLight(IpxEntity, LightEntity):
@@ -499,55 +433,43 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        try:
+        with self._command_error("turn on"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
 
             if ATTR_RGBW_COLOR in kwargs:
                 colors = kwargs[ATTR_RGBW_COLOR]
                 # if only rgb color have been set
-                await async_gather(
-                    self.xpwm_rgbw_r.set_level(
-                        scaleto100(colors[0]), self._transition * 1000
-                    ),
-                    self.xpwm_rgbw_g.set_level(
-                        scaleto100(colors[1]), self._transition * 1000
-                    ),
-                    self.xpwm_rgbw_b.set_level(
-                        scaleto100(colors[2]), self._transition * 1000
-                    ),
-                    self.xpwm_rgbw_w.set_level(
-                        scaleto100(colors[3]), self._transition * 1000
-                    ),
+                await self.xpwm_rgbw_r.set_level(
+                    scaleto100(colors[0]), self._transition * 1000
+                )
+                await self.xpwm_rgbw_g.set_level(
+                    scaleto100(colors[1]), self._transition * 1000
+                )
+                await self.xpwm_rgbw_b.set_level(
+                    scaleto100(colors[2]), self._transition * 1000
+                )
+                await self.xpwm_rgbw_w.set_level(
+                    scaleto100(colors[3]), self._transition * 1000
                 )
             elif ATTR_BRIGHTNESS in kwargs:
                 brightness = kwargs[ATTR_BRIGHTNESS]
                 if self.is_on:
-                    await async_gather(
-                        self.xpwm_rgbw_r.set_level(
-                            scaleto100(
-                                self.rgbw_color[0] * brightness / self.brightness
-                            ),
-                            self._transition * 1000,
-                        ),
-                        self.xpwm_rgbw_g.set_level(
-                            scaleto100(
-                                self.rgbw_color[1] * brightness / self.brightness
-                            ),
-                            self._transition * 1000,
-                        ),
-                        self.xpwm_rgbw_b.set_level(
-                            scaleto100(
-                                self.rgbw_color[2] * brightness / self.brightness
-                            ),
-                            self._transition * 1000,
-                        ),
-                        self.xpwm_rgbw_w.set_level(
-                            scaleto100(
-                                self.rgbw_color[3] * brightness / self.brightness
-                            ),
-                            self._transition * 1000,
-                        ),
+                    await self.xpwm_rgbw_r.set_level(
+                        scaleto100(self.rgbw_color[0] * brightness / self.brightness),
+                        self._transition * 1000,
+                    )
+                    await self.xpwm_rgbw_g.set_level(
+                        scaleto100(self.rgbw_color[1] * brightness / self.brightness),
+                        self._transition * 1000,
+                    )
+                    await self.xpwm_rgbw_b.set_level(
+                        scaleto100(self.rgbw_color[2] * brightness / self.brightness),
+                        self._transition * 1000,
+                    )
+                    await self.xpwm_rgbw_w.set_level(
+                        scaleto100(self.rgbw_color[3] * brightness / self.brightness),
+                        self._transition * 1000,
                     )
                 else:
                     await self.xpwm_rgbw_w.set_level(
@@ -558,25 +480,15 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
                 await self.xpwm_rgbw_w.set_level(
                     self._default_brightness, self._transition * 1000
                 )
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn off IPX800 light: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        try:
+        with self._command_error("turn off"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await async_gather(
-                self.xpwm_rgbw_w.off(self._transition * 1000),
-                self.xpwm_rgbw_r.off(self._transition * 1000),
-                self.xpwm_rgbw_g.off(self._transition * 1000),
-                self.xpwm_rgbw_b.off(self._transition * 1000),
-            )
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn off IPX800 light: %s", self.name
-            )
+            await self.xpwm_rgbw_w.off(self._transition * 1000)
+            await self.xpwm_rgbw_r.off(self._transition * 1000)
+            await self.xpwm_rgbw_g.off(self._transition * 1000)
+            await self.xpwm_rgbw_b.off(self._transition * 1000)
+        await self.coordinator.async_request_refresh()

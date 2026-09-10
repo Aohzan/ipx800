@@ -2,7 +2,7 @@
 
 import logging
 
-from pypx800 import IPX800, X4FP, Ipx800RequestError, Relay
+from pypx800 import IPX800, X4FP, Relay
 
 from homeassistant.components.climate import (
     PRESET_AWAY,
@@ -142,17 +142,13 @@ class X4FPClimate(IpxEntity, ClimateEntity):
         _LOGGER.debug(
             "set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode)
         )
-        try:
+        with self._command_error("set preset mode"):
             await self.control.set_mode(switcher.get(preset_mode))
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while set IPX800 climate preset mode: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
-        try:
+        with self._command_error("set HVAC mode"):
             if hvac_mode == HVACMode.HEAT:
                 await self.control.set_mode(0)
             elif hvac_mode == HVACMode.OFF:
@@ -160,11 +156,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
             else:
                 _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
                 return
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while set IPX800 climate hvac mode: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
 
 class RelayClimate(IpxEntity, ClimateEntity):
@@ -238,7 +230,7 @@ class RelayClimate(IpxEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
-        try:
+        with self._command_error("set HVAC mode"):
             if hvac_mode == HVACMode.HEAT:
                 await self.control_minus.off()
                 await self.control_plus.off()
@@ -248,15 +240,11 @@ class RelayClimate(IpxEntity, ClimateEntity):
             else:
                 _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
                 return
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while set IPX800 climate hvac mode: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set target preset mode."""
-        try:
+        with self._command_error("set preset mode"):
             if preset_mode == PRESET_COMFORT:
                 await self.control_minus.off()
                 await self.control_plus.off()
@@ -269,8 +257,4 @@ class RelayClimate(IpxEntity, ClimateEntity):
             else:
                 await self.control_minus.off()
                 await self.control_plus.on()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while set IPX800 climate preset mode: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()

@@ -1,7 +1,5 @@
 """Support for IPX800 V4 numbers."""
 
-import logging
-
 from pypx800 import IPX800, Counter, VAInput
 
 from homeassistant.components.number import NumberEntity, NumberMode
@@ -22,7 +20,6 @@ from .const import (
 )
 from .entity import IpxEntity
 
-_LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 
@@ -76,7 +73,8 @@ class CounterNumber(IpxEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
-        await self.control.set_value(value)
+        with self._command_error("set value"):
+            await self.control.set_value(value)
 
 
 class VirtualAnalogInNumber(IpxEntity, NumberEntity):
@@ -106,4 +104,5 @@ class VirtualAnalogInNumber(IpxEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
-        await self.control.set_value(value)
+        with self._command_error("set value"):
+            await self.control.set_value(value)

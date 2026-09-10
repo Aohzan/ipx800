@@ -159,15 +159,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if any(d[CONF_TYPE] == TYPE_COUNTER for d in config[CONF_DEVICES]):
         specific_devices_types.append(TYPE_COUNTER)
 
-    ipx = IPX800(
-        host=config[CONF_HOST],
-        port=config[CONF_PORT],
-        api_key=config[CONF_API_KEY],
-        username=config.get(CONF_USERNAME),
-        password=config.get(CONF_PASSWORD),
-        specific_devices_types=specific_devices_types,
-        session=session,
-    )
+    client_options = {
+        "host": config[CONF_HOST],
+        "port": config[CONF_PORT],
+        "api_key": config[CONF_API_KEY],
+        "username": config.get(CONF_USERNAME),
+        "password": config.get(CONF_PASSWORD),
+        "specific_devices_types": specific_devices_types,
+        "session": session,
+    }
+    ipx = IPX800(**client_options)
+    # Share HA's session, but never replay writes after an ambiguous response.
+    # The polling client retains its existing request/recovery behavior.
+    command_ipx = IPX800(**client_options, request_retries=1)
 
     system = IpxSystemData(
         session,
@@ -233,7 +237,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry_data = hass.data[DOMAIN][entry.entry_id] = {
         CONF_NAME: config[CONF_NAME],
-        CONTROLLER: ipx,
+        CONTROLLER: command_ipx,
         COORDINATOR: coordinator,
         CONF_DEVICES: {},
         UNDO_UPDATE_LISTENER: undo_listener,

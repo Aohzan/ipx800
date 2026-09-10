@@ -1,9 +1,8 @@
 """Support for IPX800 V4 switches."""
 
-import logging
 from typing import Any
 
-from pypx800 import IPX800, Ipx800RequestError, Relay, VInput, VOutput
+from pypx800 import IPX800, Relay, VInput, VOutput
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
@@ -24,7 +23,6 @@ from .const import (
 )
 from .entity import IpxEntity
 
-_LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 
@@ -79,29 +77,21 @@ class RelaySwitch(IpxEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
-        try:
+        with self._command_error("turn on"):
             await self.control.on()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error("An error occurred while toggle IPX800 switch: %s", self.name)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
-        try:
+        with self._command_error("turn off"):
             await self.control.off()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn off IPX800 switch: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the switch."""
-        try:
+        with self._command_error("toggle"):
             await self.control.toggle()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error("An error occurred while toggle IPX800 switch: %s", self.name)
+        await self.coordinator.async_request_refresh()
 
 
 class VirtualOutSwitch(IpxEntity, SwitchEntity):
@@ -132,31 +122,21 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
-        try:
+        with self._command_error("turn on"):
             await self.control.on()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn on IPX800 switch: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
-        try:
+        with self._command_error("turn off"):
             await self.control.off()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn off IPX800 switch: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the switch."""
-        try:
+        with self._command_error("toggle"):
             await self.control.toggle()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error("An error occurred while toggle IPX800 switch: %s", self.name)
+        await self.coordinator.async_request_refresh()
 
 
 class VirtualInSwitch(IpxEntity, SwitchEntity):
@@ -187,28 +167,18 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
-        try:
+        with self._command_error("turn on"):
             await self.control.on()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn on IPX800 switch: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
-        try:
+        with self._command_error("turn off"):
             await self.control.off()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error(
-                "An error occurred while turn off IPX800 switch: %s", self.name
-            )
+        await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the switch."""
-        try:
+        with self._command_error("toggle"):
             await self.control.toggle()
-            await self.coordinator.async_request_refresh()
-        except Ipx800RequestError:
-            _LOGGER.error("An error occurred while toggle IPX800 switch: %s", self.name)
+        await self.coordinator.async_request_refresh()
