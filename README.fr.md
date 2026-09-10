@@ -104,3 +104,5 @@ Ce paramètre dans l'URL est également disponible pour chaque route décrite ci
 ## Exemple et paramètres de configuration
 
 [Sur le README original](README.md)
+
+Les routes push utilisent la configuration active de l’IPX à chaque requête. Recharger un contrôleur met à jour ses identifiants, sa liste d’équipements et son coordinateur sans remplacer les routes d’un autre IPX. Les requêtes vers un contrôleur déchargé sont refusées. Les URL existantes avec ou sans nom restent compatibles ; une URL sans nom doit identifier un seul IPX chargé grâce aux identifiants et à la vérification de l’hôte. Si plusieurs IPX correspondent, utiliser l’URL contenant le nom de l’IPX.

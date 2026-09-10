@@ -300,3 +300,5 @@ This parameter in the URL is also available for each routes described above:
 ## Dependency
 
 [pypix800 python package](https://github.com/Aohzan/pypx800) (installed by Home-Assistant itself, nothing to do here)
+
+Push routes resolve the currently loaded IPX configuration on every request. Reloading one controller updates its credentials, device list and refresh target without replacing another controller's routes. Requests for an unloaded controller are rejected. Existing named and unnamed URLs remain supported; an unnamed URL must identify exactly one loaded IPX through its credentials and host check. If multiple IPXs match, use the named URL to remove the ambiguity.
