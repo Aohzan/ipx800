@@ -1,5 +1,7 @@
 """Generic IPX800V4 entity."""
 
+from math import isfinite
+
 from pypx800 import IPX800
 
 from homeassistant.const import (
@@ -41,6 +43,47 @@ from .coordinator import IpxDataUpdateCoordinator
 
 class IpxEntity(CoordinatorEntity):
     """Representation of a IPX800 generic device entity."""
+
+    _push_prefix: str | None = None
+    _push_binary = False
+    _push_invert = False
+
+    async def async_added_to_hass(self) -> None:
+        """Register the live entity by its stable registry identity."""
+        await super().async_added_to_hass()
+        self.coordinator.push_entities[self.unique_id] = self
+        self.async_on_remove(self._remove_push_entity)
+
+    def _remove_push_entity(self) -> None:
+        """Do not remove a replacement entity during late cleanup."""
+        if self.coordinator.push_entities.get(self.unique_id) is self:
+            self.coordinator.push_entities.pop(self.unique_id)
+
+    @property
+    def push_key(self) -> str | None:
+        """Raw scalar field represented by this entity, if unambiguous."""
+        return f"{self._push_prefix}{self._id}" if self._push_prefix else None
+
+    def push_values(self, state: str) -> dict:
+        """Convert an entity state to raw data without issuing a command."""
+        key = self.push_key
+        if key is None:
+            raise ValueError("This entity requires a full refresh push")
+        if self._push_binary:
+            states = {"on": 1, "true": 1, "1": 1, "off": 0, "false": 0, "0": 0}
+            if state.lower() not in states:
+                raise ValueError("Expected on/off, true/false or 1/0")
+            value = states[state.lower()]
+            if self._push_invert and self._invert_value:
+                value = 1 - value
+        else:
+            try:
+                value = float(state)
+            except ValueError:
+                raise ValueError("Expected a numeric field value") from None
+            if not isfinite(value):
+                raise ValueError("Expected a finite field value")
+        return {key: value}
 
     def __init__(
         self,
@@ -124,9 +167,7 @@ class IpxEntity(CoordinatorEntity):
         entity is marked unavailable for the cycle instead of raising a
         KeyError when its state is computed.
         """
-        return self.coordinator.data_available and all(
-            key in self.coordinator.data for key in keys
-        )
+        return self.coordinator.fields_available(*keys)
 
 
 class IpxDiagnosticEntity(CoordinatorEntity):

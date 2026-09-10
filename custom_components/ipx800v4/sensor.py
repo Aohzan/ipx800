@@ -105,6 +105,8 @@ async def async_setup_entry(
 class AnalogInSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through analog input."""
 
+    _push_prefix = "A"
+
     @property
     def available(self) -> bool:
         """Return True if the analog input is present in the last update."""
@@ -119,6 +121,8 @@ class AnalogInSensor(IpxEntity, SensorEntity):
 class CounterSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through analog input."""
 
+    _push_prefix = "C"
+
     @property
     def available(self) -> bool:
         """Return True if the counter is present in the last update."""
@@ -132,6 +136,8 @@ class CounterSensor(IpxEntity, SensorEntity):
 
 class VirtualAnalogInSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through virtual analog input."""
+
+    _push_prefix = "VA"
 
     @property
     def available(self) -> bool:
@@ -165,6 +171,11 @@ class XTHLSensor(IpxEntity, SensorEntity):
         self._req_type = req_type
 
     @property
+    def push_key(self) -> str:
+        """Return the raw measurement field."""
+        return f"THL{self._id}-{self._req_type}"
+
+    @property
     def available(self) -> bool:
         """Return True if the sensor value is present in the last update."""
         return self._data_available(f"THL{self._id}-{self._req_type}")
@@ -177,6 +188,11 @@ class XTHLSensor(IpxEntity, SensorEntity):
 
 class XENOSensor(IpxEntity, SensorEntity):
     """Representation of an Enocean sensor."""
+
+    @property
+    def push_key(self) -> str:
+        """Return the raw measurement field."""
+        return f"ENO ANALOG{int(self._id) - 121 + 17}"
 
     @property
     def available(self) -> bool:

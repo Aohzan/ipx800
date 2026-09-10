@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import logging
+from time import monotonic
 
 from aiohttp import ClientResponseError, InvalidURL
 from pypx800 import (
@@ -38,6 +39,71 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         self.consecutive_failures = 0
         self.last_successful_read: datetime | None = None
         self._retain_data = False
+        self.push_entities = {}
+        self.field_push_times: dict[str, float] = {}
+        self._push_expiry = None
+
+    def fields_available(self, *keys: str) -> bool:
+        """Require each field to have usable poll data or a recent direct push."""
+        now = monotonic()
+        return self.data is not None and all(
+            key in self.data
+            and (
+                self.data_available
+                or now - self.field_push_times.get(key, float("-inf")) < self.push_ttl
+            )
+            for key in keys
+        )
+
+    @property
+    def push_ttl(self) -> float:
+        """Bound push-only availability to one scan plus the recovery window."""
+        interval = self.update_interval.total_seconds()
+        return interval + (MAX_READ_FAILURES - 1) * min(interval, MAX_READ_RETRY_DELAY)
+
+    @callback
+    def async_apply_push(self, values: dict) -> None:
+        """Merge a validated batch without altering full-read health or timers."""
+        if self._shutdown_requested:
+            return
+        self.data = {**(self.data or {}), **values}
+        now = monotonic()
+        self.field_push_times.update({key: now for key in values})
+        self._schedule_push_expiry()
+        self.async_update_listeners()
+
+    @callback
+    def _schedule_push_expiry(self) -> None:
+        """Maintain one timer for field freshness, independent of polling."""
+        if self._push_expiry is not None:
+            self._push_expiry.cancel()
+            self._push_expiry = None
+        if self.field_push_times and not self._shutdown_requested:
+            delay = max(
+                0, min(self.field_push_times.values()) + self.push_ttl - monotonic()
+            )
+            self._push_expiry = self.hass.loop.call_later(delay, self._expire_push)
+
+    @callback
+    def _expire_push(self) -> None:
+        """Publish expiry even when all subsequent full reads fail."""
+        cutoff = monotonic() - self.push_ttl
+        self.field_push_times = {
+            key: timestamp
+            for key, timestamp in self.field_push_times.items()
+            if timestamp > cutoff
+        }
+        self._schedule_push_expiry()
+        self.async_update_listeners()
+
+    async def async_shutdown(self) -> None:
+        """Release push freshness resources with this controller."""
+        await super().async_shutdown()
+        if self._push_expiry is not None:
+            self._push_expiry.cancel()
+            self._push_expiry = None
+        self.field_push_times.clear()
+        self.push_entities.clear()
 
     @property
     def data_available(self) -> bool:
@@ -55,14 +121,19 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """Read once; never present cached data as a successful acquisition."""
         was_available = self.data_available
-        self._retain_data = False
+        # Keep the previous health decision while awaiting I/O: a direct push
+        # may notify listeners during a recovery read.
+        read_started = monotonic()
         try:
             data = await super()._async_update_data()
         except Ipx800InvalidAuthError as err:
+            self._retain_data = False
             raise ConfigEntryAuthFailed("IPX800 authentication failed") from err
         except Ipx800RequestError as err:
+            self._retain_data = False
             raise ConfigEntryError("IPX800 rejected the API request") from err
         except (Ipx800CannotConnectError, TimeoutError) as err:
+            self._retain_data = False
             # pypx800 wraps aiohttp errors. Do not soften definitive HTTP or
             # URL errors, and never include exception URLs (containing API keys).
             cause = err.__cause__
@@ -97,9 +168,23 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             raise IpxTransientReadError(
                 "IPX800 communication failed", retry_after=retry_delay
             ) from err
+        except Exception:
+            self._retain_data = False
+            raise
 
+        self._retain_data = False
         self.consecutive_failures = 0
         self.last_successful_read = dt_util.utcnow()
+        # A response requested before a push must not overwrite that newer value.
+        self.field_push_times = {
+            key: timestamp
+            for key, timestamp in self.field_push_times.items()
+            if timestamp > read_started
+        }
+        data = dict(data)
+        for key in self.field_push_times:
+            data[key] = self.data[key]
+        self._schedule_push_expiry()
         return data
 
     async def _async_refresh(self, *, log_failures=True, **kwargs) -> None:

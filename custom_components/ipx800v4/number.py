@@ -48,6 +48,8 @@ async def async_setup_entry(
 class CounterNumber(IpxEntity, NumberEntity):
     """Representation of a IPX number through analog input."""
 
+    _push_prefix = "C"
+
     _attr_mode = NumberMode.BOX
     _attr_native_min_value = 0
     _attr_native_max_value = 21474836
@@ -79,6 +81,8 @@ class CounterNumber(IpxEntity, NumberEntity):
 
 class VirtualAnalogInNumber(IpxEntity, NumberEntity):
     """Representation of a IPX number through virtual analog input."""
+
+    _push_prefix = "VA"
 
     def __init__(
         self,

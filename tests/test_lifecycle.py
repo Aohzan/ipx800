@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 import unittest
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 from aiohttp import BasicAuth, web
 from aiohttp.test_utils import TestClient, TestServer
@@ -41,6 +41,22 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
                 async_set=Mock(),
             ),
         )
+        self.registry_entries = {}
+        registry = SimpleNamespace(async_get=self.registry_entries.get)
+        self.registry_patch = patch(
+            "custom_components.ipx800v4.push.er.async_get", return_value=registry
+        )
+        self.registry_patch.start()
+        self.addCleanup(self.registry_patch.stop)
+        self.entries_patch = patch(
+            "custom_components.ipx800v4.push.er.async_entries_for_config_entry",
+            side_effect=lambda registry, entry_id: [
+                entry for entry in self.registry_entries.values()
+                if entry.config_entry_id == entry_id
+            ],
+        )
+        self.entries_patch.start()
+        self.addCleanup(self.entries_patch.stop)
         self.a = self.add_entry("a", "A", "secret-a")
         self.b = self.add_entry("b", "B", "secret-b")
         self.views = [
@@ -65,7 +81,9 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
             "name": name,
             "controller": object(),
             COORDINATOR: SimpleNamespace(
-                async_request_refresh=AsyncMock(), async_shutdown=AsyncMock()
+                async_request_refresh=AsyncMock(), async_shutdown=AsyncMock(),
+                config_entry=SimpleNamespace(entry_id=entry_id),
+                push_entities={}, async_apply_push=Mock()
             ),
             CONF_DEVICES: {"switch": [{
                 "component": "switch", "name": name + " relay",
@@ -76,6 +94,18 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
                 "push_password": password, "push_check_host": True,
             },
         }
+        entity_id = f"switch.{name.lower()}_relay"
+        unique_id = entry_id + "_relay"
+        entity = SimpleNamespace(
+            entity_id=entity_id, _ipx_type="relay", _push_binary=True,
+            _id=1, push_key="R1",
+            push_values=lambda state: {"R1": int(state in ("on", "1"))},
+        )
+        runtime[COORDINATOR].push_entities[unique_id] = entity
+        self.registry_entries[entity_id] = SimpleNamespace(
+            entity_id=entity_id, unique_id=unique_id, platform=DOMAIN,
+            config_entry_id=entry_id,
+        )
         self.hass.data[DOMAIN][entry_id] = runtime
         return runtime
 
@@ -122,16 +152,22 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(url=url):
                 self.assertEqual(await self.get(url, "replacement"), 200)
                 self.assertEqual(await self.get(url, "secret-a"), 401)
-        self.assertEqual(self.hass.states.async_set.call_count, 6)
+        self.hass.states.async_set.assert_not_called()
+        self.assertEqual(current[COORDINATOR].async_apply_push.call_count, 6)
         current[COORDINATOR].async_request_refresh.assert_not_awaited()
         self.b[COORDINATOR].async_request_refresh.assert_not_awaited()
 
     async def test_bulk_uses_reloaded_device_list(self):
         await async_unload_entry(self.hass, SimpleNamespace(entry_id="a"))
         current = self.add_entry("a", "A", "secret-a")
-        current[CONF_DEVICES]["switch"][0]["name"] = "new relay"
+        entity = current[COORDINATOR].push_entities["a_relay"]
+        entity.entity_id = "switch.new_relay"
+        entry = self.registry_entries.pop("switch.a_relay")
+        entry.entity_id = entity.entity_id
+        self.registry_entries[entity.entity_id] = entry
         self.assertEqual(await self.get("/api/ipx800v4_bulk/A/relay/1"), 200)
-        self.hass.states.async_set.assert_called_once_with("switch.new_relay", "on", {})
+        current[COORDINATOR].async_apply_push.assert_called_once_with({"R1": 1})
+        self.hass.states.async_set.assert_not_called()
 
     async def test_ambiguous_legacy_route_is_rejected(self):
         self.b[PUSH_CONFIG]["push_password"] = "secret-a"

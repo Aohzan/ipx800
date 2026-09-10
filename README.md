@@ -24,7 +24,7 @@ Setup requires a successful full read. If the IPX800 cannot be reached, Home Ass
 
 After a successful read, the first two consecutive communication failures retain the last valid states. Each schedules another read after `min(scan_interval, 15)` seconds, using the effective interval from integration options or YAML. The third failure makes coordinator-backed entities unavailable and restores normal polling. With `scan_interval: 300`, the two retries are about 15 seconds apart, excluding request durations; with `scan_interval: 10`, they remain 10 seconds apart.
 
-A successful full read resets recovery immediately, including reads requested through the refresh-push endpoint (still batched for 0.5 seconds) or a manual refresh. Cached states do not count as successful acquisitions. Authentication/configuration errors are not tolerated this way, and commands are not replayed by this recovery mechanism. Missing fields in successful responses and direct-state pushes retain their existing behavior. No additional YAML option is needed.
+A successful full read resets recovery immediately, including reads requested through the refresh-push endpoint (still batched for 0.5 seconds) or a manual refresh. Cached states do not count as successful acquisitions. Authentication/configuration errors are not tolerated this way, and commands are not replayed by this recovery mechanism. Missing fields in successful responses retain their existing behavior. No additional YAML option is needed.
 
 ## Controller diagnostics
 
@@ -302,3 +302,17 @@ This parameter in the URL is also available for each routes described above:
 [pypix800 python package](https://github.com/Aohzan/pypx800) (installed by Home-Assistant itself, nothing to do here)
 
 Push routes resolve the currently loaded IPX configuration on every request. Reloading one controller updates its credentials, device list and refresh target without replacing another controller's routes. Requests for an unloaded controller are rejected. Existing named and unnamed URLs remain supported; an unnamed URL must identify exactly one loaded IPX through its credentials and host check. If multiple IPXs match, use the named URL to remove the ambiguity.
+
+
+### Direct push values and availability
+
+Direct pushes update the coordinator's raw fields and publish normal entity updates. Single-entity and `_data` URLs use the current entity registry IDs (including renamed IDs) and only accept loaded entities belonging to the authenticated IPX. A malformed batch, invalid value, conflicting shared-field update or foreign target rejects the whole request.
+
+- Binary sensors, switches and relay lights accept `on/off`, `true/false` and `1/0` as entity states. Binary sensor inversion is reversed when storing the raw value, then applied normally when displaying it; switches and relay lights follow their existing non-inverted platform semantics.
+- Sensors and numbers accept finite numeric field values. Single-channel PWM lights accept the actual IPX percentage (0–100), or `off/false` for zero. An `on` value alone cannot supply a PWM level.
+- Bulk endpoints retain their existing raw bit-string format for relays, digital inputs, virtual inputs and virtual outputs. Bit positions identify hardware channels; binary sensor inversion is applied only by the entity.
+- Composite or ambiguous states (covers, climates, dimmers, RGB/RGBW lights and diagnostics) require the existing refresh endpoint: a state string alone cannot reliably reconstruct their raw data. Unsupported direct values return HTTP 400; unknown, unloaded or foreign entity targets return HTTP 404.
+
+A valid push records freshness only for the included fields. It does not reset full-read failures, change API health, or postpone polling/recovery. During a read outage, an entity is available only while **all** its required fields have recent push data. Push freshness lasts one configured scan interval plus the two bounded recovery delays: `scan_interval + 2 × min(scan_interval, 15)` seconds (330 seconds for a 300-second scan). Expiry is published even if polling keeps failing.
+
+A successful full read reconciles all fields. A push received while a read is already in flight takes precedence over that response; the next successful read reconciles it normally. The refresh endpoint still requests a debounced full pull, and commands still wait for confirmed data.

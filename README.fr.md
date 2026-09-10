@@ -36,7 +36,7 @@ Le démarrage de l’intégration nécessite une lecture complète réussie. Si 
 
 Après une lecture réussie, les deux premiers échecs consécutifs de communication conservent les derniers états valides. Chacun programme une nouvelle lecture après `min(scan_interval, 15)` secondes, avec priorité aux options de l’intégration sur le YAML. Le troisième échec rend les entités du coordinateur indisponibles et rétablit le rythme normal. Avec `scan_interval: 300`, les deux reprises sont espacées d’environ 15 secondes, hors durée des requêtes ; avec `scan_interval: 10`, elles restent espacées de 10 secondes.
 
-Toute lecture complète réussie réinitialise immédiatement la reprise, y compris après un push de rafraîchissement (toujours regroupé sur 0,5 seconde) ou une demande manuelle. Les états conservés ne comptent pas comme une acquisition réussie. Les erreurs d’authentification/configuration ne bénéficient pas de cette tolérance et ce mécanisme ne rejoue aucune commande. Les champs absents d’une réponse réussie et les push directs d’état conservent leur comportement existant. Aucune nouvelle option YAML n’est nécessaire.
+Toute lecture complète réussie réinitialise immédiatement la reprise, y compris après un push de rafraîchissement (toujours regroupé sur 0,5 seconde) ou une demande manuelle. Les états conservés ne comptent pas comme une acquisition réussie. Les erreurs d’authentification/configuration ne bénéficient pas de cette tolérance et ce mécanisme ne rejoue aucune commande. Les champs absents d’une réponse réussie conservent leur comportement existant. Aucune nouvelle option YAML n’est nécessaire.
 
 ## Dépendances
 
@@ -106,3 +106,17 @@ Ce paramètre dans l'URL est également disponible pour chaque route décrite ci
 [Sur le README original](README.md)
 
 Les routes push utilisent la configuration active de l’IPX à chaque requête. Recharger un contrôleur met à jour ses identifiants, sa liste d’équipements et son coordinateur sans remplacer les routes d’un autre IPX. Les requêtes vers un contrôleur déchargé sont refusées. Les URL existantes avec ou sans nom restent compatibles ; une URL sans nom doit identifier un seul IPX chargé grâce aux identifiants et à la vérification de l’hôte. Si plusieurs IPX correspondent, utiliser l’URL contenant le nom de l’IPX.
+
+
+### Valeurs et disponibilité des push directs
+
+Les push directs mettent à jour les champs du coordinateur puis publient normalement les entités. Les URL individuelles et `_data` utilisent les identifiants actuels du registre, y compris après renommage, et acceptent uniquement les entités chargées de l’IPX authentifié. Un lot mal formé, une valeur invalide, des valeurs contradictoires pour un même champ ou une cible étrangère entraînent le rejet complet de la requête.
+
+- Les capteurs binaires, interrupteurs et lumières sur relais acceptent `on/off`, `true/false` et `1/0` comme états d’entité. L’inversion des capteurs binaires est convertie vers la valeur brute puis appliquée normalement à l’affichage. Les interrupteurs et lumières sur relais conservent leur fonctionnement sans inversion.
+- Les capteurs et nombres acceptent des valeurs numériques finies. Une lumière PWM à un canal accepte son pourcentage IPX réel (0–100), ou `off/false` pour zéro. La valeur `on` seule ne fournit pas le niveau PWM.
+- Les URL bulk conservent leurs chaînes de bits bruts pour les relais, entrées numériques, entrées virtuelles et sorties virtuelles. L’inversion des capteurs binaires est appliquée uniquement par l’entité.
+- Les états composites ou ambigus (volets, climats, dimmers, lumières RGB/RGBW et diagnostics) nécessitent l’URL de rafraîchissement existante. Une chaîne d’état seule ne permet pas de reconstruire fidèlement leurs données. Les valeurs non prises en charge renvoient HTTP 400 ; les entités inconnues, déchargées ou étrangères renvoient HTTP 404.
+
+Un push valide actualise uniquement la fraîcheur des champs reçus. Il ne remet pas à zéro les erreurs de lecture et ne décale ni le polling ni les tentatives de récupération. Pendant une panne de lecture, une entité reste disponible uniquement si **tous** ses champs nécessaires ont reçu un push récent. Cette fraîcheur expire après `scan_interval + 2 × min(scan_interval, 15)` secondes, soit 330 secondes pour un intervalle de 300 secondes. L’expiration est publiée même si les lectures échouent toujours.
+
+Une lecture complète réussie réconcilie les données. Un push reçu pendant une lecture en cours prime sur sa réponse ; la lecture réussie suivante le réconcilie normalement. L’URL refresh demande toujours une lecture complète avec regroupement des appels, et les commandes attendent toujours des données confirmées.

@@ -1,29 +1,25 @@
 """Stateless push routes resolving the current live IPX entry per request."""
 
 from http import HTTPStatus
-import logging
 
 from aiohttp import BasicAuth, web
 
 from homeassistant.const import CONF_HOST, CONF_NAME
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.http import HomeAssistantView
-from homeassistant.util import slugify
 
 from .const import (
-    CONF_COMPONENT,
-    CONF_DEVICES,
-    CONF_ID,
-    CONF_INVERT_VALUE,
     CONF_PUSH_CHECK_HOST,
     CONF_PUSH_PASSWORD,
-    CONF_TYPE,
     COORDINATOR,
     DOMAIN,
     PUSH_CONFIG,
     PUSH_USERNAME,
+    TYPE_DIGITALIN,
+    TYPE_RELAY,
+    TYPE_VIRTUALIN,
+    TYPE_VIRTUALOUT,
 )
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class IpxPushView(HomeAssistantView):
@@ -60,6 +56,36 @@ class IpxPushView(HomeAssistantView):
             raise web.HTTPUnauthorized()
         return matches[0]
 
+    def _entity(self, hass, coordinator, entity_id):
+        """Resolve only an active entity belonging to the receiving config entry."""
+        registry_entry = er.async_get(hass).async_get(entity_id)
+        if (
+            registry_entry is None
+            or registry_entry.platform != DOMAIN
+            or registry_entry.config_entry_id != coordinator.config_entry.entry_id
+        ):
+            raise web.HTTPNotFound(text="Unknown entity for this IPX")
+        entity = coordinator.push_entities.get(registry_entry.unique_id)
+        if entity is None or entity.entity_id != entity_id:
+            raise web.HTTPNotFound(text="Entity is not loaded")
+        return entity
+
+    def _apply(self, coordinator, updates):
+        """Validate every value and shared-field conflict before publishing."""
+        values = {}
+        try:
+            for entity, state in updates:
+                for key, value in entity.push_values(state).items():
+                    if key in values and values[key] != value:
+                        raise ValueError("Conflicting values for the same IPX field")
+                    values[key] = value
+        except ValueError as err:
+            raise web.HTTPBadRequest(text=str(err)) from None
+        if not values:
+            raise web.HTTPBadRequest(text="No supported fields in payload")
+        coordinator.async_apply_push(values)
+        return web.Response(status=HTTPStatus.OK, text="OK")
+
 
 class IpxRequestView(IpxPushView):
     """Provide a page for the device to call."""
@@ -71,15 +97,9 @@ class IpxRequestView(IpxPushView):
 
     async def get(self, request, entity_id, state, ipx_name=None):
         """Respond to requests from the device."""
-        self._entry(request, ipx_name)
-        hass = request.app["hass"]
-        old_state = hass.states.get(entity_id)
-        _LOGGER.debug("Update %s to state %s", entity_id, state)
-        if old_state:
-            hass.states.async_set(entity_id, state, old_state.attributes)
-            return web.Response(status=HTTPStatus.OK, text="OK")
-        _LOGGER.warning("Entity not found for state updating: %s", entity_id)
-        return None
+        coordinator = self._entry(request, ipx_name)[COORDINATOR]
+        entity = self._entity(request.app["hass"], coordinator, entity_id)
+        return self._apply(coordinator, [(entity, state)])
 
 
 class IpxRequestDataView(IpxPushView):
@@ -92,21 +112,17 @@ class IpxRequestDataView(IpxPushView):
 
     async def get(self, request, data, ipx_name=None):
         """Respond to requests from the device."""
-        self._entry(request, ipx_name)
-        hass = request.app["hass"]
-        entities_data = data.split("&")
-        for entity_data in entities_data:
-            entity_id = entity_data.split("=")[0]
-            state = "on" if entity_data.split("=")[1] in ["1", "on", "true"] else "off"
-
-            old_state = hass.states.get(entity_id)
-            _LOGGER.debug("Update %s to state %s", entity_id, state)
-            if old_state:
-                hass.states.async_set(entity_id, state, old_state.attributes)
-            else:
-                _LOGGER.warning("Entity not found for state updating: %s", entity_id)
-
-        return web.Response(status=HTTPStatus.OK, text="OK")
+        coordinator = self._entry(request, ipx_name)[COORDINATOR]
+        updates = []
+        for item in data.split("&"):
+            if item.count("=") != 1:
+                raise web.HTTPBadRequest(text="Expected entity_id=value pairs")
+            entity_id, state = item.split("=", 1)
+            if not entity_id or not state:
+                raise web.HTTPBadRequest(text="Empty entity or value")
+            entity = self._entity(request.app["hass"], coordinator, entity_id)
+            updates.append((entity, state))
+        return self._apply(coordinator, updates)
 
 
 class IpxRequestBulkUpdateView(IpxPushView):
@@ -119,35 +135,38 @@ class IpxRequestBulkUpdateView(IpxPushView):
 
     async def get(self, request, device_type, data, ipx_name=None):
         """Respond to requests from the device."""
-        entry_data = self._entry(request, ipx_name)
-        hass = request.app["hass"]
-        _LOGGER.debug(
-            "Bulk update %s from %s : %s", device_type, entry_data[CONF_NAME], data
-        )
-        devices = (
-            device
-            for platform_devices in entry_data[CONF_DEVICES].values()
-            for device in platform_devices
-        )
-        for device_config in devices:
-            if device_config[CONF_TYPE] != device_type or CONF_ID not in device_config:
+        coordinator = self._entry(request, ipx_name)[COORDINATOR]
+        supported_types = {
+            TYPE_RELAY, TYPE_DIGITALIN, TYPE_VIRTUALIN, TYPE_VIRTUALOUT,
+        }
+        if (
+            device_type not in supported_types
+            or not data
+            or any(bit not in "01" for bit in data)
+        ):
+            raise web.HTTPBadRequest(
+                text="Expected a supported binary type and bit string"
+            )
+        # Use live registry entries, including renamed IDs. Bulk bits are raw
+        # hardware values: platform properties apply their own inversion once.
+        values = {}
+        registry = er.async_get(request.app["hass"])
+        for entry in er.async_entries_for_config_entry(
+            registry, coordinator.config_entry.entry_id
+        ):
+            if entry.platform != DOMAIN:
                 continue
-            index = int(device_config[CONF_ID]) - 1
+            entity = coordinator.push_entities.get(entry.unique_id)
+            if entity is None or entity.entity_id != entry.entity_id:
+                continue
+            if entity._ipx_type != device_type or not entity._push_binary:
+                continue
+            index = entity._id - 1
             if 0 <= index < len(data):
-                entity_id = ".".join(
-                    [device_config[CONF_COMPONENT], slugify(device_config[CONF_NAME])]
-                )
-                invert_value = device_config.get(CONF_INVERT_VALUE, False)
-                state = "on" if data[index] == ("0" if invert_value else "1") else "off"
-                old_state = hass.states.get(entity_id)
-                if old_state:
-                    if state != old_state.state:
-                        _LOGGER.debug("Update %s to state %s", entity_id, state)
-                        hass.states.async_set(entity_id, state, old_state.attributes)
-                else:
-                    _LOGGER.warning(
-                        "Entity not found for state updating: %s", entity_id
-                    )
+                values[entity.push_key] = int(data[index])
+        if not values:
+            raise web.HTTPBadRequest(text="No loaded targets in payload")
+        coordinator.async_apply_push(values)
         return web.Response(status=HTTPStatus.OK, text="OK")
 
 

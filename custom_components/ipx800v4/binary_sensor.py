@@ -49,6 +49,10 @@ async def async_setup_entry(
 class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual Out."""
 
+    _push_prefix = "VO"
+    _push_binary = True
+    _push_invert = True
+
     @property
     def available(self) -> bool:
         """Return True if the virtual output is present in the last update."""
@@ -64,6 +68,10 @@ class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
 
 class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
     """Representation of a IPX Virtual In."""
+
+    _push_prefix = "D"
+    _push_binary = True
+    _push_invert = True
 
     @property
     def available(self) -> bool:

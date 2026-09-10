@@ -82,6 +82,9 @@ async def async_setup_entry(
 class RelayLight(IpxEntity, LightEntity):
     """Representation of a IPX Light through relay."""
 
+    _push_prefix = "R"
+    _push_binary = True
+
     def __init__(
         self,
         device_config: dict,
@@ -211,6 +214,8 @@ class XDimmerLight(IpxEntity, LightEntity):
 class XPWMLight(IpxEntity, LightEntity):
     """Representation of a IPX Light through X-PWM single channel."""
 
+    _push_prefix = "PWM"
+
     def __init__(
         self,
         device_config: dict,
@@ -228,6 +233,15 @@ class XPWMLight(IpxEntity, LightEntity):
         self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         self._attr_color_mode = ColorMode.BRIGHTNESS
         self._attr_supported_features = LightEntityFeature.TRANSITION
+
+    def push_values(self, state: str) -> dict:
+        """Accept the reported PWM percentage; on alone cannot specify a level."""
+        if state.lower() in ("off", "false"):
+            state = "0"
+        values = super().push_values(state)
+        if not 0 <= values[self.push_key] <= 100:
+            raise ValueError("Expected a PWM level between 0 and 100")
+        return values
 
     @property
     def available(self) -> bool:

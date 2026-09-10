@@ -54,6 +54,9 @@ async def async_setup_entry(
 class RelaySwitch(IpxEntity, SwitchEntity):
     """Representation of a IPX Switch through relay."""
 
+    _push_prefix = "R"
+    _push_binary = True
+
     def __init__(
         self,
         device_config: dict,
@@ -103,6 +106,9 @@ class RelaySwitch(IpxEntity, SwitchEntity):
 
 class VirtualOutSwitch(IpxEntity, SwitchEntity):
     """Representation of a IPX Virtual Out."""
+
+    _push_prefix = "VO"
+    _push_binary = True
 
     def __init__(
         self,
@@ -155,6 +161,9 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
 
 class VirtualInSwitch(IpxEntity, SwitchEntity):
     """Representation of a IPX Virtual In."""
+
+    _push_prefix = "VI"
+    _push_binary = True
 
     def __init__(
         self,
