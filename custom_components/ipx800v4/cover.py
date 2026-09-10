@@ -74,9 +74,9 @@ class X4VRCover(IpxEntity, CoverEntity):
             )
 
     @property
-    def available(self) -> bool:
-        """Return True if the cover level is present in the last update."""
-        return self._data_available(f"VR{self._ext_id}-{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"VR{self._ext_id}-{self._id}",)
 
     @property
     def is_closed(self) -> bool:

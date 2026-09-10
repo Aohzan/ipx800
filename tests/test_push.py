@@ -83,11 +83,11 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(coordinator.fields_available("R1"))
         with patch("custom_components.ipx800v4.coordinator.monotonic",
                    return_value=monotonic() + coordinator.push_ttl + 1):
-            coordinator._expire_push()
+            coordinator._expire_fields()
         self.assertFalse(coordinator.fields_available("R1"))
         self.assertEqual(coordinator.field_push_times, {})
         coordinator.async_apply_push({"R1": 1})
-        timer = coordinator._push_expiry
+        timer = coordinator._freshness_expiry
         await coordinator.async_shutdown()
         self.assertTrue(timer.cancelled())
 
@@ -213,6 +213,8 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
         inverted = entity(DigitalInBinarySensor, coordinator, "binary_sensor.renamed",
                           invert=True)
         second = entity(DigitalInBinarySensor, coordinator, "binary_sensor.second", 2)
+        coordinator.register_fields(inverted.required_keys)
+        coordinator.register_fields(second.required_keys)
         coordinator.push_entities.update(first=inverted, second=second)
         registry_entries = [
             SimpleNamespace(entity_id=item.entity_id, platform=DOMAIN, unique_id=key)
@@ -238,8 +240,9 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(coordinator.fields_available("D1", "D2"))
             self.assertEqual(coordinator.consecutive_failures, 3)
         reader.side_effect = None
-        # A subsequent successful response missing D1/D2 must not keep either
-        # old push field or its freshness alive.
-        await coordinator.async_refresh()
-        self.assertFalse(inverted.available)
-        self.assertFalse(second.available)
+        # Successful omissions retain pushed values only for the bounded grace.
+        for omission in (1, 2, 3):
+            await coordinator.async_refresh()
+            self.assertEqual(inverted.available, omission < 3)
+            self.assertEqual(second.available, omission < 3)
+        self.assertEqual(coordinator.field_push_times, {})

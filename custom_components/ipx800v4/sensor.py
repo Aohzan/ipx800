@@ -108,9 +108,9 @@ class AnalogInSensor(IpxEntity, SensorEntity):
     _push_prefix = "A"
 
     @property
-    def available(self) -> bool:
-        """Return True if the analog input is present in the last update."""
-        return self._data_available(f"A{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"A{self._id}",)
 
     @property
     def native_value(self) -> float:
@@ -124,9 +124,9 @@ class CounterSensor(IpxEntity, SensorEntity):
     _push_prefix = "C"
 
     @property
-    def available(self) -> bool:
-        """Return True if the counter is present in the last update."""
-        return self._data_available(f"C{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"C{self._id}",)
 
     @property
     def native_value(self) -> float:
@@ -140,9 +140,9 @@ class VirtualAnalogInSensor(IpxEntity, SensorEntity):
     _push_prefix = "VA"
 
     @property
-    def available(self) -> bool:
-        """Return True if the virtual analog input is present in the last update."""
-        return self._data_available(f"VA{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"VA{self._id}",)
 
     @property
     def native_value(self) -> float:
@@ -176,9 +176,9 @@ class XTHLSensor(IpxEntity, SensorEntity):
         return f"THL{self._id}-{self._req_type}"
 
     @property
-    def available(self) -> bool:
-        """Return True if the sensor value is present in the last update."""
-        return self._data_available(f"THL{self._id}-{self._req_type}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"THL{self._id}-{self._req_type}",)
 
     @property
     def native_value(self) -> float:
@@ -195,10 +195,10 @@ class XENOSensor(IpxEntity, SensorEntity):
         return f"ENO ANALOG{int(self._id) - 121 + 17}"
 
     @property
-    def available(self) -> bool:
-        """Return True if the sensor value is present in the last update."""
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
         analog_id = int(self._id) - 121 + 17
-        return self._data_available(f"ENO ANALOG{analog_id}")
+        return (f"ENO ANALOG{analog_id}",)
 
     @property
     def native_value(self) -> float:

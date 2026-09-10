@@ -50,6 +50,10 @@ class IpxEntity(CoordinatorEntity):
 
     async def async_added_to_hass(self) -> None:
         """Register the live entity by its stable registry identity."""
+        self.coordinator.register_fields(self.required_keys)
+        self.async_on_remove(
+            lambda: self.coordinator.unregister_fields(self.required_keys)
+        )
         await super().async_added_to_hass()
         self.coordinator.push_entities[self.unique_id] = self
         self.async_on_remove(self._remove_push_entity)
@@ -159,15 +163,15 @@ class IpxEntity(CoordinatorEntity):
             "configuration_url": configuration_url,
         }
 
-    def _data_available(self, *keys: str) -> bool:
-        """Return True if a usable snapshot contains all keys.
+    @property
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        raise NotImplementedError
 
-        Extension data (X4VR, X4FP, X-THL, X-PWM, X-Dimmer...) can be
-        transiently absent from the IPX800 global response. In that case the
-        entity is marked unavailable for the cycle instead of raising a
-        KeyError when its state is computed.
-        """
-        return self.coordinator.fields_available(*keys)
+    @property
+    def available(self) -> bool:
+        """Require every field to be valid or within its bounded grace period."""
+        return self.coordinator.fields_available(*self.required_keys)
 
 
 class IpxDiagnosticEntity(CoordinatorEntity):

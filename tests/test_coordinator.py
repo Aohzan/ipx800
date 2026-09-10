@@ -164,7 +164,12 @@ class ReadRecoveryTests(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue(pending.cancelled())
                 self.assertEqual(listener.call_count, 2)
                 if error is Ipx800InvalidAuthError:
-                    coordinator.config_entry.async_start_reauth.assert_called_once()
+                    # HA 2026.9 renamed the reauthentication helper.
+                    self.assertEqual(
+                        coordinator.config_entry.async_start_reauth.call_count
+                        + coordinator.config_entry.async_start_reauth_if_available.call_count,
+                        1,
+                    )
                     self.assertIsNone(coordinator._unsub_refresh)
                 else:
                     self.assert_next_read(coordinator, 300)

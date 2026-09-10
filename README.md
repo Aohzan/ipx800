@@ -24,7 +24,13 @@ Setup requires a successful full read. If the IPX800 cannot be reached, Home Ass
 
 After a successful read, the first two consecutive communication failures retain the last valid states. Each schedules another read after `min(scan_interval, 15)` seconds, using the effective interval from integration options or YAML. The third failure makes coordinator-backed entities unavailable and restores normal polling. With `scan_interval: 300`, the two retries are about 15 seconds apart, excluding request durations; with `scan_interval: 10`, they remain 10 seconds apart.
 
-A successful full read resets recovery immediately, including reads requested through the refresh-push endpoint (still batched for 0.5 seconds) or a manual refresh. Cached states do not count as successful acquisitions. Authentication/configuration errors are not tolerated this way, and commands are not replayed by this recovery mechanism. Missing fields in successful responses retain their existing behavior. No additional YAML option is needed.
+A successful full read resets recovery immediately, including reads requested through the refresh-push endpoint (still batched for 0.5 seconds) or a manual refresh. Cached states do not count as successful acquisitions. Authentication/configuration errors are not tolerated this way, and commands are not replayed by this recovery mechanism. No additional YAML option is needed.
+
+### Temporarily missing fields
+
+If a successful response omits a previously valid input/output or extension field (or supplies an invalid value), only that field enters recovery. Its last value is retained for at most two further successful reads or `2 × min(scan_interval, 15)` seconds from the first detected omission, whichever comes first. This is at most 30 seconds with `scan_interval: 300`. All missing fields share the communication recovery scheduler; HTTP failures do not count as successful omissions. Expiration is published even if no further read succeeds.
+
+Only entities depending on an expired field become unavailable; healthy fields keep updating. Fields never received remain unavailable. Normal polling resumes after recovery ends, including for a permanently absent extension. A valid read or direct push restores the supplied fields immediately, without renewing unrelated fields. This policy covers the configured input/output and extension entities; XML diagnostics keep their separate behavior below.
 
 ## Controller diagnostics
 

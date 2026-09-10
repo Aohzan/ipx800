@@ -68,9 +68,9 @@ class RelaySwitch(IpxEntity, SwitchEntity):
         self.control = Relay(ipx, self._id)
 
     @property
-    def available(self) -> bool:
-        """Return True if the relay state is present in the last update."""
-        return self._data_available(f"R{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"R{self._id}",)
 
     @property
     def is_on(self) -> bool:
@@ -121,9 +121,9 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
         self.control = VOutput(ipx, self._id)
 
     @property
-    def available(self) -> bool:
-        """Return True if the virtual output is present in the last update."""
-        return self._data_available(f"VO{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"VO{self._id}",)
 
     @property
     def is_on(self) -> bool:
@@ -176,9 +176,9 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
         self.control = VInput(ipx, self._id)
 
     @property
-    def available(self) -> bool:
-        """Return True if the virtual input is present in the last update."""
-        return self._data_available(f"VI{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"VI{self._id}",)
 
     @property
     def is_on(self) -> bool:

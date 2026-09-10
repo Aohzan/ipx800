@@ -54,9 +54,9 @@ class VirtualOutBinarySensor(IpxEntity, BinarySensorEntity):
     _push_invert = True
 
     @property
-    def available(self) -> bool:
-        """Return True if the virtual output is present in the last update."""
-        return self._data_available(f"VO{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"VO{self._id}",)
 
     @property
     def is_on(self) -> bool:
@@ -74,9 +74,9 @@ class DigitalInBinarySensor(IpxEntity, BinarySensorEntity):
     _push_invert = True
 
     @property
-    def available(self) -> bool:
-        """Return True if the digital input is present in the last update."""
-        return self._data_available(f"D{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"D{self._id}",)
 
     @property
     def is_on(self) -> bool:

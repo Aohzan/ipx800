@@ -36,7 +36,13 @@ Le démarrage de l’intégration nécessite une lecture complète réussie. Si 
 
 Après une lecture réussie, les deux premiers échecs consécutifs de communication conservent les derniers états valides. Chacun programme une nouvelle lecture après `min(scan_interval, 15)` secondes, avec priorité aux options de l’intégration sur le YAML. Le troisième échec rend les entités du coordinateur indisponibles et rétablit le rythme normal. Avec `scan_interval: 300`, les deux reprises sont espacées d’environ 15 secondes, hors durée des requêtes ; avec `scan_interval: 10`, elles restent espacées de 10 secondes.
 
-Toute lecture complète réussie réinitialise immédiatement la reprise, y compris après un push de rafraîchissement (toujours regroupé sur 0,5 seconde) ou une demande manuelle. Les états conservés ne comptent pas comme une acquisition réussie. Les erreurs d’authentification/configuration ne bénéficient pas de cette tolérance et ce mécanisme ne rejoue aucune commande. Les champs absents d’une réponse réussie conservent leur comportement existant. Aucune nouvelle option YAML n’est nécessaire.
+Toute lecture complète réussie réinitialise immédiatement la reprise, y compris après un push de rafraîchissement (toujours regroupé sur 0,5 seconde) ou une demande manuelle. Les états conservés ne comptent pas comme une acquisition réussie. Les erreurs d’authentification/configuration ne bénéficient pas de cette tolérance et ce mécanisme ne rejoue aucune commande. Aucune nouvelle option YAML n’est nécessaire.
+
+### Champs temporairement absents
+
+Si une réponse réussie omet un champ d’entrée/sortie ou d’extension auparavant valide (ou contient une valeur invalide), seul ce champ entre en récupération. Sa dernière valeur est conservée au maximum pendant deux lectures réussies supplémentaires ou `2 × min(scan_interval, 15)` secondes après la première absence détectée, selon la première limite atteinte. Cela représente au plus 30 secondes avec `scan_interval: 300`. Tous les champs absents partagent la planification des reprises de communication ; les échecs HTTP ne comptent pas comme des constats d’absence. L’expiration est publiée même si aucune lecture suivante ne réussit.
+
+Seules les entités dépendant d’un champ expiré deviennent indisponibles ; les autres continuent de recevoir leurs valeurs actuelles. Un champ jamais reçu reste indisponible. Le rythme normal reprend après la récupération, même pour une extension durablement absente. Une lecture ou un push valide rétablit immédiatement les champs reçus, sans renouveler les autres. Cette politique concerne les entités d’entrées/sorties et d’extensions configurées ; les diagnostics XML gardent leur comportement distinct décrit plus haut.
 
 ## Dépendances
 

@@ -65,9 +65,9 @@ class CounterNumber(IpxEntity, NumberEntity):
         self.control = Counter(ipx, self._id)
 
     @property
-    def available(self) -> bool:
-        """Return True if the counter is present in the last update."""
-        return self._data_available(f"C{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"C{self._id}",)
 
     @property
     def native_value(self) -> float:
@@ -95,9 +95,9 @@ class VirtualAnalogInNumber(IpxEntity, NumberEntity):
         self.control = VAInput(ipx, self._id)
 
     @property
-    def available(self) -> bool:
-        """Return True if the virtual analog input is present in the last update."""
-        return self._data_available(f"VA{self._id}")
+    def required_keys(self) -> tuple[str, ...]:
+        """Raw response fields required by this entity."""
+        return (f"VA{self._id}",)
 
     @property
     def native_value(self) -> float:
