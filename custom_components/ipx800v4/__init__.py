@@ -6,7 +6,7 @@ from http import HTTPStatus
 import logging
 
 from aiohttp import web
-from pypx800 import IPX800, Ipx800CannotConnectError, Ipx800InvalidAuthError
+from pypx800 import IPX800
 import voluptuous as vol
 
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -26,14 +26,13 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import slugify
 
 from .const import (
@@ -66,6 +65,7 @@ from .const import (
     UNDO_UPDATE_LISTENER,
 )
 
+from .coordinator import IpxDataUpdateCoordinator
 from .system import IpxSystemData
 
 _LOGGER = logging.getLogger(__name__)
@@ -160,19 +160,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         session=session,
     )
 
-    async def check_connection():
-        if not await ipx.ping():
-            raise Ipx800CannotConnectError
-
-    try:
-        await check_connection()
-    except Ipx800CannotConnectError as exception:
-        _LOGGER.error(
-            "Cannot connect to the IPX800 named %s, check host, port or api_key",
-            config[CONF_NAME],
-        )
-        raise ConfigEntryNotReady from exception
-
     system = IpxSystemData(
         session,
         config[CONF_HOST],
@@ -194,12 +181,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def async_update_data():
         """Fetch data from API."""
         nonlocal controller_mac
-        try:
-            data = await ipx.global_get()
-        except Ipx800InvalidAuthError as err:
-            raise UpdateFailed("Authentication error on IPX800") from err
-        except Ipx800CannotConnectError as err:
-            raise UpdateFailed(f"Failed to communicating with API: {err}") from err
+        data = await ipx.global_get()
 
         # Sequential requests share the configured scan interval and debouncer.
         data["system"] = await system.async_get()
@@ -220,10 +202,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "A scan interval too low has been set, you probably will get errors since the IPX800 can't handle too much request at the same time"
         )
 
-    coordinator = DataUpdateCoordinator(
+    coordinator = IpxDataUpdateCoordinator(
         hass,
         _LOGGER,
-        name=DOMAIN,
+        config_entry=entry,
+        name=f"{config[CONF_NAME]} ({config[CONF_HOST]})",
         update_method=async_update_data,
         update_interval=timedelta(seconds=scan_interval),
         request_refresh_debouncer=Debouncer(
@@ -234,9 +217,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ),
     )
 
-    undo_listener = entry.add_update_listener(_async_update_listener)
+    await coordinator.async_config_entry_first_refresh()
 
-    await coordinator.async_refresh()
+    undo_listener = entry.add_update_listener(_async_update_listener)
+    entry.async_on_unload(undo_listener)
 
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_NAME: config[CONF_NAME],
@@ -310,11 +294,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    for component in PLATFORMS:
-        await hass.config_entries.async_forward_entry_unload(entry, component)
+    if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        return False
 
-    del hass.data[DOMAIN]
-
+    entry_data = hass.data[DOMAIN].pop(entry.entry_id)
+    await entry_data[COORDINATOR].async_shutdown()
     return True
 
 

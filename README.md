@@ -18,7 +18,13 @@ HACS > Integrations > Explore & Add Repositories > GCE IPX800 V4 > Install this 
 Copy `custom_components/ipx800` in `config/custom_components` of your Home Assistant (you must have `*.py` files in `config/custom_components/ipx800v4`).
 Add the `ipx800v4` entry in your `configuration.yml` (see example below).
 
-The IPX800 must be available during Home Assistant start. If you have an other home automation system which query the IPX800, like Jeedom, disable it during start to ensure it will respond to requests.
+Setup requires a successful full read. If the IPX800 cannot be reached, Home Assistant retries setup automatically; entities are not made available without valid data.
+
+### Communication failures
+
+After a successful read, the first two consecutive communication failures retain the last valid states. Each schedules another read after `min(scan_interval, 15)` seconds, using the effective interval from integration options or YAML. The third failure makes coordinator-backed entities unavailable and restores normal polling. With `scan_interval: 300`, the two retries are about 15 seconds apart, excluding request durations; with `scan_interval: 10`, they remain 10 seconds apart.
+
+A successful full read resets recovery immediately, including reads requested through the refresh-push endpoint (still batched for 0.5 seconds) or a manual refresh. Cached states do not count as successful acquisitions. Authentication/configuration errors are not tolerated this way, and commands are not replayed by this recovery mechanism. Missing fields in successful responses and direct-state pushes retain their existing behavior. No additional YAML option is needed.
 
 ## Controller diagnostics
 

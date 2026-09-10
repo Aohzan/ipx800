@@ -30,8 +30,13 @@ HACS > Intégrations > Explorer et ajouter des dépôts > GCE IPX800 V4 > Instal
 Copier le dossier `custom_components/ipx800` dans `config/custom_components` de votre installation Home Assistant (vous devez avoir les fichiers `*.py` dans `config/custom_components/ipx800`).
 Ajouter l'entrée `ipx800` dans votre fichier `configuration.yml` (voir l'exemple ci-dessous).
 
-L'IPX800 doit être disponible pendant le démarrage d'Home Assistant.
-Si vous avez un autre système domotique qui communiquer avec l'IPX800, comme Jeedom, désactivez le pendant le démarrage d'Home Assistant, afin d'être sûr qu'il puisse répondre aux requêtes.
+Le démarrage de l’intégration nécessite une lecture complète réussie. Si l’IPX800 est injoignable, Home Assistant retente automatiquement la configuration ; les entités ne sont pas disponibles sans données valides.
+
+### Erreurs de communication
+
+Après une lecture réussie, les deux premiers échecs consécutifs de communication conservent les derniers états valides. Chacun programme une nouvelle lecture après `min(scan_interval, 15)` secondes, avec priorité aux options de l’intégration sur le YAML. Le troisième échec rend les entités du coordinateur indisponibles et rétablit le rythme normal. Avec `scan_interval: 300`, les deux reprises sont espacées d’environ 15 secondes, hors durée des requêtes ; avec `scan_interval: 10`, elles restent espacées de 10 secondes.
+
+Toute lecture complète réussie réinitialise immédiatement la reprise, y compris après un push de rafraîchissement (toujours regroupé sur 0,5 seconde) ou une demande manuelle. Les états conservés ne comptent pas comme une acquisition réussie. Les erreurs d’authentification/configuration ne bénéficient pas de cette tolérance et ce mécanisme ne rejoue aucune commande. Les champs absents d’une réponse réussie et les push directs d’état conservent leur comportement existant. Aucune nouvelle option YAML n’est nécessaire.
 
 ## Dépendances
 

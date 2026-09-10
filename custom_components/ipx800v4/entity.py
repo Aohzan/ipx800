@@ -9,10 +9,7 @@ from homeassistant.const import (
     CONF_UNIT_OF_MEASUREMENT,
     EntityCategory,
 )
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
 from .const import (
@@ -39,6 +36,7 @@ from .const import (
     TYPE_XPWM_RGBW,
     TYPE_XTHL,
 )
+from .coordinator import IpxDataUpdateCoordinator
 
 
 class IpxEntity(CoordinatorEntity):
@@ -48,7 +46,7 @@ class IpxEntity(CoordinatorEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
         suffix_name: str = "",
     ) -> None:
         """Initialize the device."""
@@ -119,14 +117,14 @@ class IpxEntity(CoordinatorEntity):
         }
 
     def _data_available(self, *keys: str) -> bool:
-        """Return True if the last update succeeded and contains all keys.
+        """Return True if a usable snapshot contains all keys.
 
         Extension data (X4VR, X4FP, X-THL, X-PWM, X-Dimmer...) can be
         transiently absent from the IPX800 global response. In that case the
         entity is marked unavailable for the cycle instead of raising a
         KeyError when its state is computed.
         """
-        return self.coordinator.last_update_success and all(
+        return self.coordinator.data_available and all(
             key in self.coordinator.data for key in keys
         )
 
@@ -138,7 +136,7 @@ class IpxDiagnosticEntity(CoordinatorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
-        self, ipx: IPX800, coordinator: DataUpdateCoordinator, key: str
+        self, ipx: IPX800, coordinator: IpxDataUpdateCoordinator, key: str
     ) -> None:
         """Initialize a controller diagnostic."""
         super().__init__(coordinator)
@@ -150,7 +148,10 @@ class IpxDiagnosticEntity(CoordinatorEntity):
     @property
     def available(self) -> bool:
         """Return whether this field was present and valid in the last poll."""
-        return super().available and self.system_data.get(self._key) is not None
+        return (
+            self.coordinator.data_available
+            and self.system_data.get(self._key) is not None
+        )
 
     @property
     def system_data(self) -> dict:
