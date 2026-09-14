@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.14.0](https://github.com/Aohzan/ipx800/compare/3.13.1...3.14.0) (2026-09-14)
+
+### Features
+
+* add controller uptime, load and clock diagnostics ([c7c5675](https://github.com/Aohzan/ipx800/commit/c7c567525c9914060a266e2e1c7d6268b77ce1c5))
+
+### Bug Fixes
+
+* bound freshness of temporarily missing IPX response fields ([0e347dc](https://github.com/Aohzan/ipx800/commit/0e347dc8ebb8e1a98d3e18888662e8f3fc36bc47))
+* bound transient read recovery independently of scan interval ([b2a70c8](https://github.com/Aohzan/ipx800/commit/b2a70c8d6e4d8142c92db7d5466cbf1d3e994467))
+* preserve field recovery, snapshot RGB targets and isolate XML polling ([93a75cd](https://github.com/Aohzan/ipx800/commit/93a75cdaf8839ef15b34bfa70eddcbbc35d43b20))
+* propagate IPX command failures to Home Assistant callers ([4983f3e](https://github.com/Aohzan/ipx800/commit/4983f3ec0023f31195484eedcbabf9b0baa8a1de))
+* resolve push requests against live IPX entries ([4180c17](https://github.com/Aohzan/ipx800/commit/4180c179ae1a4f58b1fcb032a2c8f65542d050c4)), closes [#6](https://github.com/Aohzan/ipx800/issues/6)
+* restore release metadata and cover XML diagnostics with tests ([20cc874](https://github.com/Aohzan/ipx800/commit/20cc8744e559b04c1d1f229ee31c9bb6aa97e855))
+* stop unauthenticated XML polling after five failures ([391a96e](https://github.com/Aohzan/ipx800/commit/391a96e92edc3f5350e712edc1384ebe7040ef8b))
+* synchronize direct pushes with coordinator fields and availability ([4fa90b1](https://github.com/Aohzan/ipx800/commit/4fa90b1c56c248cc604486c2cf416b61f6f47525)), closes [#5](https://github.com/Aohzan/ipx800/issues/5)
+
 ## [3.13.1](https://github.com/Aohzan/ipx800/compare/3.13.0...3.13.1) (2026-06-17)
 
 ### Bug Fixes
