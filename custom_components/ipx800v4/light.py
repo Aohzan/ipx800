@@ -106,20 +106,20 @@ class RelayLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        async with self._command_error("turn on"):
-            await self._async_write(self.control.on, retry=True)
+        with self._command_error("turn on"):
+            await self.control.on()
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        async with self._command_error("turn off"):
-            await self._async_write(self.control.off, retry=True)
+        with self._command_error("turn off"):
+            await self.control.off()
         await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the light."""
-        async with self._command_error("toggle"):
-            await self._async_write(self.control.toggle)
+        with self._command_error("toggle"):
+            await self.control.toggle()
         await self.coordinator.async_request_refresh()
 
 
@@ -157,38 +157,31 @@ class XDimmerLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        async with self._command_error("turn on"):
+        with self._command_error("turn on"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_BRIGHTNESS in kwargs:
-                await self._async_write(
-                    self.control.set_level,
-                    scaleto100(kwargs[ATTR_BRIGHTNESS]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.control.set_level(
+                    scaleto100(kwargs[ATTR_BRIGHTNESS]), self._transition * 1000
                 )
             else:
-                await self._async_write(
-                    self.control.on, self._transition * 1000, retry=True
-                )
+                await self.control.on(self._transition * 1000)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        async with self._command_error("turn off"):
+        with self._command_error("turn off"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await self._async_write(
-                self.control.off, self._transition * 1000, retry=True
-            )
+            await self.control.off(self._transition * 1000)
         await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the light."""
-        async with self._command_error("toggle"):
+        with self._command_error("toggle"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await self._async_write(self.control.toggle, self._transition * 1000)
+            await self.control.toggle(self._transition * 1000)
         await self.coordinator.async_request_refresh()
 
 
@@ -241,41 +234,33 @@ class XPWMLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        async with self._command_error("turn on"):
+        with self._command_error("turn on"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_BRIGHTNESS in kwargs:
-                await self._async_write(
-                    self.control.set_level,
-                    scaleto100(kwargs[ATTR_BRIGHTNESS]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.control.set_level(
+                    scaleto100(kwargs[ATTR_BRIGHTNESS]), self._transition * 1000
                 )
             else:
-                await self._async_write(
-                    self.control.set_level,
-                    self._default_brightness,
-                    self._transition * 1000,
-                    retry=True,
+                await self.control.set_level(
+                    self._default_brightness, self._transition * 1000
                 )
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        async with self._command_error("turn off"):
+        with self._command_error("turn off"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await self._async_write(
-                self.control.off, self._transition * 1000, retry=True
-            )
+            await self.control.off(self._transition * 1000)
         await self.coordinator.async_request_refresh()
 
     async def async_toggle(self, **kwargs: Any) -> None:
         """Toggle the light."""
-        async with self._command_error("toggle"):
+        with self._command_error("toggle"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await self._async_write(self.control.toggle, self._transition * 1000)
+            await self.control.toggle(self._transition * 1000)
         await self.coordinator.async_request_refresh()
 
 
@@ -331,28 +316,19 @@ class XPWMRGBLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        async with self._command_error("turn on"):
+        with self._command_error("turn on"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
             if ATTR_RGB_COLOR in kwargs:
                 colors = kwargs[ATTR_RGB_COLOR]
-                await self._async_write(
-                    self.xpwm_rgb_r.set_level,
-                    scaleto100(colors[0]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgb_r.set_level(
+                    scaleto100(colors[0]), self._transition * 1000
                 )
-                await self._async_write(
-                    self.xpwm_rgb_g.set_level,
-                    scaleto100(colors[1]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgb_g.set_level(
+                    scaleto100(colors[1]), self._transition * 1000
                 )
-                await self._async_write(
-                    self.xpwm_rgb_b.set_level,
-                    scaleto100(colors[2]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgb_b.set_level(
+                    scaleto100(colors[2]), self._transition * 1000
                 )
             elif ATTR_BRIGHTNESS in kwargs:
                 brightness = kwargs[ATTR_BRIGHTNESS]
@@ -365,78 +341,48 @@ class XPWMRGBLight(IpxEntity, LightEntity):
                         scaleto100(channel * brightness / current_brightness)
                         for channel in colors
                     )
-                    await self._async_write(
-                        self.xpwm_rgb_r.set_level,
+                    await self.xpwm_rgb_r.set_level(
                         levels[0],
                         self._transition * 1000,
-                        retry=True,
                     )
-                    await self._async_write(
-                        self.xpwm_rgb_g.set_level,
+                    await self.xpwm_rgb_g.set_level(
                         levels[1],
                         self._transition * 1000,
-                        retry=True,
                     )
-                    await self._async_write(
-                        self.xpwm_rgb_b.set_level,
+                    await self.xpwm_rgb_b.set_level(
                         levels[2],
                         self._transition * 1000,
-                        retry=True,
                     )
                 else:
-                    await self._async_write(
-                        self.xpwm_rgb_r.set_level,
-                        scaleto100(brightness),
-                        self._transition * 1000,
-                        retry=True,
+                    await self.xpwm_rgb_r.set_level(
+                        scaleto100(brightness), self._transition * 1000
                     )
-                    await self._async_write(
-                        self.xpwm_rgb_g.set_level,
-                        scaleto100(brightness),
-                        self._transition * 1000,
-                        retry=True,
+                    await self.xpwm_rgb_g.set_level(
+                        scaleto100(brightness), self._transition * 1000
                     )
-                    await self._async_write(
-                        self.xpwm_rgb_b.set_level,
-                        scaleto100(brightness),
-                        self._transition * 1000,
-                        retry=True,
+                    await self.xpwm_rgb_b.set_level(
+                        scaleto100(brightness), self._transition * 1000
                     )
             else:
-                await self._async_write(
-                    self.xpwm_rgb_r.set_level,
-                    scaleto100(self._default_brightness),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgb_r.set_level(
+                    scaleto100(self._default_brightness), self._transition * 1000
                 )
-                await self._async_write(
-                    self.xpwm_rgb_g.set_level,
-                    scaleto100(self._default_brightness),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgb_g.set_level(
+                    scaleto100(self._default_brightness), self._transition * 1000
                 )
-                await self._async_write(
-                    self.xpwm_rgb_b.set_level,
-                    scaleto100(self._default_brightness),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgb_b.set_level(
+                    scaleto100(self._default_brightness), self._transition * 1000
                 )
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        async with self._command_error("turn off"):
+        with self._command_error("turn off"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await self._async_write(
-                self.xpwm_rgb_r.off, self._transition * 1000, retry=True
-            )
-            await self._async_write(
-                self.xpwm_rgb_g.off, self._transition * 1000, retry=True
-            )
-            await self._async_write(
-                self.xpwm_rgb_b.off, self._transition * 1000, retry=True
-            )
+            await self.xpwm_rgb_r.off(self._transition * 1000)
+            await self.xpwm_rgb_g.off(self._transition * 1000)
+            await self.xpwm_rgb_b.off(self._transition * 1000)
         await self.coordinator.async_request_refresh()
 
 
@@ -495,36 +441,24 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
-        async with self._command_error("turn on"):
+        with self._command_error("turn on"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
 
             if ATTR_RGBW_COLOR in kwargs:
                 colors = kwargs[ATTR_RGBW_COLOR]
                 # if only rgb color have been set
-                await self._async_write(
-                    self.xpwm_rgbw_r.set_level,
-                    scaleto100(colors[0]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgbw_r.set_level(
+                    scaleto100(colors[0]), self._transition * 1000
                 )
-                await self._async_write(
-                    self.xpwm_rgbw_g.set_level,
-                    scaleto100(colors[1]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgbw_g.set_level(
+                    scaleto100(colors[1]), self._transition * 1000
                 )
-                await self._async_write(
-                    self.xpwm_rgbw_b.set_level,
-                    scaleto100(colors[2]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgbw_b.set_level(
+                    scaleto100(colors[2]), self._transition * 1000
                 )
-                await self._async_write(
-                    self.xpwm_rgbw_w.set_level,
-                    scaleto100(colors[3]),
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgbw_w.set_level(
+                    scaleto100(colors[3]), self._transition * 1000
                 )
             elif ATTR_BRIGHTNESS in kwargs:
                 brightness = kwargs[ATTR_BRIGHTNESS]
@@ -537,61 +471,40 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
                         scaleto100(channel * brightness / current_brightness)
                         for channel in colors
                     )
-                    await self._async_write(
-                        self.xpwm_rgbw_r.set_level,
+                    await self.xpwm_rgbw_r.set_level(
                         levels[0],
                         self._transition * 1000,
-                        retry=True,
                     )
-                    await self._async_write(
-                        self.xpwm_rgbw_g.set_level,
+                    await self.xpwm_rgbw_g.set_level(
                         levels[1],
                         self._transition * 1000,
-                        retry=True,
                     )
-                    await self._async_write(
-                        self.xpwm_rgbw_b.set_level,
+                    await self.xpwm_rgbw_b.set_level(
                         levels[2],
                         self._transition * 1000,
-                        retry=True,
                     )
-                    await self._async_write(
-                        self.xpwm_rgbw_w.set_level,
+                    await self.xpwm_rgbw_w.set_level(
                         levels[3],
                         self._transition * 1000,
-                        retry=True,
                     )
                 else:
-                    await self._async_write(
-                        self.xpwm_rgbw_w.set_level,
+                    await self.xpwm_rgbw_w.set_level(
                         scaleto100(brightness),
                         self._transition * 1000,
-                        retry=True,
                     )
             else:
-                await self._async_write(
-                    self.xpwm_rgbw_w.set_level,
-                    self._default_brightness,
-                    self._transition * 1000,
-                    retry=True,
+                await self.xpwm_rgbw_w.set_level(
+                    self._default_brightness, self._transition * 1000
                 )
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the light."""
-        async with self._command_error("turn off"):
+        with self._command_error("turn off"):
             if ATTR_TRANSITION in kwargs:
                 self._transition = kwargs[ATTR_TRANSITION]
-            await self._async_write(
-                self.xpwm_rgbw_w.off, self._transition * 1000, retry=True
-            )
-            await self._async_write(
-                self.xpwm_rgbw_r.off, self._transition * 1000, retry=True
-            )
-            await self._async_write(
-                self.xpwm_rgbw_g.off, self._transition * 1000, retry=True
-            )
-            await self._async_write(
-                self.xpwm_rgbw_b.off, self._transition * 1000, retry=True
-            )
+            await self.xpwm_rgbw_w.off(self._transition * 1000)
+            await self.xpwm_rgbw_r.off(self._transition * 1000)
+            await self.xpwm_rgbw_g.off(self._transition * 1000)
+            await self.xpwm_rgbw_b.off(self._transition * 1000)
         await self.coordinator.async_request_refresh()
