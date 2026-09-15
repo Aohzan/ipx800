@@ -91,38 +91,40 @@ class X4VRCover(IpxEntity, CoverEntity):
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open cover."""
-        with self._command_error("open cover"):
-            await self.control.on()
+        async with self._command_error("open cover"):
+            await self._async_write(self.control.on, retry=True)
         asyncio.create_task(self.async_refresh_cover_state(20))
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover."""
-        with self._command_error("close cover"):
-            await self.control.off()
+        async with self._command_error("close cover"):
+            await self._async_write(self.control.off, retry=True)
         asyncio.create_task(self.async_refresh_cover_state(20))
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
-        with self._command_error("stop cover"):
-            await self.control.stop()
+        async with self._command_error("stop cover"):
+            await self._async_write(self.control.stop, retry=True)
         await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Set the cover to a specific position."""
-        with self._command_error("set cover position"):
-            await self.control.set_level(kwargs[ATTR_POSITION])
+        async with self._command_error("set cover position"):
+            await self._async_write(
+                self.control.set_level, kwargs[ATTR_POSITION], retry=True
+            )
         asyncio.create_task(self.async_refresh_cover_state(20))
 
     async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         """Open the cover tilt."""
-        with self._command_error("open cover tilt"):
-            await self.control.set_pulse_up(1)
+        async with self._command_error("open cover tilt"):
+            await self._async_write(self.control.set_pulse_up, 1)
         asyncio.create_task(self.async_refresh_cover_state(3))
 
     async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         """Close the cover tilt."""
-        with self._command_error("close cover tilt"):
-            await self.control.set_pulse_down(1)
+        async with self._command_error("close cover tilt"):
+            await self._async_write(self.control.set_pulse_down, 1)
         asyncio.create_task(self.async_refresh_cover_state(3))
 
     async def async_refresh_cover_state(self, repeat: int = 20) -> None:
