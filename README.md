@@ -360,3 +360,36 @@ Direct pushes update the coordinator's raw fields and publish normal entity upda
 A valid push records freshness only for the included fields. It does not reset full-read failures, change API health, or postpone polling/recovery. During a read outage, an entity is available only while **all** its required fields have recent push data. Push freshness lasts one configured scan interval plus the two bounded recovery delays: `scan_interval + 2 × min(scan_interval, 15)` seconds (330 seconds for a 300-second scan). Expiry is published even if polling keeps failing.
 
 A successful full read reconciles all fields. A push received while a read is already in flight takes precedence over that response; the next successful read reconciles it normally. The refresh endpoint still requests a debounced full pull, and commands still wait for confirmed data.
+
+
+## Command retries
+
+Explicit state/value commands retry transient communication failures at most twice,
+with non-blocking waits of 1 then 2 seconds (three attempts total per write).
+This applies to relay/virtual ON/OFF, dimmer/PWM levels, RGB/RGBW channels,
+heating modes and virtual analog values. Timeouts (including response-body reads), missing success confirmations and
+unexpected/malformed response content are retried. Authentication errors, invalid
+URLs and definitive HTTP errors fail immediately. Final errors include the failure
+category, exception type and actual attempt/retry counts for the failed write. A failed refresh after a successful
+write never replays that write. Failed commands still raise `HomeAssistantError`.
+
+For X4VR, open/close send absolute positions 0/100, a requested position sends
+its absolute target, and stop sends 101. These commands may retry; BSO tilt
+uses relative pulses and never retries. See the [GCE API reference](https://wiki.gce-electronics.com/index.php?title=API_V4).
+Toggles and counter writes also remain single-attempt operations.
+
+A newer command on any overlapping output supersedes older pending retries and
+remaining channel writes, including across entity aliases. An already in-flight
+request finishes before the new write; backoff does not hold the output lock.
+The superseded caller receives an error. Unloading stops pending retries.
+Transitions can restart if their first response was lost; a successful API response
+acknowledges the request, not completion of the physical movement.
+
+For an output driving a pulse, timer or IPX scenario where repeated ON/OFF has
+side effects, add `retry_commands: false` to that device's YAML configuration.
+The default is `true`; this only enables retries for the eligible commands above,
+never for toggles or pulses. External IPX scenarios/manual commands cannot be
+ordered by Home Assistant's command manager.
+
+The command client retains `request_retries=1`. Its CGI path avoids the blocking
+`time.sleep()` in pypx800 2.5.1; integration retries use `await asyncio.sleep()`.

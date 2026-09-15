@@ -1,4 +1,4 @@
-"""Command failures reach callers without retries or fabricated state changes."""
+"""Command failures reach callers with bounded retries and no fabricated state changes."""
 
 import asyncio
 import unittest
@@ -20,6 +20,7 @@ from pypx800 import (
 )
 
 from custom_components.ipx800v4 import async_setup_entry
+from custom_components.ipx800v4.commands import CommandManager, IpxCommandClient
 from custom_components.ipx800v4.climate import RelayClimate, X4FPClimate
 from custom_components.ipx800v4.cover import X4VRCover
 from custom_components.ipx800v4.light import (
@@ -89,9 +90,11 @@ def make_entity(cls, error=None):
     entity.entity_id = "switch.test_ipx"
     entity._id = entity._ext_id = 1
     entity._ids = [1, 2, 3, 4]
+    entity._retry_commands = True
     entity._transition = 0
     entity._default_brightness = 100
     entity.coordinator = SimpleNamespace(
+        commands=CommandManager(),
         data={
             "R1": 1,
             "R2": 0,
@@ -152,6 +155,10 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     entity, write = make_entity(cls, error)
                     before = deepcopy(entity.coordinator.data)
                     with (
+                        patch(
+                            "custom_components.ipx800v4.commands.asyncio.sleep",
+                            new_callable=AsyncMock,
+                        ),
                         self.assertNoLogs("custom_components.ipx800v4", "ERROR"),
                         self.assertRaises(HomeAssistantError) as raised,
                     ):
@@ -160,7 +167,18 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     self.assertIn(entity.entity_id, str(raised.exception))
                     self.assertNotIn("SECRET", str(raised.exception))
                     self.assertNotIn("password", str(raised.exception))
-                    write.assert_awaited_once()
+                    retries = (
+                        error_type
+                        in (Ipx800CannotConnectError, Ipx800RequestError, TimeoutError)
+                        and cls is not CounterNumber
+                        and method
+                        not in (
+                            "async_toggle",
+                            "async_open_cover_tilt",
+                            "async_close_cover_tilt",
+                        )
+                    )
+                    self.assertEqual(write.await_count, 3 if retries else 1)
                     entity.coordinator.async_request_refresh.assert_not_awaited()
                     entity.async_refresh_cover_state.assert_not_called()
                     self.assertEqual(before, entity.coordinator.data)
@@ -218,10 +236,16 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                             **{op: writer(name) for op in ("on", "off", "set_level")}
                         ),
                     )
-                with self.assertRaises(HomeAssistantError):
+                with (
+                    patch(
+                        "custom_components.ipx800v4.commands.asyncio.sleep",
+                        new_callable=AsyncMock,
+                    ),
+                    self.assertRaises(HomeAssistantError),
+                ):
                     await getattr(entity, method)(**kwargs)
                 await asyncio.sleep(0)
-                self.assertEqual(calls, names[:2])
+                self.assertEqual(calls, [names[0]] + [names[1]] * 3)
                 entity.coordinator.async_request_refresh.assert_not_awaited()
 
     async def test_color_targets_survive_updates_between_writes(self):
@@ -230,7 +254,10 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                 with self.subTest(cls=cls.__name__, expire=expire):
                     entity, write = make_entity(cls)
                     entity.coordinator.data = {
-                        "PWM1": 100, "PWM2": 50, "PWM3": 25, "PWM4": 10,
+                        "PWM1": 100,
+                        "PWM2": 50,
+                        "PWM3": 25,
+                        "PWM4": 10,
                     }
                     levels = []
 
@@ -298,10 +325,13 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                 return_value=Mock(async_refresh=AsyncMock()),
             ),
             patch("custom_components.ipx800v4.IPX800", wraps=IPX800) as factory,
+            patch(
+                "custom_components.ipx800v4.IpxCommandClient", wraps=IpxCommandClient
+            ) as command_factory,
         ):
             await async_setup_entry(hass, entry)
         self.assertNotIn("request_retries", factory.call_args_list[0].kwargs)
-        self.assertEqual(factory.call_args_list[1].kwargs["request_retries"], 1)
+        self.assertEqual(command_factory.call_args.kwargs["request_retries"], 1)
         client = hass.data["ipx800v4"]["test"]["controller"]
         # Use real pypx800 API and CGI write paths with unsuccessful responses.
         for control, command in (

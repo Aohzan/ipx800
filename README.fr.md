@@ -161,3 +161,41 @@ Les push directs mettent à jour les champs du coordinateur puis publient normal
 Un push valide actualise uniquement la fraîcheur des champs reçus. Il ne remet pas à zéro les erreurs de lecture et ne décale ni le polling ni les tentatives de récupération. Pendant une panne de lecture, une entité reste disponible uniquement si **tous** ses champs nécessaires ont reçu un push récent. Cette fraîcheur expire après `scan_interval + 2 × min(scan_interval, 15)` secondes, soit 330 secondes pour un intervalle de 300 secondes. L’expiration est publiée même si les lectures échouent toujours.
 
 Une lecture complète réussie réconcilie les données. Un push reçu pendant une lecture en cours prime sur sa réponse ; la lecture réussie suivante le réconcilie normalement. L’URL refresh demande toujours une lecture complète avec regroupement des appels, et les commandes attendent toujours des données confirmées.
+
+
+## Réessais des commandes
+
+Les commandes d’état ou de valeur explicite réessaient les erreurs de communication
+transitoires au maximum deux fois : attente non bloquante de 1 puis 2 secondes,
+soit trois tentatives par écriture. Cela concerne ON/OFF des relais et entrées/sorties
+virtuelles, les niveaux dimmer/PWM, les canaux RGB/RGBW, les modes de chauffage
+et les valeurs analogiques virtuelles. Les timeouts (lecture du corps de réponse comprise), les réponses sans confirmation
+de succès et les contenus inattendus ou mal formés sont réessayés. Les erreurs
+d’authentification, URL invalides et erreurs HTTP définitives ne sont pas réessayées.
+L’erreur finale précise la cause, le type d’exception et le nombre réel de tentatives
+et de réessais pour l’écriture en échec. Une lecture en échec
+après une écriture réussie ne rejoue jamais l’écriture. L’échec final remonte
+à l’automatisation sous forme de `HomeAssistantError`.
+
+Pour X4VR, ouverture/fermeture envoient une position absolue 0/100, le positionnement
+une cible absolue et le stop la valeur 101 : ces commandes peuvent être réessayées.
+L’inclinaison BSO utilise des impulsions relatives et n’est jamais réessayée.
+Voir l’[API GCE](https://wiki.gce-electronics.com/index.php?title=API_V4).
+Les basculements (`toggle`) et écritures de compteurs restent également à un seul envoi.
+
+Une nouvelle commande sur une sortie commune annule les anciens réessais en attente
+et les écritures de canaux restantes, même entre plusieurs entités représentant la
+même sortie. Une requête déjà en cours termine avant la nouvelle écriture ; les
+pauses libèrent les verrous. L’ancien appel reçoit alors une erreur indiquant qu’il
+a été remplacé. Le déchargement de l’intégration arrête les réessais en attente.
+Une transition peut repartir si la première réponse a été perdue ; une réponse API
+réussie confirme la requête, pas la fin du mouvement physique.
+
+Pour une sortie déclenchant une impulsion, une temporisation ou un scénario IPX,
+ajouter `retry_commands: false` dans la configuration YAML de cet équipement si
+répéter ON/OFF a des effets secondaires. Par défaut, l’option vaut `true` et concerne
+uniquement les commandes éligibles ci-dessus, jamais les toggles ou impulsions.
+Le gestionnaire ne peut pas ordonner les commandes manuelles ou scénarios externes à HA.
+
+Le client de commandes conserve `request_retries=1`. Son chemin CGI évite le
+`time.sleep()` bloquant de pypx800 2.5.1 ; les réessais utilisent `await asyncio.sleep()`.
