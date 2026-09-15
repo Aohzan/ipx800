@@ -72,3 +72,6 @@ IPX_PRESET_COMFORT = "Confort"
 
 PRESET_COMFORT_MINUS_1 = "comfort_minus_1"
 PRESET_COMFORT_MINUS_2 = "comfort_minus_2"
+
+# Disable replay for outputs driving timers, pulses or external scenarios.
+CONF_RETRY_COMMANDS = "retry_commands"

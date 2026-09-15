@@ -42,6 +42,7 @@ from .const import (
     CONF_PUSH_CHECK_HOST,
     CONF_PUSH_PASSWORD,
     CONF_TRANSITION,
+    CONF_RETRY_COMMANDS,
     CONF_TYPE,
     CONF_TYPE_ALLOWED,
     CONTROLLER,
@@ -62,6 +63,7 @@ from .const import (
     UNDO_UPDATE_LISTENER,
 )
 
+from .commands import IpxCommandClient
 from .coordinator import IpxDataUpdateCoordinator
 from .push import (
     IpxRequestView,
@@ -86,6 +88,7 @@ PLATFORMS = [
 
 DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
     {
+        vol.Optional(CONF_RETRY_COMMANDS, default=True): cv.boolean,
         vol.Required(CONF_NAME): cv.string,
         vol.Required(CONF_COMPONENT): cv.string,
         vol.Required(CONF_TYPE): cv.string,
@@ -171,9 +174,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "session": session,
     }
     ipx = IPX800(**client_options)
-    # Share HA's session, but never replay writes after an ambiguous response.
+    # Share HA's session; replay policy is explicit at each command call site.
     # The polling client retains its existing request/recovery behavior.
-    command_ipx = IPX800(**client_options, request_retries=1)
+    command_ipx = IpxCommandClient(**client_options, request_retries=1)
 
     system = IpxSystemData(
         session,
