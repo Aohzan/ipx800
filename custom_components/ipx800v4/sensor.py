@@ -111,7 +111,8 @@ async def async_setup_entry(
 
 class AnalogInSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through analog input."""
-
+    
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _push_prefix = "A"
 
     @property
