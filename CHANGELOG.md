@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.15.0](https://github.com/Aohzan/ipx800/compare/3.14.0...3.15.0) (2026-09-18)
+
+### Features
+
+* add retry for idempotent commands ([8f5f80e](https://github.com/Aohzan/ipx800/commit/8f5f80e437a5d08ebee6ba4c30b0c5f18b648952))
+
 ## [3.14.0](https://github.com/Aohzan/ipx800/compare/3.13.1...3.14.0) (2026-09-14)
 
 ### Features
