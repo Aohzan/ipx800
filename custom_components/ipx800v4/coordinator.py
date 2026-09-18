@@ -16,6 +16,7 @@ from pypx800 import (
     Ipx800RequestError,
 )
 
+from .commands import CommandManager
 from .const import MAX_READ_FAILURES, MAX_READ_RETRY_DELAY
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(self, *args, **kwargs) -> None:
         """Initialize per-controller recovery state."""
         super().__init__(*args, **kwargs)
+        self.commands = CommandManager()
         self.consecutive_failures = 0
         self.last_successful_read: datetime | None = None
         self._retain_data = False
@@ -185,6 +187,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def async_shutdown(self) -> None:
         """Release push freshness resources with this controller."""
+        self.commands.shutdown()
         await super().async_shutdown()
         if self._freshness_expiry is not None:
             self._freshness_expiry.cancel()

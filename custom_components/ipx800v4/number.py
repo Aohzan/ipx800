@@ -73,8 +73,8 @@ class CounterNumber(IpxEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
-        with self._command_error("set value"):
-            await self.control.set_value(value)
+        async with self._command_error("set value"):
+            await self._async_write(self.control.set_value, value)
 
 
 class VirtualAnalogInNumber(IpxEntity, NumberEntity):
@@ -104,5 +104,5 @@ class VirtualAnalogInNumber(IpxEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
-        with self._command_error("set value"):
-            await self.control.set_value(value)
+        async with self._command_error("set value"):
+            await self._async_write(self.control.set_value, value, retry=True)

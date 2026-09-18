@@ -142,17 +142,19 @@ class X4FPClimate(IpxEntity, ClimateEntity):
         _LOGGER.debug(
             "set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode)
         )
-        with self._command_error("set preset mode"):
-            await self.control.set_mode(switcher.get(preset_mode))
+        async with self._command_error("set preset mode"):
+            await self._async_write(
+                self.control.set_mode, switcher.get(preset_mode), retry=True
+            )
         await self.coordinator.async_request_refresh()
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
-        with self._command_error("set HVAC mode"):
+        async with self._command_error("set HVAC mode"):
             if hvac_mode == HVACMode.HEAT:
-                await self.control.set_mode(0)
+                await self._async_write(self.control.set_mode, 0, retry=True)
             elif hvac_mode == HVACMode.OFF:
-                await self.control.set_mode(3)
+                await self._async_write(self.control.set_mode, 3, retry=True)
             else:
                 _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
                 return
@@ -185,7 +187,10 @@ class RelayClimate(IpxEntity, ClimateEntity):
     @property
     def required_keys(self) -> tuple[str, ...]:
         """Raw response fields required by this entity."""
-        return (f"R{self._ids[0]}", f"R{self._ids[1]}",)
+        return (
+            f"R{self._ids[0]}",
+            f"R{self._ids[1]}",
+        )
 
     @property
     def hvac_mode(self) -> HVACMode | None:
@@ -230,13 +235,13 @@ class RelayClimate(IpxEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
-        with self._command_error("set HVAC mode"):
+        async with self._command_error("set HVAC mode"):
             if hvac_mode == HVACMode.HEAT:
-                await self.control_minus.off()
-                await self.control_plus.off()
+                await self._async_write(self.control_minus.off, retry=True)
+                await self._async_write(self.control_plus.off, retry=True)
             elif hvac_mode == HVACMode.OFF:
-                await self.control_minus.off()
-                await self.control_plus.on()
+                await self._async_write(self.control_minus.off, retry=True)
+                await self._async_write(self.control_plus.on, retry=True)
             else:
                 _LOGGER.error("Unrecognized hvac mode: %s", hvac_mode)
                 return
@@ -244,17 +249,17 @@ class RelayClimate(IpxEntity, ClimateEntity):
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set target preset mode."""
-        with self._command_error("set preset mode"):
+        async with self._command_error("set preset mode"):
             if preset_mode == PRESET_COMFORT:
-                await self.control_minus.off()
-                await self.control_plus.off()
+                await self._async_write(self.control_minus.off, retry=True)
+                await self._async_write(self.control_plus.off, retry=True)
             elif preset_mode == PRESET_ECO:
-                await self.control_minus.on()
-                await self.control_plus.on()
+                await self._async_write(self.control_minus.on, retry=True)
+                await self._async_write(self.control_plus.on, retry=True)
             elif preset_mode == PRESET_AWAY:
-                await self.control_minus.on()
-                await self.control_plus.off()
+                await self._async_write(self.control_minus.on, retry=True)
+                await self._async_write(self.control_plus.off, retry=True)
             else:
-                await self.control_minus.off()
-                await self.control_plus.on()
+                await self._async_write(self.control_minus.off, retry=True)
+                await self._async_write(self.control_plus.on, retry=True)
         await self.coordinator.async_request_refresh()

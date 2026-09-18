@@ -1,10 +1,12 @@
 """Support for IPX800 V4 covers."""
 
-import logging
-from typing import Any
 import asyncio
+import logging
+from collections.abc import Awaitable, Callable
+from typing import Any
 
-from pypx800 import IPX800, X4VR
+from pypx800 import IPX800, X4VR, Ipx800CannotConnectError, Ipx800RequestError
+
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
@@ -17,6 +19,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
+from .commands import error_details
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -89,41 +92,67 @@ class X4VRCover(IpxEntity, CoverEntity):
         """Return the current cover position."""
         return 100 - int(self.coordinator.data[f"VR{self._ext_id}-{self._id}"])
 
+    async def _async_move(
+        self,
+        command: Callable[..., Awaitable[Any]],
+        *args: Any,
+        repeat: int = 20,
+        retry: bool = True,
+    ) -> None:
+        """Start position reads after the first successful or ambiguous attempt."""
+        tracking = False
+
+        async def attempt():
+            nonlocal tracking
+            try:
+                result = await command(*args)
+            except (Ipx800CannotConnectError, Ipx800RequestError, TimeoutError) as err:
+                if error_details(err)[1] and not tracking:
+                    tracking = True
+                    asyncio.create_task(self.async_refresh_cover_state(repeat))
+                raise
+            else:
+                if not tracking:
+                    tracking = True
+                    asyncio.create_task(self.async_refresh_cover_state(repeat))
+                return result
+
+        await self._async_write(attempt, retry=retry)
+
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open cover."""
-        with self._command_error("open cover"):
-            await self.control.on()
-        asyncio.create_task(self.async_refresh_cover_state(20))
+        async with self._command_error("open cover", target=("position", 100)):
+            await self._async_move(self.control.on)
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover."""
-        with self._command_error("close cover"):
-            await self.control.off()
-        asyncio.create_task(self.async_refresh_cover_state(20))
+        async with self._command_error("close cover", target=("position", 0)):
+            await self._async_move(self.control.off)
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
-        with self._command_error("stop cover"):
-            await self.control.stop()
+        async with self._command_error("stop cover", target=("stop",)):
+            await self._async_write(self.control.stop, retry=True)
         await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Set the cover to a specific position."""
-        with self._command_error("set cover position"):
-            await self.control.set_level(kwargs[ATTR_POSITION])
-        asyncio.create_task(self.async_refresh_cover_state(20))
+        async with self._command_error(
+            "set cover position", target=("position", kwargs[ATTR_POSITION])
+        ):
+            await self._async_move(self.control.set_level, kwargs[ATTR_POSITION])
 
     async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         """Open the cover tilt."""
-        with self._command_error("open cover tilt"):
-            await self.control.set_pulse_up(1)
-        asyncio.create_task(self.async_refresh_cover_state(3))
+        async with self._command_error("open cover tilt"):
+            await self._async_move(self.control.set_pulse_up, 1, repeat=3, retry=False)
 
     async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         """Close the cover tilt."""
-        with self._command_error("close cover tilt"):
-            await self.control.set_pulse_down(1)
-        asyncio.create_task(self.async_refresh_cover_state(3))
+        async with self._command_error("close cover tilt"):
+            await self._async_move(
+                self.control.set_pulse_down, 1, repeat=3, retry=False
+            )
 
     async def async_refresh_cover_state(self, repeat: int = 20) -> None:
         """Refresh state during the cover operation."""
