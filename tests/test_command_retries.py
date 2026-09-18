@@ -16,7 +16,7 @@ from pypx800 import (
 )
 from test_commands import make_entity
 
-from custom_components.ipx800v4.commands import IpxCommandClient
+from custom_components.ipx800v4.commands import IpxCommandClient, InvalidCommandResponse
 from custom_components.ipx800v4.cover import X4VRCover
 from custom_components.ipx800v4.light import RelayLight, XPWMRGBLight
 from custom_components.ipx800v4.switch import RelaySwitch
@@ -269,7 +269,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         from aiohttp import ContentTypeError
 
         for failure, cause, reason in (
-            (Ipx800RequestError(), None, "response did not confirm success"),
+            (InvalidCommandResponse(), None, "response did not confirm success"),
             (
                 Ipx800CannotConnectError(),
                 ContentTypeError(Mock(), (), status=200, message="SECRET"),
@@ -314,7 +314,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         from pypx800 import Relay
 
         for status, body, error, attempts in (
-            (200, {"status": "Error"}, None, 3),
+            (200, {"status": "Error"}, None, 1),
             (200, [], None, 3),
             (200, None, ContentTypeError(Mock(), (), status=200), 3),
             (200, None, JSONDecodeError("invalid", "x", 0), 3),

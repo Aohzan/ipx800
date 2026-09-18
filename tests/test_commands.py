@@ -168,8 +168,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     self.assertNotIn("SECRET", str(raised.exception))
                     self.assertNotIn("password", str(raised.exception))
                     retries = (
-                        error_type
-                        in (Ipx800CannotConnectError, Ipx800RequestError, TimeoutError)
+                        error_type in (Ipx800CannotConnectError, TimeoutError)
                         and cls is not CounterNumber
                         and method
                         not in (
@@ -180,7 +179,14 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     )
                     self.assertEqual(write.await_count, 3 if retries else 1)
                     entity.coordinator.async_request_refresh.assert_not_awaited()
-                    entity.async_refresh_cover_state.assert_not_called()
+                    if (
+                        cls is X4VRCover
+                        and method != "async_stop_cover"
+                        and error_type in (Ipx800CannotConnectError, TimeoutError)
+                    ):
+                        entity.async_refresh_cover_state.assert_called_once()
+                    else:
+                        entity.async_refresh_cover_state.assert_not_called()
                     self.assertEqual(before, entity.coordinator.data)
 
     async def test_successful_commands_keep_refresh_behavior(self):
@@ -224,7 +230,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     async def write(*args):
                         calls.append(name)
                         if name == failed_name:
-                            raise Ipx800RequestError()
+                            raise TimeoutError()
 
                     return write
 

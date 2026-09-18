@@ -167,25 +167,37 @@ Une lecture complète réussie réconcilie les données. Un push reçu pendant u
 
 Les commandes d’état ou de valeur explicite réessaient les erreurs de communication
 transitoires au maximum deux fois : attente non bloquante de 1 puis 2 secondes,
-soit trois tentatives par écriture. Cela concerne ON/OFF des relais et entrées/sorties
+soit au plus trois tentatives par écriture. Un budget global de 15 secondes couvre
+l’ensemble des écritures d’une commande, les attentes de verrou et les délais de
+réessai ; il ne se renouvelle pas à chaque canal RGB/RGBW. Le rafraîchissement
+d’état qui suit reste séparé de ce budget. Cela concerne ON/OFF des relais et entrées/sorties
 virtuelles, les niveaux dimmer/PWM, les canaux RGB/RGBW, les modes de chauffage
 et les valeurs analogiques virtuelles. Les timeouts (lecture du corps de réponse comprise), les réponses sans confirmation
 de succès et les contenus inattendus ou mal formés sont réessayés. Les erreurs
-d’authentification, URL invalides et erreurs HTTP définitives ne sont pas réessayées.
-L’erreur finale précise la cause, le type d’exception et le nombre réel de tentatives
+d’authentification, URL invalides, refus explicites (`status: Error`, ou `Error`
+en CGI) et erreurs HTTP définitives ne sont pas réessayées.
+L’erreur d’écriture précise la cause, le type d’exception et le nombre réel de tentatives
 et de réessais pour l’écriture en échec. Une lecture en échec
 après une écriture réussie ne rejoue jamais l’écriture. L’échec final remonte
-à l’automatisation sous forme de `HomeAssistantError`.
+à l’automatisation sous forme de `HomeAssistantError`. L’expiration du budget,
+le remplacement et le déchargement sont signalés avec l’entité et l’opération.
+Les erreurs 401/403 indiquent le code HTTP et invitent à vérifier les identifiants.
 
 Pour X4VR, ouverture/fermeture envoient une position absolue 0/100, le positionnement
 une cible absolue et le stop la valeur 101 : ces commandes peuvent être réessayées.
 L’inclinaison BSO utilise des impulsions relatives et n’est jamais réessayée.
 Voir l’[API GCE](https://wiki.gce-electronics.com/index.php?title=API_V4).
 Les basculements (`toggle`) et écritures de compteurs restent également à un seul envoi.
+Le suivi de position commence après la première tentative réussie ou ambiguë,
+sans attendre la fin des réessais, même si la commande finit en erreur.
 
 Une nouvelle commande sur une sortie commune annule les anciens réessais en attente
 et les écritures de canaux restantes, même entre plusieurs entités représentant la
-même sortie. Une requête déjà en cours termine avant la nouvelle écriture ; les
+même sortie. Exception : les mêmes consignes ON/OFF de relais ou E/S virtuelles,
+ou les mêmes cibles absolues/stop X4VR, peuvent coexister sur une même sortie
+si les réessais sont autorisés. Chaque appel attend sa propre confirmation ;
+une consigne différente intercalée invalide toujours les anciens réessais.
+Une requête déjà en cours termine (ou expire) avant la nouvelle écriture ; les
 pauses libèrent les verrous. L’ancien appel reçoit alors une erreur indiquant qu’il
 a été remplacé. Le déchargement de l’intégration arrête les réessais en attente.
 Une transition peut repartir si la première réponse a été perdue ; une réponse API

@@ -6,6 +6,7 @@ import socket
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import Any
 
@@ -26,7 +27,24 @@ from pypx800 import (
 
 _LOGGER = logging.getLogger(__name__)
 RETRY_DELAYS = (1, 2)
+COMMAND_TIMEOUT = 15
 _CURRENT_COMMAND: ContextVar[Callable[[], None]] = ContextVar("ipx_command_check")
+
+
+class InvalidCommandResponse(Ipx800RequestError):
+    """An ambiguous response, as opposed to an explicit command refusal."""
+
+
+class CommandInterrupted(HomeAssistantError):
+    """A locally interrupted operation with a safe, contextualizable reason."""
+
+
+@dataclass(eq=False)
+class CommandIntent:
+    """Identity shared only by consecutive, equivalent absolute commands."""
+
+    keys: tuple[str, ...]
+    target: object
 
 
 class IpxCommandClient(IPX800):
@@ -41,16 +59,26 @@ class IpxCommandClient(IPX800):
                 )
                 try:
                     if response.status in (401, 403):
-                        raise Ipx800InvalidAuthError("IPX800 authentication failed")
+                        raise Ipx800InvalidAuthError(
+                            "IPX800 authentication failed"
+                        ) from ClientResponseError(
+                            response.request_info,
+                            response.history,
+                            status=response.status,
+                        )
                     response.raise_for_status()
                     content = await response.json()
                 finally:
                     response.close()
             if not isinstance(content, dict):
-                raise Ipx800RequestError("IPX800 returned an unexpected JSON structure")
+                raise InvalidCommandResponse(
+                    "IPX800 returned an unexpected JSON structure"
+                )
             if not self._request_checkstatus or content.get("status") == "Success":
                 return content
-            raise Ipx800RequestError("IPX800 response did not confirm success")
+            if content.get("status") == "Error":
+                raise Ipx800RequestError("IPX800 rejected the command")
+            raise InvalidCommandResponse("IPX800 response did not confirm success")
         except (TimeoutError, ClientError, socket.gaierror) as err:
             raise Ipx800CannotConnectError("IPX800 communication failed") from err
         except (JSONDecodeError, UnicodeDecodeError) as err:
@@ -68,14 +96,22 @@ class IpxCommandClient(IPX800):
                 )
                 try:
                     if response.status in (401, 403):
-                        raise Ipx800InvalidAuthError("IPX800 authentication failed")
+                        raise Ipx800InvalidAuthError(
+                            "IPX800 authentication failed"
+                        ) from ClientResponseError(
+                            response.request_info,
+                            response.history,
+                            status=response.status,
+                        )
                     response.raise_for_status()
                     content = await response.text()
                 finally:
                     response.close()
             if not self._request_checkstatus or "Success" in content:
                 return content
-            raise Ipx800RequestError("IPX800 response did not confirm success")
+            if content.strip() == "Error":
+                raise Ipx800RequestError("IPX800 rejected the command")
+            raise InvalidCommandResponse("IPX800 response did not confirm success")
         except (TimeoutError, ClientError, socket.gaierror) as err:
             raise Ipx800CannotConnectError("IPX800 communication failed") from err
 
@@ -89,7 +125,10 @@ def error_details(error: Exception) -> tuple[str, bool]:
     """Return a secret-free reason and whether replay may recover the failure."""
     cause = error.__cause__
     if isinstance(error, Ipx800InvalidAuthError):
-        return "authentication failed", False
+        status = (
+            f" (HTTP {cause.status})" if isinstance(cause, ClientResponseError) else ""
+        )
+        return f"authentication failed{status}", False
     if isinstance(error, InvalidURL) or isinstance(cause, InvalidURL):
         return "invalid request URL", False
     # HTTP status takes precedence, including ContentTypeError on a 4xx.
@@ -107,8 +146,10 @@ def error_details(error: Exception) -> tuple[str, bool]:
         return "request timeout", True
     if isinstance(cause, (JSONDecodeError, UnicodeDecodeError)):
         return "invalid response content", True
-    if isinstance(error, Ipx800RequestError):
+    if isinstance(error, InvalidCommandResponse):
         return "response did not confirm success", True
+    if isinstance(error, Ipx800RequestError):
+        return "command rejected", False
     return "connection or response transfer failed", True
 
 
@@ -140,7 +181,7 @@ class CommandManager:
 
     def __init__(self) -> None:
         self._closed = False
-        self._versions: dict[str, object] = {}
+        self._versions: dict[str, CommandIntent] = {}
         self._locks: dict[str, asyncio.Lock] = {}
 
     def shutdown(self) -> None:
@@ -148,22 +189,45 @@ class CommandManager:
         self._closed = True
 
     @asynccontextmanager
-    async def operation(self, keys: tuple[str, ...]) -> AsyncIterator[None]:
-        # Register intent before waiting for an in-flight write. An older
-        # operation must not retry or write its remaining channels afterwards.
-        version = object()
+    async def operation(
+        self, keys: tuple[str, ...], target: object = None
+    ) -> AsyncIterator[None]:
+        # Identical absolute intents share a generation, not a success result.
+        # An intervening conflicting command always starts a new generation.
+        keys = tuple(sorted(set(keys)))
+        previous = self._versions.get(keys[0]) if keys else None
+        if (
+            target is not None
+            and previous is not None
+            and previous.keys == keys
+            and previous.target == target
+            and all(self._versions.get(key) is previous for key in keys)
+        ):
+            version = previous
+        else:
+            version = CommandIntent(keys, target)
         for key in keys:
             self._versions[key] = version
 
         def check_current() -> None:
             if self._closed:
-                raise HomeAssistantError("IPX800 integration is unloading")
+                raise CommandInterrupted("IPX800 integration is unloading")
             if any(self._versions[key] is not version for key in keys):
-                raise HomeAssistantError("IPX800 command superseded by a newer command")
+                raise CommandInterrupted("IPX800 command superseded by a newer command")
 
         token = _CURRENT_COMMAND.set(check_current)
+        budget = asyncio.timeout(COMMAND_TIMEOUT)
         try:
-            yield
+            async with budget:
+                check_current()
+                yield
+        except TimeoutError as err:
+            if not budget.expired():
+                raise
+            raise CommandInterrupted(
+                f"IPX800 command time budget exhausted ({COMMAND_TIMEOUT}s); "
+                "some writes may already have been applied. Check device state"
+            ) from err
         finally:
             _CURRENT_COMMAND.reset(token)
 

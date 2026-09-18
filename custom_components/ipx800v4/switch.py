@@ -77,13 +77,13 @@ class RelaySwitch(IpxEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
-        async with self._command_error("turn on"):
+        async with self._command_error("turn on", target=("state", 1)):
             await self._async_write(self.control.on, retry=True)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
-        async with self._command_error("turn off"):
+        async with self._command_error("turn off", target=("state", 0)):
             await self._async_write(self.control.off, retry=True)
         await self.coordinator.async_request_refresh()
 
@@ -122,13 +122,13 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
-        async with self._command_error("turn on"):
+        async with self._command_error("turn on", target=("state", 1)):
             await self._async_write(self.control.on, retry=True)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
-        async with self._command_error("turn off"):
+        async with self._command_error("turn off", target=("state", 0)):
             await self._async_write(self.control.off, retry=True)
         await self.coordinator.async_request_refresh()
 
@@ -167,13 +167,13 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
-        async with self._command_error("turn on"):
+        async with self._command_error("turn on", target=("state", 1)):
             await self._async_write(self.control.on, retry=True)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
-        async with self._command_error("turn off"):
+        async with self._command_error("turn off", target=("state", 0)):
             await self._async_write(self.control.off, retry=True)
         await self.coordinator.async_request_refresh()
 

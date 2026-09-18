@@ -46,7 +46,7 @@ from .const import (
     TYPE_XTHL,
 )
 from .coordinator import IpxDataUpdateCoordinator
-from .commands import CommandFailure
+from .commands import CommandFailure, CommandInterrupted, error_details
 
 
 class IpxEntity(CoordinatorEntity):
@@ -57,12 +57,25 @@ class IpxEntity(CoordinatorEntity):
     _push_invert = False
 
     @asynccontextmanager
-    async def _command_error(self, operation: str) -> AsyncIterator[None]:
+    async def _command_error(
+        self, operation: str, *, target: object = None
+    ) -> AsyncIterator[None]:
         """Report expected write failures; keep refreshes outside this boundary."""
         try:
-            async with self.coordinator.commands.operation(self.required_keys):
+            async with self.coordinator.commands.operation(
+                self.required_keys, target if self._retry_commands else None
+            ):
                 yield
+        except CommandInterrupted as err:
+            raise HomeAssistantError(
+                f"Cannot {operation} for {self.entity_id or self.name}: {err}"
+            ) from err
         except CommandFailure as err:
+            if error_details(err.error)[0].startswith("authentication failed"):
+                raise HomeAssistantError(
+                    f"Cannot {operation} for {self.entity_id or self.name}: "
+                    f"{err}. Check the configured credentials."
+                ) from err.error
             raise HomeAssistantError(
                 f"Cannot confirm {operation} for {self.entity_id or self.name}: "
                 f"{err}. Check device state before issuing another command."

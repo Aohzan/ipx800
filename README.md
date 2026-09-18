@@ -365,22 +365,33 @@ A successful full read reconciles all fields. A push received while a read is al
 ## Command retries
 
 Explicit state/value commands retry transient communication failures at most twice,
-with non-blocking waits of 1 then 2 seconds (three attempts total per write).
+with non-blocking waits of 1 then 2 seconds (at most three attempts per write).
+A shared 15-second budget covers all writes, lock waits and retry delays in one
+command; it does not restart for each RGB/RGBW channel. The subsequent state
+refresh remains outside this write budget.
 This applies to relay/virtual ON/OFF, dimmer/PWM levels, RGB/RGBW channels,
 heating modes and virtual analog values. Timeouts (including response-body reads), missing success confirmations and
 unexpected/malformed response content are retried. Authentication errors, invalid
-URLs and definitive HTTP errors fail immediately. Final errors include the failure
+URLs, explicit refusals (`status: Error`, or CGI `Error`) and definitive HTTP
+errors fail immediately. Write failures include the failure
 category, exception type and actual attempt/retry counts for the failed write. A failed refresh after a successful
 write never replays that write. Failed commands still raise `HomeAssistantError`.
+Budget exhaustion, supersession and unload errors include the entity and operation.
+Authentication errors retain the HTTP 401/403 status and credentials advice.
 
 For X4VR, open/close send absolute positions 0/100, a requested position sends
 its absolute target, and stop sends 101. These commands may retry; BSO tilt
 uses relative pulses and never retries. See the [GCE API reference](https://wiki.gce-electronics.com/index.php?title=API_V4).
 Toggles and counter writes also remain single-attempt operations.
+Position tracking starts after the first successful or ambiguous attempt, before
+retries finish, including when the command eventually fails.
 
 A newer command on any overlapping output supersedes older pending retries and
-remaining channel writes, including across entity aliases. An already in-flight
-request finishes before the new write; backoff does not hold the output lock.
+remaining channel writes, including across entity aliases. Identical relay/virtual
+ON/OFF intents or X4VR absolute targets/stop on the same output may coexist when
+retries are enabled. Each caller still awaits its own confirmation; an intervening
+conflicting intent always invalidates older retries. An already in-flight request
+finishes (or times out) before the new write; backoff does not hold the output lock.
 The superseded caller receives an error. Unloading stops pending retries.
 Transitions can restart if their first response was lost; a successful API response
 acknowledges the request, not completion of the physical movement.
