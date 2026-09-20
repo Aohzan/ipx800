@@ -1,6 +1,8 @@
 """Coordinate reads with bounded communication and missing-field recovery."""
 
+import asyncio
 import logging
+from contextlib import suppress
 from datetime import datetime
 from math import isfinite
 from time import monotonic
@@ -51,6 +53,38 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         self._missing_fields: dict[str, tuple[float, int]] = {}
         self._last_read_time: float | None = None
         self._read_in_progress = False
+        self._cover_refresh_task: asyncio.Task | None = None
+        self._cover_refresh_remaining = 0
+
+    @callback
+    def async_track_cover_movement(self, repeat: int = 20) -> None:
+        """Extend one shared position refresh loop for this controller."""
+        if self._shutdown_requested:
+            return
+        self._cover_refresh_remaining = max(
+            self._cover_refresh_remaining, max(1, min(repeat, 20))
+        )
+        if self._cover_refresh_task is None:
+            self._cover_refresh_task = self.hass.async_create_background_task(
+                self._async_refresh_covers(), f"{self.name} cover tracking"
+            )
+
+    async def _async_refresh_covers(self) -> None:
+        """Read all positions every two seconds, regardless of cover count."""
+        try:
+            while self._cover_refresh_remaining and not self._shutdown_requested:
+                self._cover_refresh_remaining -= 1
+                try:
+                    await self.async_request_refresh()
+                except Exception as err:
+                    _LOGGER.error(
+                        "%s: cover state refresh failed (%s)",
+                        self.name,
+                        type(err).__name__,
+                    )
+                await asyncio.sleep(2)
+        finally:
+            self._cover_refresh_task = None
 
     @property
     def recovery_delay(self) -> float:
@@ -189,6 +223,12 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         """Release push freshness resources with this controller."""
         self.commands.shutdown()
         await super().async_shutdown()
+        if self._cover_refresh_task is not None:
+            self._cover_refresh_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self._cover_refresh_task
+            self._cover_refresh_task = None
+        self._cover_refresh_remaining = 0
         if self._freshness_expiry is not None:
             self._freshness_expiry.cancel()
             self._freshness_expiry = None

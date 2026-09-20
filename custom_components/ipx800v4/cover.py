@@ -1,7 +1,5 @@
 """Support for IPX800 V4 covers."""
 
-import asyncio
-import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -17,9 +15,9 @@ from homeassistant.components.cover import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .commands import error_details
+from .coordinator import IpxDataUpdateCoordinator
 from .const import (
     CONF_DEVICES,
     CONF_TYPE,
@@ -31,7 +29,6 @@ from .const import (
 )
 from .entity import IpxEntity
 
-_LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 
@@ -60,7 +57,7 @@ class X4VRCover(IpxEntity, CoverEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the X4VRCover."""
         super().__init__(device_config, ipx, coordinator)
@@ -109,12 +106,12 @@ class X4VRCover(IpxEntity, CoverEntity):
             except (Ipx800CannotConnectError, Ipx800RequestError, TimeoutError) as err:
                 if error_details(err)[1] and not tracking:
                     tracking = True
-                    asyncio.create_task(self.async_refresh_cover_state(repeat))
+                    self.coordinator.async_track_cover_movement(repeat)
                 raise
             else:
                 if not tracking:
                     tracking = True
-                    asyncio.create_task(self.async_refresh_cover_state(repeat))
+                    self.coordinator.async_track_cover_movement(repeat)
                 return result
 
         await self._async_write(attempt, retry=retry)
@@ -153,18 +150,3 @@ class X4VRCover(IpxEntity, CoverEntity):
             await self._async_move(
                 self.control.set_pulse_down, 1, repeat=3, retry=False
             )
-
-    async def async_refresh_cover_state(self, repeat: int = 20) -> None:
-        """Refresh state during the cover operation."""
-        if repeat > 20:
-            repeat = 20
-        if repeat < 1:
-            repeat = 1
-        for i in range(repeat):
-            try:
-                await self.coordinator.async_request_refresh()
-            except Exception as e:
-                _LOGGER.error(
-                    "An error occurred while refreshing the cover state: %s", str(e)
-                )
-            await asyncio.sleep(2)

@@ -174,8 +174,11 @@ d’état qui suit reste séparé de ce budget. Cela concerne ON/OFF des relais 
 virtuelles, les niveaux dimmer/PWM, les canaux RGB/RGBW, les modes de chauffage
 et les valeurs analogiques virtuelles. Les timeouts (lecture du corps de réponse comprise), les réponses sans confirmation
 de succès et les contenus inattendus ou mal formés sont réessayés. Les erreurs
-d’authentification, URL invalides, refus explicites (`status: Error`, ou `Error`
-en CGI) et erreurs HTTP définitives ne sont pas réessayées.
+d’authentification, URL invalides et erreurs HTTP définitives ne sont pas
+réessayées. Les réponses génériques `status: Error` ou `Error` en CGI sont
+réessayées uniquement pour les commandes éligibles : elles peuvent survenir
+même si l’ordre a été exécuté. Une erreur permanente peut donc aussi épuiser
+les trois tentatives.
 L’erreur d’écriture précise la cause, le type d’exception et le nombre réel de tentatives
 et de réessais pour l’écriture en échec. Une lecture en échec
 après une écriture réussie ne rejoue jamais l’écriture. L’échec final remonte
@@ -188,6 +191,10 @@ une cible absolue et le stop la valeur 101 : ces commandes peuvent être réessa
 L’inclinaison BSO utilise des impulsions relatives et n’est jamais réessayée.
 Voir l’[API GCE](https://wiki.gce-electronics.com/index.php?title=API_V4).
 Les basculements (`toggle`) et écritures de compteurs restent également à un seul envoi.
+Une seule boucle de suivi par IPX demande un rafraîchissement global toutes les
+2 secondes, pendant 20 cycles (3 pour une inclinaison BSO). Un nouveau mouvement
+prolonge ce suivi sans créer une boucle supplémentaire ; une inclinaison ne
+raccourcit pas un suivi déjà en cours. La boucle est annulée au déchargement.
 Le suivi de position commence après la première tentative réussie ou ambiguë,
 sans attendre la fin des réessais, même si la commande finit en erreur.
 
