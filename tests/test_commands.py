@@ -137,7 +137,7 @@ def make_entity(cls, error=None):
                 }
             ),
         )
-    entity.async_refresh_cover_state = AsyncMock()
+    entity.coordinator.async_track_cover_movement = Mock()
     return entity, write
 
 
@@ -168,7 +168,8 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     self.assertNotIn("SECRET", str(raised.exception))
                     self.assertNotIn("password", str(raised.exception))
                     retries = (
-                        error_type in (Ipx800CannotConnectError, TimeoutError)
+                        error_type
+                        in (Ipx800RequestError, Ipx800CannotConnectError, TimeoutError)
                         and cls is not CounterNumber
                         and method
                         not in (
@@ -182,11 +183,12 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     if (
                         cls is X4VRCover
                         and method != "async_stop_cover"
-                        and error_type in (Ipx800CannotConnectError, TimeoutError)
+                        and error_type
+                        in (Ipx800RequestError, Ipx800CannotConnectError, TimeoutError)
                     ):
-                        entity.async_refresh_cover_state.assert_called_once()
+                        entity.coordinator.async_track_cover_movement.assert_called_once()
                     else:
-                        entity.async_refresh_cover_state.assert_not_called()
+                        entity.coordinator.async_track_cover_movement.assert_not_called()
                     self.assertEqual(before, entity.coordinator.data)
 
     async def test_successful_commands_keep_refresh_behavior(self):
@@ -197,7 +199,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(0)
                 self.assertGreater(write.await_count, 0)
                 if cls is X4VRCover and method != "async_stop_cover":
-                    entity.async_refresh_cover_state.assert_awaited_once()
+                    entity.coordinator.async_track_cover_movement.assert_called_once()
                 elif cls not in (CounterNumber, VirtualAnalogInNumber):
                     entity.coordinator.async_request_refresh.assert_awaited_once()
 

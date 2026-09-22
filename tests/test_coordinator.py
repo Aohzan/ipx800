@@ -8,7 +8,7 @@ from datetime import timedelta
 import logging
 from types import SimpleNamespace
 import unittest
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, call, patch
 
 from pypx800 import (
     Ipx800CannotConnectError,
@@ -239,6 +239,88 @@ class ReadRecoveryTests(unittest.IsolatedAsyncioTestCase):
         reader.side_effect = slow_read
         await asyncio.gather(*(coordinator.async_refresh() for _ in range(5)))
         self.assertEqual(maximum, 1)
+
+    async def test_eight_covers_share_twenty_refreshes(self):
+        coordinator, _ = self.make_coordinator()
+        coordinator.async_request_refresh = AsyncMock()
+        with patch(
+            "custom_components.ipx800v4.coordinator.asyncio.sleep",
+            new_callable=AsyncMock,
+        ) as sleep:
+            for _ in range(8):
+                coordinator.async_track_cover_movement()
+            task = coordinator._cover_refresh_task
+            self.assertEqual(len(self.tasks), 1)
+            await task
+        self.assertEqual(coordinator.async_request_refresh.await_count, 20)
+        self.assertEqual(sleep.await_args_list, [call(2)] * 20)
+        self.assertIsNone(coordinator._cover_refresh_task)
+        # A later movement starts a new loop after the old one finished.
+        with patch(
+            "custom_components.ipx800v4.coordinator.asyncio.sleep",
+            new_callable=AsyncMock,
+        ):
+            coordinator.async_track_cover_movement(3)
+            await coordinator._cover_refresh_task
+        self.assertEqual(coordinator.async_request_refresh.await_count, 23)
+
+    async def test_new_movement_extends_shared_tracking_without_shortening_it(self):
+        coordinator, _ = self.make_coordinator()
+        coordinator.async_request_refresh = AsyncMock()
+        ticks = 0
+
+        async def sleep(delay):
+            nonlocal ticks
+            ticks += 1
+            if ticks == 10:
+                coordinator.async_track_cover_movement(3)
+            if ticks == 15:
+                coordinator.async_track_cover_movement(20)
+
+        with patch(
+            "custom_components.ipx800v4.coordinator.asyncio.sleep", side_effect=sleep
+        ):
+            coordinator.async_track_cover_movement()
+            await coordinator._cover_refresh_task
+        self.assertEqual(len(self.tasks), 1)
+        self.assertEqual(coordinator.async_request_refresh.await_count, 35)
+
+    async def test_shutdown_cancels_tracking_and_prevents_restart(self):
+        coordinator, _ = self.make_coordinator()
+        sleeping = asyncio.Event()
+
+        async def sleep(delay):
+            sleeping.set()
+            await asyncio.Event().wait()
+
+        coordinator.async_request_refresh = AsyncMock()
+        with patch(
+            "custom_components.ipx800v4.coordinator.asyncio.sleep", side_effect=sleep
+        ):
+            coordinator.async_track_cover_movement()
+            task = coordinator._cover_refresh_task
+            await asyncio.wait_for(sleeping.wait(), 1)
+            await coordinator.async_shutdown()
+        self.assertTrue(task.cancelled())
+        self.assertIsNone(coordinator._cover_refresh_task)
+        coordinator.async_track_cover_movement()
+        self.assertIsNone(coordinator._cover_refresh_task)
+        coordinator.async_request_refresh.assert_awaited_once()
+
+    async def test_tracking_is_independent_per_controller(self):
+        first, _ = self.make_coordinator()
+        second, _ = self.make_coordinator()
+        first.async_request_refresh = AsyncMock()
+        second.async_request_refresh = AsyncMock()
+        with patch(
+            "custom_components.ipx800v4.coordinator.asyncio.sleep",
+            new_callable=AsyncMock,
+        ):
+            first.async_track_cover_movement(3)
+            second.async_track_cover_movement(20)
+            await asyncio.gather(first._cover_refresh_task, second._cover_refresh_task)
+        self.assertEqual(first.async_request_refresh.await_count, 3)
+        self.assertEqual(second.async_request_refresh.await_count, 20)
 
 
 if __name__ == "__main__":

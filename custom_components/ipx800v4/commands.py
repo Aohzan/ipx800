@@ -32,7 +32,7 @@ _CURRENT_COMMAND: ContextVar[Callable[[], None]] = ContextVar("ipx_command_check
 
 
 class InvalidCommandResponse(Ipx800RequestError):
-    """An ambiguous response, as opposed to an explicit command refusal."""
+    """A response without a usable success status."""
 
 
 class CommandInterrupted(HomeAssistantError):
@@ -77,7 +77,7 @@ class IpxCommandClient(IPX800):
             if not self._request_checkstatus or content.get("status") == "Success":
                 return content
             if content.get("status") == "Error":
-                raise Ipx800RequestError("IPX800 rejected the command")
+                raise Ipx800RequestError("IPX800 returned a generic error")
             raise InvalidCommandResponse("IPX800 response did not confirm success")
         except (TimeoutError, ClientError, socket.gaierror) as err:
             raise Ipx800CannotConnectError("IPX800 communication failed") from err
@@ -110,7 +110,7 @@ class IpxCommandClient(IPX800):
             if not self._request_checkstatus or "Success" in content:
                 return content
             if content.strip() == "Error":
-                raise Ipx800RequestError("IPX800 rejected the command")
+                raise Ipx800RequestError("IPX800 returned a generic error")
             raise InvalidCommandResponse("IPX800 response did not confirm success")
         except (TimeoutError, ClientError, socket.gaierror) as err:
             raise Ipx800CannotConnectError("IPX800 communication failed") from err
@@ -149,7 +149,9 @@ def error_details(error: Exception) -> tuple[str, bool]:
     if isinstance(error, InvalidCommandResponse):
         return "response did not confirm success", True
     if isinstance(error, Ipx800RequestError):
-        return "command rejected", False
+        # A generic Error can be returned even when the command was applied.
+        # Only callers opting into safe replay may retry this ambiguous failure.
+        return "device returned an error; command execution uncertain", True
     return "connection or response transfer failed", True
 
 

@@ -372,8 +372,10 @@ refresh remains outside this write budget.
 This applies to relay/virtual ON/OFF, dimmer/PWM levels, RGB/RGBW channels,
 heating modes and virtual analog values. Timeouts (including response-body reads), missing success confirmations and
 unexpected/malformed response content are retried. Authentication errors, invalid
-URLs, explicit refusals (`status: Error`, or CGI `Error`) and definitive HTTP
-errors fail immediately. Write failures include the failure
+URLs and definitive HTTP errors fail immediately. Generic `status: Error` or
+CGI `Error` responses are retried only for eligible commands: they can occur
+even when the command was applied. A permanent generic error may therefore
+also exhaust all three attempts. Write failures include the failure
 category, exception type and actual attempt/retry counts for the failed write. A failed refresh after a successful
 write never replays that write. Failed commands still raise `HomeAssistantError`.
 Budget exhaustion, supersession and unload errors include the entity and operation.
@@ -383,6 +385,9 @@ For X4VR, open/close send absolute positions 0/100, a requested position sends
 its absolute target, and stop sends 101. These commands may retry; BSO tilt
 uses relative pulses and never retries. See the [GCE API reference](https://wiki.gce-electronics.com/index.php?title=API_V4).
 Toggles and counter writes also remain single-attempt operations.
+One shared tracking loop per IPX requests a global refresh every 2 seconds for
+20 cycles (3 for BSO tilt). A new movement extends this loop without starting
+another; tilt never shortens an ongoing tracking window. Unloading cancels it.
 Position tracking starts after the first successful or ambiguous attempt, before
 retries finish, including when the command eventually fails.
 

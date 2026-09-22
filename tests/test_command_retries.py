@@ -270,6 +270,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
 
         for failure, cause, reason in (
             (InvalidCommandResponse(), None, "response did not confirm success"),
+            (Ipx800RequestError(), None, "command execution uncertain"),
             (
                 Ipx800CannotConnectError(),
                 ContentTypeError(Mock(), (), status=200, message="SECRET"),
@@ -314,7 +315,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         from pypx800 import Relay
 
         for status, body, error, attempts in (
-            (200, {"status": "Error"}, None, 1),
+            (200, {"status": "Error"}, None, 3),
             (200, [], None, 3),
             (200, None, ContentTypeError(Mock(), (), status=200), 3),
             (200, None, JSONDecodeError("invalid", "x", 0), 3),

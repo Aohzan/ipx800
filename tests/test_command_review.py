@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
 from homeassistant.exceptions import HomeAssistantError
-from pypx800 import Relay, XPWM
+from pypx800 import Relay, XPWM, Ipx800RequestError
 from test_commands import make_entity
 
 from custom_components.ipx800v4.commands import IpxCommandClient
@@ -204,17 +204,17 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
         write.side_effect = [TimeoutError(), None]
 
         async def backoff(delay):
-            entity.async_refresh_cover_state.assert_called_once_with(20)
+            entity.coordinator.async_track_cover_movement.assert_called_once_with(20)
 
         with patch(
             "custom_components.ipx800v4.commands.asyncio.sleep", side_effect=backoff
         ):
             await entity.async_open_cover()
-        entity.async_refresh_cover_state.assert_called_once_with(20)
+        entity.coordinator.async_track_cover_movement.assert_called_once_with(20)
         self.assertEqual(write.await_count, 2)
 
-    async def test_explicit_cgi_refusal_is_not_retried_but_missing_response_is(self):
-        for body, attempts in (("Error", 1), ("", 3)):
+    async def test_generic_cgi_error_and_missing_response_are_retried(self):
+        for body, attempts in (("Error", 3), ("", 3)):
             with self.subTest(body=body):
                 response = Mock(status=200, text=AsyncMock(return_value=body))
                 session = Mock(get=AsyncMock(return_value=response))
@@ -231,3 +231,17 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
                     await entity.async_turn_off()
                 self.assertEqual(session.get.await_count, attempts)
                 self.assertEqual(sleep.await_count, attempts - 1)
+
+    async def test_cover_generic_error_then_success_keeps_one_tracking_request(self):
+        entity, write = make_entity(X4VRCover)
+        write.side_effect = [Ipx800RequestError(), None]
+
+        async def backoff(delay):
+            entity.coordinator.async_track_cover_movement.assert_called_once_with(20)
+
+        with patch(
+            "custom_components.ipx800v4.commands.asyncio.sleep", side_effect=backoff
+        ):
+            await entity.async_open_cover()
+        self.assertEqual(write.await_count, 2)
+        entity.coordinator.async_track_cover_movement.assert_called_once_with(20)
