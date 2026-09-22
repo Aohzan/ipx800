@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.16.0](https://github.com/Aohzan/ipx800/compare/3.15.0...3.16.0) (2026-09-22)
+
+### Features
+
+* add controller uptime, load and clock diagnostics ([a62b4d1](https://github.com/Aohzan/ipx800/commit/a62b4d1c9a0f55a870ba0c6c2993ad6249308995))
+
+### Bug Fixes
+
+* address command retry review feedback ([26c0a33](https://github.com/Aohzan/ipx800/commit/26c0a336e7b56b6c3014c6af1c2a912c81e483de))
+* bound freshness of temporarily missing IPX response fields ([0e06a2a](https://github.com/Aohzan/ipx800/commit/0e06a2ab57100bf428ecaabb072e0610dae6ff9b))
+* bound transient read recovery independently of scan interval ([4193d5f](https://github.com/Aohzan/ipx800/commit/4193d5f92e2ce0e1e804cafe1555d79bd7bac946))
+* preserve field recovery, snapshot RGB targets and isolate XML polling ([8d2b891](https://github.com/Aohzan/ipx800/commit/8d2b891b4f18d850bb286748ec4fe4e26028950b))
+* propagate IPX command failures to Home Assistant callers ([8d19819](https://github.com/Aohzan/ipx800/commit/8d19819750fc31a3779e85dc920f4fa7f8acea90))
+* resolve push requests against live IPX entries ([235f1f6](https://github.com/Aohzan/ipx800/commit/235f1f63b418096025ea86790c282c1f2b4693b4)), closes [#6](https://github.com/Aohzan/ipx800/issues/6)
+* restore release metadata and cover XML diagnostics with tests ([ef219a7](https://github.com/Aohzan/ipx800/commit/ef219a7914937535534ce576a23f192400bac81c))
+* share cover tracking and retry generic IPX errors ([#16](https://github.com/Aohzan/ipx800/issues/16)) ([7bf4556](https://github.com/Aohzan/ipx800/commit/7bf455678c24c2d5facb2fb0d7bde48fe6b44e06))
+* stop unauthenticated XML polling after five failures ([b55d668](https://github.com/Aohzan/ipx800/commit/b55d6686c6cae1fb01c0483f3d58c236eda0dc89))
+* synchronize direct pushes with coordinator fields and availability ([7a494ee](https://github.com/Aohzan/ipx800/commit/7a494eec533f9a9d841fcefa6c68afe88a02e995)), closes [#5](https://github.com/Aohzan/ipx800/issues/5)
+
 ## [3.15.0](https://github.com/Aohzan/ipx800/compare/3.14.0...3.15.0) (2026-09-18)
 
 ### Features
