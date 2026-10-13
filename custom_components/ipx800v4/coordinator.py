@@ -37,9 +37,13 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
     shares that timer; the freshness timer only publishes expired data.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+        self, *args, controller_device_id: str | None = None, **kwargs
+    ) -> None:
         """Initialize per-controller recovery state."""
         super().__init__(*args, **kwargs)
+        # Registry id of the IPX device, the via device of configured devices.
+        self.controller_device_id = controller_device_id
         self.commands = CommandManager()
         self.consecutive_failures = 0
         self.last_successful_read: datetime | None = None

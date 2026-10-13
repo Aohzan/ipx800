@@ -225,6 +225,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass,
         _LOGGER,
         config_entry=entry,
+        controller_device_id=controller_device.id,
         name=f"{config[CONF_NAME]} ({config[CONF_HOST]})",
         update_method=ipx.global_get,
         update_interval=timedelta(seconds=scan_interval),
