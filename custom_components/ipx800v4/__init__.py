@@ -55,6 +55,7 @@ from .const import (
     REQUEST_REFRESH_DELAY,
     TYPE_COUNTER,
     TYPE_RELAY,
+    TYPE_VIRTUALANALOGIN,
     TYPE_X4VR,
     TYPE_X4VR_BSO,
     TYPE_XPWM,
@@ -160,9 +161,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     session = async_get_clientsession(hass, False)
 
-    specific_devices_types = []
-    if any(d[CONF_TYPE] == TYPE_COUNTER for d in config[CONF_DEVICES]):
-        specific_devices_types.append(TYPE_COUNTER)
+    # pypx800 polls these types with a separate request, only when configured
+    specific_devices_types = [
+        device_type
+        for device_type in (TYPE_COUNTER, TYPE_VIRTUALANALOGIN)
+        if any(d[CONF_TYPE] == device_type for d in config[CONF_DEVICES])
+    ]
 
     client_options = {
         "host": config[CONF_HOST],
