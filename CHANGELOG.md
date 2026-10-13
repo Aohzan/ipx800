@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.17.0](https://github.com/Aohzan/ipx800/compare/3.16.1...3.17.0) (2026-10-13)
+
+### Features
+
+* add EnOcean actuators as switches ([c5d69d4](https://github.com/Aohzan/ipx800/commit/c5d69d4abc5dd7801a50cc99dc712219c84da36b)), closes [#74](https://github.com/Aohzan/ipx800/issues/74)
+
+### Bug Fixes
+
+* link devices to the controller with via_device_id ([939bc9e](https://github.com/Aohzan/ipx800/commit/939bc9e9d5a1a6895a001be5b2b46711d1a1627c)), closes [#85](https://github.com/Aohzan/ipx800/issues/85)
+* warn when X-PWM devices lack web credentials ([ab5648c](https://github.com/Aohzan/ipx800/commit/ab5648c8173952e7e37bb5b919ea2837bae8ca64)), closes [#82](https://github.com/Aohzan/ipx800/issues/82)
+
 ## [3.16.1](https://github.com/Aohzan/ipx800/compare/3.16.0...3.16.1) (2026-10-13)
 
 ### Bug Fixes
