@@ -35,6 +35,8 @@ from custom_components.ipx800v4.switch import (
     RelaySwitch,
     VirtualInSwitch,
     VirtualOutSwitch,
+    XENOActuator,
+    XENOSwitch,
 )
 
 CASES = (
@@ -44,6 +46,7 @@ CASES = (
             RelaySwitch,
             VirtualInSwitch,
             VirtualOutSwitch,
+            XENOSwitch,
             RelayLight,
             XDimmerLight,
             XPWMLight,
@@ -109,6 +112,7 @@ def make_entity(cls, error=None):
             "FP1 Zone 1": "Comfort",
             "C1": 12,
             "VA1": 12,
+            "ENO ACTIONNEUR1": 1,
         },
         async_request_refresh=AsyncMock(),
     )
@@ -279,6 +283,18 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     write.side_effect = update_during_write
                     await entity.async_turn_on(brightness=128)
                     self.assertEqual(levels, [50, 25, 13, 5][:channels])
+
+    async def test_xeno_actuator_api_parameters(self):
+        ipx = Mock(request_api=AsyncMock())
+        actuator = XENOActuator(ipx, 3)
+        for command, params in (
+            ("on", {"SetEnoPC": 3}),
+            ("off", {"ClearEnoPC": 3}),
+            ("toggle", {"ToggleEnoPC": 3}),
+        ):
+            with self.subTest(command=command):
+                await getattr(actuator, command)()
+                ipx.request_api.assert_awaited_with(params)
 
     async def test_programming_errors_and_cancellation_are_not_disguised(self):
         for error in (ValueError("bug"), asyncio.CancelledError()):

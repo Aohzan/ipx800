@@ -93,6 +93,7 @@ Vous pouvez contrôller ces types d'appareil :
 - `digitalin` en tant que binarysensor
 - `analogin` en tant que sensor
 - `xdimmer` en tant que light
+- `xeno` en tant que sensor (capteur analogique EnOcean) ou switch (actionneur EnOcean, `id` de 1 à 24)
 - `xpwm` en tant que light
 - `xpwm_rgb` en tant que light (utilise 3 canaux xpwm)
 - `xpwm_rgbw` en tant que light (utilise 4 canaux xpwm)
