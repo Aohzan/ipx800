@@ -102,6 +102,8 @@ Vous pouvez contrôller ces types d'appareil :
 - `xthl` en tant que sensors
 - `x4fp` en tant que climate
 
+Les types X-PWM (`xpwm`, `xpwm_rgb`, `xpwm_rgbw`) nécessitent `username` et `password` : leurs niveaux ne sont lus et modifiés qu'avec les identifiants web de l'IPX.
+
 ## Push état depuis l'IPX800
 
 Premièrement, si vous souhaitez poussez des états depuis votre IPX800, vous devez choisir un mot de passe et le préciser dans le paramètre `push_password` de votre configuration.

@@ -15,7 +15,7 @@ class SetupTests(unittest.IsolatedAsyncioTestCase):
     asyncTearDown = test_coordinator.ReadRecoveryTests.asyncTearDown
     make_coordinator = test_coordinator.ReadRecoveryTests.make_coordinator
 
-    async def setup_entry(self, device_types, component="sensor"):
+    async def setup_entry(self, device_types, component="sensor", **gateway):
         """Set up an entry with an entity per device type, return IPX800 kwargs."""
         template, _ = self.make_coordinator()
         hass, entry = template.hass, template.config_entry
@@ -30,6 +30,7 @@ class SetupTests(unittest.IsolatedAsyncioTestCase):
                  "type": device_type, "id": 1}
                 for device_type in device_types
             ],
+            **gateway,
         }
         entry.options = {}
         ipx = Mock(host="192.0.2.1", global_get=AsyncMock(return_value={}))
@@ -81,6 +82,19 @@ class SetupTests(unittest.IsolatedAsyncioTestCase):
                     if key in device_info
                 }
                 self.assertEqual(links, expected)
+
+    async def test_xpwm_without_credentials_warns(self):
+        for gateway, warns in (
+            ({}, True),
+            ({"username": "user"}, True),
+            ({"username": "user", "password": "pass"}, False),
+        ):
+            with self.subTest(gateway=gateway):
+                with self.assertLogs("custom_components.ipx800v4") as logs:
+                    await self.setup_entry(["xpwm"], component="light", **gateway)
+                self.assertEqual(
+                    any("X-PWM" in line for line in logs.output), warns
+                )
 
 
 if __name__ == "__main__":
