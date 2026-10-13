@@ -168,6 +168,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if any(d[CONF_TYPE] == device_type for d in config[CONF_DEVICES])
     ]
 
+    # pypx800 reads and sets X-PWM levels (PWMx fields) only with web credentials
+    if not (config.get(CONF_USERNAME) and config.get(CONF_PASSWORD)) and any(
+        d[CONF_TYPE] in (TYPE_XPWM, TYPE_XPWM_RGB, TYPE_XPWM_RGBW)
+        for d in config[CONF_DEVICES]
+    ):
+        _LOGGER.warning(
+            "X-PWM devices of the IPX800 %s stay unavailable: set %s and %s",
+            config[CONF_NAME],
+            CONF_USERNAME,
+            CONF_PASSWORD,
+        )
+
     client_options = {
         "host": config[CONF_HOST],
         "port": config[CONF_PORT],

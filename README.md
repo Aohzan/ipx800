@@ -102,6 +102,8 @@ You can control by setting the type of the device:
 - `x4fp` as climate
 - `counter` as sensor or number
 
+X-PWM types (`xpwm`, `xpwm_rgb`, `xpwm_rgbw`) require `username` and `password`: their levels are only read and set with the IPX web credentials.
+
 ## Example
 
 ```yaml
