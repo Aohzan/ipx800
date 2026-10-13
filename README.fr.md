@@ -217,4 +217,4 @@ uniquement les commandes éligibles ci-dessus, jamais les toggles ou impulsions.
 Le gestionnaire ne peut pas ordonner les commandes manuelles ou scénarios externes à HA.
 
 Le client de commandes conserve `request_retries=1`. Son chemin CGI évite le
-`time.sleep()` bloquant de pypx800 2.5.1 ; les réessais utilisent `await asyncio.sleep()`.
+`time.sleep()` bloquant de pypx800 ; les réessais utilisent `await asyncio.sleep()`.

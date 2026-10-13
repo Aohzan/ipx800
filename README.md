@@ -408,4 +408,4 @@ never for toggles or pulses. External IPX scenarios/manual commands cannot be
 ordered by Home Assistant's command manager.
 
 The command client retains `request_retries=1`. Its CGI path avoids the blocking
-`time.sleep()` in pypx800 2.5.1; integration retries use `await asyncio.sleep()`.
+`time.sleep()` in pypx800; integration retries use `await asyncio.sleep()`.
