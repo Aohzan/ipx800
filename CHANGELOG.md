@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.16.1](https://github.com/Aohzan/ipx800/compare/3.16.0...3.16.1) (2026-10-13)
+
+### Bug Fixes
+
+* poll virtual analog inputs ([bc613c8](https://github.com/Aohzan/ipx800/commit/bc613c89c86d1254074dd7022f25bf943a7fc4dd)), closes [pypx800#10](https://github.com/Aohzan/pypx800/issues/10)
+
 ## [3.16.0](https://github.com/Aohzan/ipx800/compare/3.15.0...3.16.0) (2026-09-22)
 
 ### Features
