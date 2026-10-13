@@ -11,6 +11,8 @@ from homeassistant.const import (
     CONF_ICON,
     CONF_NAME,
     CONF_UNIT_OF_MEASUREMENT,
+    MAJOR_VERSION,
+    MINOR_VERSION,
     EntityCategory,
 )
 from homeassistant.exceptions import HomeAssistantError
@@ -203,9 +205,13 @@ class IpxEntity(CoordinatorEntity):
             "name": device_config[CONF_NAME],
             "manufacturer": "GCE",
             "model": "IPX800 V4",
-            "via_device": (DOMAIN, self.ipx.host),
             "configuration_url": configuration_url,
         }
+        # Home Assistant 2026.8 deprecates via_device, removed in 2027.8.
+        if (MAJOR_VERSION, MINOR_VERSION) >= (2026, 8):
+            self._attr_device_info["via_device_id"] = coordinator.controller_device_id
+        else:
+            self._attr_device_info["via_device"] = (DOMAIN, self.ipx.host)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
