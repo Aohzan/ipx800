@@ -92,7 +92,7 @@ You can control by setting the type of the device:
 - `analogin` as sensor
 - `virtualanalogin` as sensor or number
 - `xdimmer` as light
-- `xeno` as sensor
+- `xeno` as sensor (EnOcean analog sensor) or switch (EnOcean actuator, `id` from 1 to 24)
 - `xpwm` as light
 - `xpwm_rgb` as light (use 3 xpwm channels)
 - `xpwm_rgbw` as light (use 4 xpwm channels)
@@ -193,6 +193,10 @@ ipx800v4:
         type: xeno
         id: 124
         unit_of_measurement: "C"
+      - component: switch
+        name: Prise Salon
+        type: xeno
+        id: 1
 ```
 
 ## List of configuration parameters
@@ -277,7 +281,7 @@ type:
   description: type of input/output on the IPX800 or an extension.
   required: true
   type: string
-  values: "relay", "analogin", "virtualanalogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp", "counter"
+  values: "relay", "analogin", "virtualanalogin", "digitalin", "virtualin", "virtualout", "xdimmer", "xpwm", "xpwm_rgb", "xpwm_rgbw", "xthl", "x4vr", "x4fp", "relay_fp", "counter", "xeno"
 id:
   description: id of type output, required for all except xpwm_rgb and xpwm_rgbw type
   required: false
