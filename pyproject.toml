@@ -6,10 +6,5 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "homeassistant>=2026.2.3",
-    "pypx800>=2.5.1",
-]
-
-[dependency-groups]
-dev = [
-    "async-timeout>=4.0.3",
+    "pypx800>=2.6.0",
 ]

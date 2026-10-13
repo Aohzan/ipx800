@@ -1605,19 +1605,11 @@ dependencies = [
     { name = "pypx800" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "async-timeout" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "homeassistant", specifier = ">=2026.2.3" },
-    { name = "pypx800", specifier = ">=2.5.1" },
+    { name = "pypx800", specifier = ">=2.6.0" },
 ]
-
-[package.metadata.requires-dev]
-dev = [{ name = "async-timeout", specifier = ">=4.0.3" }]
 
 [[package]]
 name = "jinja2"
@@ -2287,11 +2279,16 @@ wheels = [
 
 [[package]]
 name = "pypx800"
-version = "2.5.1"
+version = "2.6.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/40/ad/6446a3280586b8c89e2f58e99a1c2a020ae47295503ccdc44de4e9f059c7/pypx800-2.5.1.tar.gz", hash = "sha256:a129a5003e4c522724e958a6f8d7eaac3d315904d7e9dcd126e141b3cf304b6d", size = 8295, upload-time = "2024-11-06T11:08:21.483Z" }
+dependencies = [
+    { name = "aiohttp", version = "3.13.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14.2'" },
+    { name = "aiohttp", version = "3.14.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14.2'" },
+    { name = "async-timeout" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/de/16/7d7da16ea51a21e411e48dcf0d34448461ea675cfe4655c7ca1a4fa5292f/pypx800-2.6.0.tar.gz", hash = "sha256:d6c8dd637adfa1e590fd9af54eb13d31b69d24ea51204d2fc5318b9574574951", size = 8647, upload-time = "2026-10-13T21:47:30.996Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/c6/e5992041a4bf754d34baff5d9930cc1fe4dfc40809b7738bef82f426e209/pypx800-2.5.1-py3-none-any.whl", hash = "sha256:5ed1c0e17780a95d14c79e6b1c1613d55a2a18319aa38756462aaa4ff91d7c8d", size = 12179, upload-time = "2024-11-06T11:08:20.061Z" },
+    { url = "https://files.pythonhosted.org/packages/68/a6/c47f3e7c31e77b9e4e481fbe514709042d6a545c30d624514045ffe812a7/pypx800-2.6.0-py3-none-any.whl", hash = "sha256:5a19b2bcb77b7a277ac8e3872a44b3b46d80a992d48c1373a182a780be0a9005", size = 12264, upload-time = "2026-10-13T21:47:29.657Z" },
 ]
 
 [[package]]
