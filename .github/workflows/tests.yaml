@@ -28,5 +28,14 @@ jobs:
       - name: Install locked dependencies
         run: uv sync --locked
 
+      # Home Assistant installs the manifest requirements with its package
+      # constraints (here of the oldest supported version, locked in uv.lock):
+      # a library must not need a newer version of a package pinned by the core.
+      - name: Check requirements against Home Assistant constraints
+        run: |
+          constraints="$(uv run --locked python -c 'import homeassistant, pathlib; print(pathlib.Path(homeassistant.__file__).with_name("package_constraints.txt"))')"
+          uv run --locked python scripts/sync_requirements.py --print \
+            | xargs -r uv pip install --dry-run --constraint "$constraints"
+
       - name: Run regression tests
         run: uv run --locked python -m unittest discover -s tests -v
