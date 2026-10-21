@@ -7,7 +7,7 @@ locked versions to the manifest.
 Home Assistant installs the requirements with its package constraints, so a
 library must not need a newer version of a package pinned by the core. The
 check resolves them with the constraints of the oldest supported version,
-the homeassistant lower bound in pyproject.toml.
+the homeassistant lower bound in the dev group of pyproject.toml.
 
 Usage:
     python scripts/sync_requirements.py          # update manifest.json
@@ -59,10 +59,10 @@ def locked_requirements(requirements: list[str]) -> list[str]:
 def oldest_homeassistant() -> str:
     """Return the oldest supported Home Assistant version."""
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    for requirement in pyproject["project"]["dependencies"]:
+    for requirement in pyproject["dependency-groups"]["dev"]:
         if match := re.fullmatch(r"homeassistant>=(\S+)", requirement):
             return match[1]
-    raise SystemExit("No homeassistant>= requirement in pyproject.toml")
+    raise SystemExit("No homeassistant>= requirement in the dev group of pyproject.toml")
 
 
 def check(requirements: list[str]) -> None:
