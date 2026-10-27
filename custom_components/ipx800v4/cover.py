@@ -57,7 +57,7 @@ class X4VRCover(IpxEntity, CoverEntity):
     ) -> None:
         """Initialize the X4VRCover."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = X4VR(ipx, self._ext_id, self._id)
+        self.control = X4VR(ipx, self._required_ext_id, self._required_id)
         self._attr_device_class = CoverDeviceClass.SHUTTER
         self._attr_supported_features = (
             CoverEntityFeature.OPEN

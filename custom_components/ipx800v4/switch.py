@@ -63,7 +63,7 @@ class RelaySwitch(IpxEntity, SwitchEntity):
     ) -> None:
         """Initialize the RelaySwitch."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = Relay(ipx, self._id)
+        self.control = Relay(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
@@ -108,7 +108,7 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
     ) -> None:
         """Initialize the VirtualOutSwitch."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = VOutput(ipx, self._id)
+        self.control = VOutput(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
@@ -153,7 +153,7 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
     ) -> None:
         """Initialize the VirtualInSwitch."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = VInput(ipx, self._id)
+        self.control = VInput(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
@@ -219,7 +219,7 @@ class XENOSwitch(IpxEntity, SwitchEntity):
     ) -> None:
         """Initialize the XENOSwitch."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = XENOActuator(ipx, self._id)
+        self.control = XENOActuator(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:

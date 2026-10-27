@@ -87,7 +87,7 @@ class RelayLight(IpxEntity, LightEntity):
     ) -> None:
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = Relay(ipx, self._id)
+        self.control = Relay(ipx, self._required_id)
         self._attr_supported_color_modes = {ColorMode.ONOFF}
         self._attr_color_mode = ColorMode.ONOFF
 
@@ -131,7 +131,7 @@ class XDimmerLight(IpxEntity, LightEntity):
     ) -> None:
         """Initialize the class XDimmerLight."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = XDimmer(ipx, self._id)
+        self.control = XDimmer(ipx, self._required_id)
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
         self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         self._attr_color_mode = ColorMode.BRIGHTNESS
@@ -202,7 +202,7 @@ class XPWMLight(IpxEntity, LightEntity):
     ) -> None:
         """Initialize the XPWMLight."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = XPWM(ipx, self._id)
+        self.control = XPWM(ipx, self._required_id)
 
         self._default_brightness = scaleto100(
             device_config.get(CONF_DEFAULT_BRIGHTNESS, 255)

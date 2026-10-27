@@ -205,18 +205,18 @@ class XENOSensor(IpxEntity, SensorEntity):
     @property
     def push_key(self) -> str:
         """Return the raw measurement field."""
-        return f"ENO ANALOG{int(self._id) - 121 + 17}"
+        return f"ENO ANALOG{self._required_id - 121 + 17}"
 
     @property
     def required_keys(self) -> tuple[str, ...]:
         """Raw response fields required by this entity."""
-        analog_id = int(self._id) - 121 + 17
+        analog_id = self._required_id - 121 + 17
         return (f"ENO ANALOG{analog_id}",)
 
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        analog_id = int(self._id) - 121 + 17
+        analog_id = self._required_id - 121 + 17
         return round(self.coordinator.data[f"ENO ANALOG{analog_id}"], 1)
 
 
