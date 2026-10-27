@@ -2,15 +2,18 @@
 
 from unittest.mock import MagicMock
 
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+import voluptuous as vol
 
+from custom_components.ipx800v4 import CONFIG_SCHEMA
 from custom_components.ipx800v4.const import DOMAIN
 from homeassistant.config_entries import SOURCE_IMPORT, SOURCE_USER, ConfigEntryState
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, InvalidData
 
-from .conftest import ENTRY_DATA, NAME
+from .conftest import ENTRY_DATA, NAME, YAML_CONFIG
 
 
 async def test_user_yaml_only(hass: HomeAssistant) -> None:
@@ -99,3 +102,23 @@ async def test_options_reload(
     assert data.coordinator.update_interval.total_seconds() == 60
     assert data.system_coordinator.update_interval.total_seconds() == 60
     assert mock_clients.global_get.await_count == 2
+
+
+async def test_options_scan_interval_minimum(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """Test a scan interval of 0, a polling without pause, is refused."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    with pytest.raises(InvalidData):
+        await hass.config_entries.options.async_configure(
+            result["flow_id"], {CONF_SCAN_INTERVAL: 0}
+        )
+    assert mock_config_entry.options == {}
+
+
+def test_yaml_scan_interval_minimum() -> None:
+    """Test the YAML configuration refuses a scan interval of 0."""
+    with pytest.raises(vol.Invalid):
+        CONFIG_SCHEMA({DOMAIN: [YAML_CONFIG | {CONF_SCAN_INTERVAL: 0}]})
