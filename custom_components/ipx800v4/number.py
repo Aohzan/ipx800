@@ -34,14 +34,16 @@ async def async_setup_entry(
     entities: list[NumberEntity] = []
 
     for device in devices:
-        if device.get(CONF_TYPE) in [TYPE_VIRTUALANALOGIN, TYPE_COUNTER]:
+        if device.get(CONF_TYPE) == TYPE_VIRTUALANALOGIN:
             entities.append(VirtualAnalogInNumber(device, controller, coordinator))
+        elif device.get(CONF_TYPE) == TYPE_COUNTER:
+            entities.append(CounterNumber(device, controller, coordinator))
 
     async_add_entities(entities, True)
 
 
 class CounterNumber(IpxEntity, NumberEntity):
-    """Representation of a IPX number through analog input."""
+    """Representation of a IPX counter as a number."""
 
     _push_prefix = "C"
 
