@@ -2,7 +2,7 @@
 
 from typing import Any
 
-import voluptuous as vol
+import probatio
 
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -76,12 +76,12 @@ class Ipx800OptionsFlowHandler(OptionsFlowWithReload):
         )
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required(
+                    probatio.Required(
                         CONF_SCAN_INTERVAL,
                         default=scan_interval,
-                    ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                    ): probatio.All(probatio.Coerce(int), probatio.Range(min=1)),
                 }
             ),
         )
