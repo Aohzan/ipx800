@@ -1,2 +1,9 @@
-*.py[cod]
 __pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+config/*
+!config/configuration.yaml

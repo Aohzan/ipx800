@@ -1,0 +1,8 @@
+# Home Assistant configuration for development, see scripts/develop
+default_config:
+
+logger:
+  default: info
+  logs:
+    custom_components.ipx800v4: debug
+    pypx800: debug
