@@ -92,7 +92,6 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         self._read_in_progress = False
         self._cover_refresh_task: asyncio.Task | None = None
         self._cover_refresh_remaining = 0
-        self._auth_issue = False
 
     @callback
     def async_track_cover_movement(self, repeat: int = 20) -> None:
@@ -364,11 +363,10 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         self._retain_data = False
         self.consecutive_failures = 0
         self.last_successful_read = dt_util.utcnow()
-        if self._auth_issue:
-            ir.async_delete_issue(
-                self.hass, DOMAIN, auth_issue_id(self.config_entry.entry_id)
-            )
-            self._auth_issue = False
+        # Unconditional: after a reload, the coordinator which raised it is gone.
+        ir.async_delete_issue(
+            self.hass, DOMAIN, auth_issue_id(self.config_entry.entry_id)
+        )
         now = monotonic()
         self._last_read_time = now
         # A response requested before a push must not overwrite that newer value.
@@ -411,7 +409,6 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             translation_key="invalid_auth",
             translation_placeholders={"name": self.config_entry.title},
         )
-        self._auth_issue = True
         raise ConfigEntryError(
             translation_domain=DOMAIN, translation_key="invalid_auth"
         ) from err

@@ -85,6 +85,29 @@ async def test_setup_invalid_auth(
     assert issue_registry.async_get_issue(DOMAIN, issue_id) is None
 
 
+async def test_invalid_auth_issue_deleted_after_reload(
+    hass: HomeAssistant,
+    issue_registry: ir.IssueRegistry,
+    mock_config_entry: MockConfigEntry,
+    mock_clients: MagicMock,
+) -> None:
+    """Test the repair issue is deleted once a reloaded entry reads the IPX800."""
+    mock_clients.global_get.side_effect = Ipx800InvalidAuthError
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+    issue_id = f"invalid_auth_{mock_config_entry.entry_id}"
+    assert issue_registry.async_get_issue(DOMAIN, issue_id) is not None
+
+    # The credentials are fixed in configuration.yaml, then the entry reloaded
+    mock_clients.global_get.side_effect = None
+    assert await hass.config_entries.async_reload(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert issue_registry.async_get_issue(DOMAIN, issue_id) is None
+
+
 async def test_import_from_yaml(hass: HomeAssistant, mock_clients: MagicMock) -> None:
     """Test the YAML configuration creates the entry, and updates it."""
     assert await async_setup_component(hass, DOMAIN, {DOMAIN: [YAML_CONFIG]})
@@ -195,3 +218,69 @@ async def test_remove_device(
     response = await client.remove_device(device_id)
     assert response["success"] is removed
     assert (device_registry.async_get(device_id) is None) is removed
+
+
+async def test_upgrade_keeps_entities_of_a_previous_version(
+    hass: HomeAssistant,
+    device_registry: dr.DeviceRegistry,
+    entity_registry: er.EntityRegistry,
+    mock_config_entry: MockConfigEntry,
+    mock_clients: MagicMock,
+) -> None:
+    """Test an upgrade from the legacy names keeps the entities and their names.
+
+    The previous versions registered the entities with has_entity_name=False
+    and the user may have renamed their devices.
+    """
+    mock_config_entry.add_to_hass(hass)
+    boiler = device_registry.async_get_or_create(
+        config_entry_id=mock_config_entry.entry_id,
+        identifiers={(DOMAIN, "boiler")},
+        name="Boiler",
+    )
+    device_registry.async_update_device(boiler.id, name_by_user="Chaudière")
+    living_room = device_registry.async_get_or_create(
+        config_entry_id=mock_config_entry.entry_id,
+        identifiers={(DOMAIN, "living_room")},
+        name="Living room",
+    )
+    for domain, object_id, unique_id, name, device_id in (
+        ("switch", "boiler", "switch_boiler", "Boiler", boiler.id),
+        (
+            "sensor",
+            "living_room_temperature",
+            "sensor_living_room_temperature",
+            "Living room Temperature",
+            living_room.id,
+        ),
+    ):
+        entity_registry.async_get_or_create(
+            domain,
+            DOMAIN,
+            f"{DOMAIN}_{HOST}_{unique_id}",
+            suggested_object_id=object_id,
+            config_entry=mock_config_entry,
+            device_id=device_id,
+            has_entity_name=False,
+            original_name=name,
+        )
+
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    entities = er.async_entries_for_config_entry(
+        entity_registry, mock_config_entry.entry_id
+    )
+    assert not [entity for entity in entities if entity.entity_id.endswith("_2")]
+    boiler_entity = entity_registry.async_get("switch.boiler")
+    assert boiler_entity.device_id == boiler.id
+    assert boiler_entity.has_entity_name
+    # The main entity takes the name the user gave to its device
+    assert hass.states.get("switch.boiler").attributes["friendly_name"] == "Chaudière"
+    assert device_registry.async_get(boiler.id).name_by_user == "Chaudière"
+    temperature = entity_registry.async_get("sensor.living_room_temperature")
+    assert temperature.device_id == living_room.id
+    assert (
+        hass.states.get("sensor.living_room_temperature").attributes["friendly_name"]
+        == "Living room Temperature"
+    )

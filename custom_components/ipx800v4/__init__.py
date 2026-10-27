@@ -104,7 +104,7 @@ GATEWAY_CONFIG = vol.Schema(
         vol.Required(CONF_API_KEY): cv.string,
         vol.Optional(CONF_USERNAME): cv.string,
         vol.Optional(CONF_PASSWORD): cv.string,
-        vol.Optional(CONF_SCAN_INTERVAL): cv.positive_int,
+        vol.Optional(CONF_SCAN_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=1)),
         vol.Optional(CONF_PUSH_PASSWORD): cv.string,
         vol.Optional(CONF_PUSH_CHECK_HOST, default=True): cv.boolean,
         vol.Optional(CONF_DEVICES, default=[]): vol.All(

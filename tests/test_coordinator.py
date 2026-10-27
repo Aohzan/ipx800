@@ -123,7 +123,7 @@ class ReadRecoveryTests(CoordinatorTestCase):
                     with patch("custom_components.ipx800v4.coordinator.ir") as issues:
                         await coordinator.async_refresh()
                         await coordinator.async_refresh()
-                    issues.async_delete_issue.assert_called_once()
+                    issues.async_delete_issue.assert_called()
 
     async def test_startup_auth_error_is_not_setup_retry(self):
         coordinator, reader = self.make_coordinator()

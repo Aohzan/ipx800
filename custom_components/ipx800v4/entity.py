@@ -13,7 +13,6 @@ from homeassistant.const import (
     CONF_UNIT_OF_MEASUREMENT,
     EntityCategory,
 )
-from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -86,12 +85,15 @@ class IpxEntity(CoordinatorEntity[IpxDataUpdateCoordinator]):
     def _command_exception(
         self, translation_key: str, operation: str, err: Exception
     ) -> HomeAssistantError:
-        """Return the translated error of a write."""
+        """Return the translated error of a write.
+
+        Each operation has its own translation keys, a placeholder would stay
+        in English in the other languages.
+        """
         return HomeAssistantError(
             translation_domain=DOMAIN,
-            translation_key=translation_key,
+            translation_key=f"{translation_key}_{operation}",
             translation_placeholders={
-                "operation": operation,
                 "entity": self.entity_id or self._config_name,
                 "error": str(err),
             },
@@ -116,11 +118,6 @@ class IpxEntity(CoordinatorEntity[IpxDataUpdateCoordinator]):
         await super().async_added_to_hass()
         self.coordinator.push_entities[self.unique_id] = self
         self.async_on_remove(self._remove_push_entity)
-
-    @callback
-    def async_entity_id_changed(self, old_entity_id: str) -> None:
-        """Keep the push registration, the push views resolve entity IDs live."""
-        super().async_entity_id_changed(old_entity_id)
 
     def _remove_push_entity(self) -> None:
         """Do not remove a replacement entity during late cleanup."""

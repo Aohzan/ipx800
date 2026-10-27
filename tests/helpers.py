@@ -12,7 +12,7 @@ import logging
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 from custom_components.ipx800v4.commands import CommandManager
 from custom_components.ipx800v4.coordinator import IpxDataUpdateCoordinator
@@ -49,6 +49,11 @@ class CoordinatorTestCase(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.coordinators = []
         self.tasks = []
+        # Each successful read deletes the authentication repair issue, the
+        # fake hass has no issue registry.
+        patcher = patch("custom_components.ipx800v4.coordinator.ir.async_delete_issue")
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     async def asyncTearDown(self):
         for coordinator in self.coordinators:
