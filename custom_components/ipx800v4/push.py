@@ -6,20 +6,19 @@ from aiohttp import BasicAuth, web
 
 from homeassistant.const import CONF_HOST, CONF_NAME
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.http import HomeAssistantView
+from homeassistant.helpers.http import KEY_HASS, HomeAssistantView
 
 from .const import (
     CONF_PUSH_CHECK_HOST,
     CONF_PUSH_PASSWORD,
-    COORDINATOR,
     DOMAIN,
-    PUSH_CONFIG,
     PUSH_USERNAME,
     TYPE_DIGITALIN,
     TYPE_RELAY,
     TYPE_VIRTUALIN,
     TYPE_VIRTUALOUT,
 )
+from .coordinator import PUSH_ENTRIES
 
 
 class IpxPushView(HomeAssistantView):
@@ -39,9 +38,11 @@ class IpxPushView(HomeAssistantView):
             raise web.HTTPUnauthorized()
 
         matches = []
-        for entry_data in request.app["hass"].data.get(DOMAIN, {}).values():
-            config = entry_data.get(PUSH_CONFIG)
-            if config is None or (ipx_name is not None and config[CONF_NAME] != ipx_name):
+        for entry_data in request.app[KEY_HASS].data.get(PUSH_ENTRIES, {}).values():
+            config = entry_data.push_config
+            if config is None or (
+                ipx_name is not None and config[CONF_NAME] != ipx_name
+            ):
                 continue
             if config[CONF_PUSH_PASSWORD] != auth.password:
                 continue
@@ -77,7 +78,9 @@ class IpxPushView(HomeAssistantView):
             for entity, state in updates:
                 for key, value in entity.push_values(state).items():
                     if key in values and values[key] != value:
-                        raise ValueError("Conflicting values for the same IPX field")
+                        raise ValueError(  # noqa: TRY301
+                            "Conflicting values for the same IPX field"
+                        )
                     values[key] = value
         except ValueError as err:
             raise web.HTTPBadRequest(text=str(err)) from None
@@ -97,8 +100,8 @@ class IpxRequestView(IpxPushView):
 
     async def get(self, request, entity_id, state, ipx_name=None):
         """Respond to requests from the device."""
-        coordinator = self._entry(request, ipx_name)[COORDINATOR]
-        entity = self._entity(request.app["hass"], coordinator, entity_id)
+        coordinator = self._entry(request, ipx_name).coordinator
+        entity = self._entity(request.app[KEY_HASS], coordinator, entity_id)
         return self._apply(coordinator, [(entity, state)])
 
 
@@ -112,7 +115,7 @@ class IpxRequestDataView(IpxPushView):
 
     async def get(self, request, data, ipx_name=None):
         """Respond to requests from the device."""
-        coordinator = self._entry(request, ipx_name)[COORDINATOR]
+        coordinator = self._entry(request, ipx_name).coordinator
         updates = []
         for item in data.split("&"):
             if item.count("=") != 1:
@@ -120,7 +123,7 @@ class IpxRequestDataView(IpxPushView):
             entity_id, state = item.split("=", 1)
             if not entity_id or not state:
                 raise web.HTTPBadRequest(text="Empty entity or value")
-            entity = self._entity(request.app["hass"], coordinator, entity_id)
+            entity = self._entity(request.app[KEY_HASS], coordinator, entity_id)
             updates.append((entity, state))
         return self._apply(coordinator, updates)
 
@@ -135,9 +138,12 @@ class IpxRequestBulkUpdateView(IpxPushView):
 
     async def get(self, request, device_type, data, ipx_name=None):
         """Respond to requests from the device."""
-        coordinator = self._entry(request, ipx_name)[COORDINATOR]
+        coordinator = self._entry(request, ipx_name).coordinator
         supported_types = {
-            TYPE_RELAY, TYPE_DIGITALIN, TYPE_VIRTUALIN, TYPE_VIRTUALOUT,
+            TYPE_RELAY,
+            TYPE_DIGITALIN,
+            TYPE_VIRTUALIN,
+            TYPE_VIRTUALOUT,
         }
         if (
             device_type not in supported_types
@@ -150,7 +156,7 @@ class IpxRequestBulkUpdateView(IpxPushView):
         # Use live registry entries, including renamed IDs. Bulk bits are raw
         # hardware values: platform properties apply their own inversion once.
         values = {}
-        registry = er.async_get(request.app["hass"])
+        registry = er.async_get(request.app[KEY_HASS])
         for entry in er.async_entries_for_config_entry(
             registry, coordinator.config_entry.entry_id
         ):
@@ -181,5 +187,5 @@ class IpxRequestRefreshView(IpxPushView):
     async def get(self, request, data, ipx_name=None):
         """Respond to requests from the device."""
         entry_data = self._entry(request, ipx_name)
-        await entry_data[COORDINATOR].async_request_refresh()
+        await entry_data.coordinator.async_request_refresh()
         return web.Response(status=HTTPStatus.OK, text="OK")

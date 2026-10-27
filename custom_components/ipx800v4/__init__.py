@@ -7,8 +7,7 @@ import logging
 from pypx800 import IPX800
 import voluptuous as vol
 
-from homeassistant.helpers.device_registry import DeviceEntry
-from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
+from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_DEVICE_CLASS,
@@ -20,17 +19,19 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_UNIT_OF_MEASUREMENT,
     CONF_USERNAME,
-    Platform,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+    issue_registry as ir,
+)
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
+from .commands import IpxCommandClient
 from .const import (
     CONF_COMPONENT,
     CONF_DEFAULT_BRIGHTNESS,
@@ -41,17 +42,14 @@ from .const import (
     CONF_INVERT_VALUE,
     CONF_PUSH_CHECK_HOST,
     CONF_PUSH_PASSWORD,
-    CONF_TRANSITION,
     CONF_RETRY_COMMANDS,
+    CONF_TRANSITION,
     CONF_TYPE,
     CONF_TYPE_ALLOWED,
-    CONTROLLER,
-    COORDINATOR,
-    SYSTEM_COORDINATOR,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TRANSITION,
     DOMAIN,
-    PUSH_CONFIG,
+    PLATFORMS,
     REQUEST_REFRESH_DELAY,
     TYPE_COUNTER,
     TYPE_RELAY,
@@ -61,31 +59,24 @@ from .const import (
     TYPE_XPWM,
     TYPE_XPWM_RGB,
     TYPE_XPWM_RGBW,
-    UNDO_UPDATE_LISTENER,
 )
-
-from .commands import IpxCommandClient
-from .coordinator import IpxDataUpdateCoordinator
+from .coordinator import (
+    PUSH_ENTRIES,
+    IpxConfigEntry,
+    IpxData,
+    IpxDataUpdateCoordinator,
+    IpxSystemCoordinator,
+    auth_issue_id,
+)
 from .push import (
-    IpxRequestView,
-    IpxRequestDataView,
     IpxRequestBulkUpdateView,
+    IpxRequestDataView,
     IpxRequestRefreshView,
+    IpxRequestView,
 )
 from .system import IpxSystemData
 
 _LOGGER = logging.getLogger(__name__)
-
-
-PLATFORMS = [
-    Platform.BINARY_SENSOR,
-    Platform.CLIMATE,
-    Platform.COVER,
-    Platform.LIGHT,
-    Platform.NUMBER,
-    Platform.SENSOR,
-    Platform.SWITCH,
-]
 
 DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
     {
@@ -131,7 +122,7 @@ CONFIG_SCHEMA = vol.Schema(
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the IPX800 from config file."""
-    hass.data.setdefault(DOMAIN, {})
+    hass.data.setdefault(PUSH_ENTRIES, {})
     # Integration setup runs once. Routes resolve live entries on every request.
     for view in (
         IpxRequestView,
@@ -152,10 +143,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> bool:
     """Set up the IPX800v4."""
-    hass.data.setdefault(DOMAIN, {})
-
     config = entry.data
     options = entry.options
 
@@ -201,8 +190,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         config.get(CONF_USERNAME),
         config.get(CONF_PASSWORD),
     )
-    device_registry = dr.async_get(hass)
-    controller_device = device_registry.async_get_or_create(
+    controller_device = dr.async_get(hass).async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, ipx.host)},
         manufacturer="GCE",
@@ -210,19 +198,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         name=config[CONF_NAME],
         configuration_url=f"http://{config[CONF_HOST]}:{config[CONF_PORT]}",
     )
-    controller_mac = None
-
-    async def async_update_system():
-        """Fetch optional diagnostics on their own polling schedule."""
-        nonlocal controller_mac
-        data = await system.async_get()
-        if (mac := data.get("mac")) and mac != controller_mac:
-            device_registry.async_update_device(
-                controller_device.id,
-                merge_connections={(dr.CONNECTION_NETWORK_MAC, mac)},
-            )
-            controller_mac = mac
-        return data
 
     scan_interval = options.get(
         CONF_SCAN_INTERVAL, config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
@@ -251,53 +226,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
 
-    system_coordinator = DataUpdateCoordinator(
+    system_coordinator = IpxSystemCoordinator(
         hass,
-        _LOGGER,
-        config_entry=entry,
-        name=f"{config[CONF_NAME]} diagnostics",
-        update_method=async_update_system,
-        update_interval=timedelta(seconds=scan_interval),
+        entry,
+        system,
+        controller_device.id,
+        timedelta(seconds=scan_interval),
     )
-    # Initial snapshot, then timer-only polling. I/O pushes, commands and
-    # recovery reads never request or postpone a diagnostics refresh.
+    # Initial snapshot, then timer-only polling. A failed diagnostics read
+    # doesn't prevent the setup.
     await system_coordinator.async_refresh()
-
-    undo_listener = entry.add_update_listener(_async_update_listener)
-    entry.async_on_unload(undo_listener)
-
-    entry_data = hass.data[DOMAIN][entry.entry_id] = {
-        CONF_NAME: config[CONF_NAME],
-        CONTROLLER: command_ipx,
-        COORDINATOR: coordinator,
-        SYSTEM_COORDINATOR: system_coordinator,
-        CONF_DEVICES: {},
-        UNDO_UPDATE_LISTENER: undo_listener,
-    }
-    entry.async_on_unload(
-        partial(_async_remove_entry_data, hass, entry.entry_id, entry_data)
-    )
-
-    if CONF_DEVICES not in config:
-        _LOGGER.warning(
-            "No devices configuration found for the IPX800 %s", config[CONF_NAME]
-        )
-        return True
 
     # Load each supported component entities from their devices
     devices = build_device_list(config[CONF_DEVICES])
-
-    for component in PLATFORMS:
-        _LOGGER.debug("Load component %s", component)
-        hass.data[DOMAIN][entry.entry_id][CONF_DEVICES][component] = filter_device_list(
-            devices, component
-        )
+    entry_data = entry.runtime_data = IpxData(
+        name=config[CONF_NAME],
+        controller=command_ipx,
+        coordinator=coordinator,
+        system_coordinator=system_coordinator,
+        devices={
+            component: filter_device_list(devices, component) for component in PLATFORMS
+        },
+    )
+    hass.data.setdefault(PUSH_ENTRIES, {})[entry.entry_id] = entry_data
+    entry.async_on_unload(
+        partial(_async_remove_entry_data, hass, entry.entry_id, entry_data)
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Expose push access only once this entry and its platforms are ready.
     if CONF_PUSH_PASSWORD in config:
-        entry_data[PUSH_CONFIG] = config
+        entry_data.push_config = dict(config)
     else:
         _LOGGER.info(
             "No %s parameter provided in configuration, skip API call handling for IPX800 PUSH",
@@ -307,45 +267,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
+async def async_unload_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> bool:
+    """Unload a config entry, the coordinators are shut down with it."""
     if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         return False
-
-    entry_data = hass.data.get(DOMAIN, {}).get(entry.entry_id)
-    if entry_data is not None:
-        _async_remove_entry_data(hass, entry.entry_id, entry_data)
-        await entry_data[COORDINATOR].async_shutdown()
-        await entry_data[SYSTEM_COORDINATOR].async_shutdown()
+    _async_remove_entry_data(hass, entry.entry_id, entry.runtime_data)
     return True
 
 
+async def async_remove_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> None:
+    """Remove the repair issue of a removed entry."""
+    ir.async_delete_issue(hass, DOMAIN, auth_issue_id(entry.entry_id))
+
+
 @callback
-def _async_remove_entry_data(hass: HomeAssistant, entry_id: str, entry_data: dict) -> None:
+def _async_remove_entry_data(
+    hass: HomeAssistant, entry_id: str, entry_data: IpxData
+) -> None:
     """Detach this runtime, including after incomplete setup; keep newer entries."""
-    entries = hass.data.get(DOMAIN, {})
+    entries = hass.data.get(PUSH_ENTRIES, {})
     if entries.get(entry_id) is entry_data:
         entries.pop(entry_id)
     # Keep the domain container: pending setups and stateless routes can reuse it.
 
 
-async def _async_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
-    """Handle options update."""
-    await hass.config_entries.async_reload(config_entry.entry_id)
-
-
 async def async_remove_config_entry_device(
-    hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
+    hass: HomeAssistant, config_entry: IpxConfigEntry, device_entry: dr.DeviceEntry
 ) -> bool:
-    """Remove a config entry from a device."""
-    entity_registry = er.async_get(hass)
-    entities = er.async_entries_for_device(entity_registry, device_entry.id)
-    if entities:
-        return False
-
-    device_registry = dr.async_get(hass)
-    device_registry.async_remove_device(device_entry.id)
-    return True
+    """Allow removing a device left without entities."""
+    return not er.async_entries_for_device(
+        er.async_get(hass), device_entry.id, include_disabled_entities=True
+    )
 
 
 def build_device_list(devices_config: list) -> list:

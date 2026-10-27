@@ -1,27 +1,60 @@
 """Coordinate reads with bounded communication and missing-field recovery."""
 
 import asyncio
-import logging
 from contextlib import suppress
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+import logging
 from math import isfinite
 from time import monotonic
+from typing import Any, NoReturn
 
 from aiohttp import ClientResponseError, InvalidURL
-from homeassistant.core import callback
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryError
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.util import dt as dt_util
 from pypx800 import (
     Ipx800CannotConnectError,
     Ipx800InvalidAuthError,
     Ipx800RequestError,
 )
 
-from .commands import CommandManager
-from .const import MAX_READ_FAILURES, MAX_READ_RETRY_DELAY
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_NAME
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryError
+from homeassistant.helpers import device_registry as dr, issue_registry as ir
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
+from homeassistant.util.hass_dict import HassKey
+
+from .commands import CommandManager, IpxCommandClient
+from .const import DOMAIN, MAX_READ_FAILURES, MAX_READ_RETRY_DELAY
+from .system import IpxSystemData
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class IpxData:
+    """Runtime data of an IPX800 config entry."""
+
+    name: str
+    controller: IpxCommandClient
+    coordinator: IpxDataUpdateCoordinator
+    system_coordinator: IpxSystemCoordinator
+    # Valid device configurations of each platform
+    devices: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    # Set once the platforms are ready, when push is configured
+    push_config: dict[str, Any] | None = None
+
+
+type IpxConfigEntry = ConfigEntry[IpxData]
+
+# Loaded entries, resolved by the push views on every request
+PUSH_ENTRIES: HassKey[dict[str, IpxData]] = HassKey(DOMAIN)
+
+
+def auth_issue_id(entry_id: str) -> str:
+    """Return the repair issue ID of rejected credentials."""
+    return f"invalid_auth_{entry_id}"
 
 
 class IpxTransientReadError(UpdateFailed):
@@ -59,6 +92,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         self._read_in_progress = False
         self._cover_refresh_task: asyncio.Task | None = None
         self._cover_refresh_remaining = 0
+        self._auth_issue = False
 
     @callback
     def async_track_cover_movement(self, repeat: int = 20) -> None:
@@ -81,7 +115,8 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
                 try:
                     await self.async_request_refresh()
                 except Exception as err:
-                    _LOGGER.error(
+                    # Logged without a traceback, the next position read retries
+                    _LOGGER.error(  # noqa: TRY400
                         "%s: cover state refresh failed (%s)",
                         self.name,
                         type(err).__name__,
@@ -173,7 +208,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             return
         self.data = {**(self.data or {}), **values}
         now = monotonic()
-        self.field_push_times.update({key: now for key in values})
+        self.field_push_times.update(dict.fromkeys(values, now))
         for key in values:
             if key in self._required_fields:
                 self.field_receipt_times[key] = now
@@ -274,22 +309,30 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             data = await super()._async_update_data()
         except Ipx800InvalidAuthError as err:
             self._retain_data = False
-            raise ConfigEntryAuthFailed("IPX800 authentication failed") from err
+            self._raise_auth_failed(err)
         except Ipx800RequestError as err:
             self._retain_data = False
-            raise ConfigEntryError("IPX800 rejected the API request") from err
+            raise ConfigEntryError(
+                translation_domain=DOMAIN, translation_key="request_rejected"
+            ) from err
         except (Ipx800CannotConnectError, TimeoutError) as err:
             self._retain_data = False
             # pypx800 wraps aiohttp errors. Do not soften definitive HTTP or
             # URL errors, and never include exception URLs (containing API keys).
             cause = err.__cause__
             if isinstance(cause, InvalidURL):
-                raise ConfigEntryError("Invalid IPX800 URL") from err
+                raise ConfigEntryError(
+                    translation_domain=DOMAIN, translation_key="invalid_url"
+                ) from err
             if isinstance(cause, ClientResponseError):
                 if cause.status in (401, 403):
-                    raise ConfigEntryAuthFailed("IPX800 authentication failed") from err
+                    self._raise_auth_failed(err)
                 if 400 <= cause.status < 500 and cause.status not in (408, 429):
-                    raise ConfigEntryError("IPX800 rejected the HTTP request") from err
+                    raise ConfigEntryError(
+                        translation_domain=DOMAIN,
+                        translation_key="http_rejected",
+                        translation_placeholders={"status": str(cause.status)},
+                    ) from err
 
             self.consecutive_failures += 1
             self._retain_data = (
@@ -308,7 +351,9 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
                 else self.update_interval.total_seconds(),
             )
             raise IpxTransientReadError(
-                "IPX800 communication failed", retry_after=retry_delay
+                translation_domain=DOMAIN,
+                translation_key="cannot_connect",
+                retry_after=retry_delay,
             ) from err
         except Exception:
             self._retain_data = False
@@ -319,6 +364,11 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         self._retain_data = False
         self.consecutive_failures = 0
         self.last_successful_read = dt_util.utcnow()
+        if self._auth_issue:
+            ir.async_delete_issue(
+                self.hass, DOMAIN, auth_issue_id(self.config_entry.entry_id)
+            )
+            self._auth_issue = False
         now = monotonic()
         self._last_read_time = now
         # A response requested before a push must not overwrite that newer value.
@@ -350,6 +400,22 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
         self._schedule_freshness_expiry()
         return data
 
+    def _raise_auth_failed(self, err: Exception) -> NoReturn:
+        """Ask to fix the YAML credentials, the entry has no reauthentication."""
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            auth_issue_id(self.config_entry.entry_id),
+            is_fixable=False,
+            severity=ir.IssueSeverity.ERROR,
+            translation_key="invalid_auth",
+            translation_placeholders={"name": self.config_entry.title},
+        )
+        self._auth_issue = True
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="invalid_auth"
+        ) from err
+
     async def _async_refresh(self, *, log_failures=True, **kwargs) -> None:
         """Publish the availability threshold while retaining real read failures."""
         was_available = self.data_available
@@ -370,7 +436,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
                         self.update_interval.total_seconds(),
                     )
             elif (previous_update_success or was_available) and isinstance(
-                self.last_exception, (ConfigEntryAuthFailed, ConfigEntryError)
+                self.last_exception, ConfigEntryError
             ):
                 _LOGGER.error(
                     "%s: read failed (%s); last successful read=%s",
@@ -387,3 +453,44 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             and was_available != self.data_available
         ):
             self.async_update_listeners()
+
+
+class IpxSystemCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+    """Poll the controller diagnostics on their own schedule.
+
+    I/O pushes, commands and recovery reads never request or postpone a
+    diagnostics refresh.
+    """
+
+    config_entry: IpxConfigEntry
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: IpxConfigEntry,
+        system: IpxSystemData,
+        controller_device_id: str,
+        update_interval: timedelta,
+    ) -> None:
+        """Initialize the coordinator."""
+        super().__init__(
+            hass,
+            _LOGGER,
+            config_entry=entry,
+            name=f"{entry.data[CONF_NAME]} diagnostics",
+            update_interval=update_interval,
+        )
+        self.system = system
+        self.controller_device_id = controller_device_id
+        self._mac: str | None = None
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Read the diagnostics, adding the MAC address to the controller device."""
+        data = await self.system.async_get()
+        if (mac := data.get("mac")) and mac != self._mac:
+            dr.async_get(self.hass).async_update_device(
+                self.controller_device_id,
+                new_connections={(dr.CONNECTION_NETWORK_MAC, mac)},
+            )
+            self._mac = mac
+        return data

@@ -3,21 +3,18 @@
 from pypx800 import IPX800, Counter, VAInput
 
 from homeassistant.components.number import NumberEntity, NumberMode
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
-    CONF_DEVICES,
     CONF_TYPE,
-    CONTROLLER,
-    COORDINATOR,
-    DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     TYPE_COUNTER,
     TYPE_VIRTUALANALOGIN,
 )
+from .coordinator import IpxConfigEntry
 from .entity import IpxEntity
 
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -25,19 +22,20 @@ PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: IpxConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the IPX800 numbers."""
-    controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
-    devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["number"]
+    data = entry.runtime_data
+    controller = data.controller
+    coordinator = data.coordinator
+    devices = data.devices[Platform.NUMBER]
 
     entities: list[NumberEntity] = []
 
     for device in devices:
         if device.get(CONF_TYPE) in [TYPE_VIRTUALANALOGIN, TYPE_COUNTER]:
-            entities.append(VirtualAnalogInNumber(device, controller, coordinator))  # noqa: PERF401
+            entities.append(VirtualAnalogInNumber(device, controller, coordinator))
 
     async_add_entities(entities, True)
 

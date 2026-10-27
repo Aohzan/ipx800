@@ -13,20 +13,16 @@ from homeassistant.components.light import (
     LightEntity,
     LightEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CONF_DEFAULT_BRIGHTNESS,
-    CONF_DEVICES,
     CONF_TRANSITION,
     CONF_TYPE,
-    CONTROLLER,
-    COORDINATOR,
     DEFAULT_TRANSITION,
-    DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     TYPE_RELAY,
     TYPE_XDIMMER,
@@ -34,6 +30,7 @@ from .const import (
     TYPE_XPWM_RGB,
     TYPE_XPWM_RGBW,
 )
+from .coordinator import IpxConfigEntry
 from .entity import IpxEntity
 
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -51,13 +48,14 @@ def scaleto100(value):
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: IpxConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the IPX800 lights."""
-    controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
-    devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["light"]
+    data = entry.runtime_data
+    controller = data.controller
+    coordinator = data.coordinator
+    devices = data.devices[Platform.LIGHT]
 
     entities: list[LightEntity] = []
 

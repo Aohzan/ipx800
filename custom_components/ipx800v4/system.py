@@ -5,7 +5,7 @@ import logging
 import re
 from xml.etree import ElementTree
 
-from aiohttp import BasicAuth, ClientError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientSession, ClientTimeout, encode_basic_auth
 
 from homeassistant.util import dt as dt_util
 
@@ -25,9 +25,15 @@ class IpxSystemData:
         username: str | None,
         password: str | None,
     ) -> None:
+        """Initialize the reader of the XML status page."""
         self._session = session
         self._url = f"http://{host}:{port}/user/status.xml"
-        self._auth = BasicAuth(username, password or "") if username else None
+        # Basic authentication, latin-1 encoded like aiohttp.BasicAuth did
+        self._headers = (
+            {"Authorization": encode_basic_auth(username, password or "", "latin1")}
+            if username
+            else None
+        )
         self._last_boot: datetime | None = None
         self._last_uptime: int | None = None
         self._failed = False
@@ -40,12 +46,14 @@ class IpxSystemData:
 
         try:
             async with self._session.get(
-                self._url, auth=self._auth, timeout=ClientTimeout(total=5)
+                self._url, headers=self._headers, timeout=ClientTimeout(total=5)
             ) as response:
                 response.raise_for_status()
                 root = ElementTree.fromstring(await response.text())
             if root.tag != "response":
-                raise ValueError("Expected an IPX800 XML response")
+                raise ValueError(  # noqa: TRY301
+                    "Expected an IPX800 XML response"
+                )
         except (ClientError, TimeoutError, ElementTree.ParseError, ValueError) as err:
             if not self._failed:
                 _LOGGER.warning(
@@ -55,7 +63,7 @@ class IpxSystemData:
                     err,
                 )
             self._failed = True
-            if self._auth is None:
+            if self._headers is None:
                 self._unauthenticated_failures += 1
                 if self._unauthenticated_failures == MAX_UNAUTHENTICATED_FAILURES:
                     _LOGGER.warning(

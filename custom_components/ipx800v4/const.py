@@ -1,14 +1,21 @@
 """Constants for the ipx800v4 integration."""
 
+from homeassistant.const import Platform
+
 DOMAIN = "ipx800v4"
 
-CONTROLLER = "controller"
-COORDINATOR = "coordinator"
-SYSTEM_COORDINATOR = "system_coordinator"
-UNDO_UPDATE_LISTENER = "undo_update_listener"
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.CLIMATE,
+    Platform.COVER,
+    Platform.LIGHT,
+    Platform.NUMBER,
+    Platform.SENSOR,
+    Platform.SWITCH,
+]
+
 GLOBAL_PARALLEL_UPDATES = 1
 PUSH_USERNAME = "ipx800"
-PUSH_CONFIG = "push_config"
 
 DEFAULT_SCAN_INTERVAL = 10
 DEFAULT_TRANSITION = 0.5

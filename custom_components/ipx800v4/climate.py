@@ -14,18 +14,13 @@ from homeassistant.components.climate import (
     HVACAction,
     HVACMode,
 )
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import Platform, UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
-    CONF_DEVICES,
     CONF_TYPE,
-    CONTROLLER,
-    COORDINATOR,
-    DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     IPX_PRESET_AWAY,
     IPX_PRESET_COMFORT,
@@ -36,6 +31,7 @@ from .const import (
     TYPE_RELAY,
     TYPE_X4FP,
 )
+from .coordinator import IpxConfigEntry
 from .entity import IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,13 +40,14 @@ PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: IpxConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the IPX800 climates."""
-    controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
-    devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["climate"]
+    data = entry.runtime_data
+    controller = data.controller
+    coordinator = data.coordinator
+    devices = data.devices[Platform.CLIMATE]
 
     entities: list[ClimateEntity] = []
 
@@ -174,7 +171,6 @@ class RelayClimate(IpxEntity, ClimateEntity):
         super().__init__(device_config, ipx, coordinator)
         self.control_minus = Relay(ipx, self._ids[0])
         self.control_plus = Relay(ipx, self._ids[1])
-        self._enable_turn_on_off_backwards_compatibility = False
         self._attr_supported_features = (
             ClimateEntityFeature.PRESET_MODE
             | ClimateEntityFeature.TURN_OFF

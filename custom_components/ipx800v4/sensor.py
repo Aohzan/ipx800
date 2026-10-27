@@ -1,5 +1,6 @@
 """Support for IPX800 V4 sensors."""
 
+from dataclasses import dataclass
 from datetime import datetime
 import logging
 
@@ -10,18 +11,12 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import LIGHT_LUX, Platform, UnitOfRatio, UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
-    CONF_DEVICES,
     CONF_TYPE,
-    CONTROLLER,
-    COORDINATOR,
-    SYSTEM_COORDINATOR,
-    DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     TYPE_ANALOGIN,
     TYPE_COUNTER,
@@ -29,6 +24,7 @@ from .const import (
     TYPE_XENO,
     TYPE_XTHL,
 )
+from .coordinator import IpxConfigEntry, IpxDataUpdateCoordinator
 from .entity import IpxDiagnosticEntity, IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,14 +33,15 @@ PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: IpxConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the IPX800 sensors."""
-    controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
-    system_coordinator = hass.data[DOMAIN][entry.entry_id][SYSTEM_COORDINATOR]
-    devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["sensor"]
+    data = entry.runtime_data
+    controller = data.controller
+    coordinator = data.coordinator
+    system_coordinator = data.system_coordinator
+    devices = data.devices[Platform.SENSOR]
 
     entities: list[SensorEntity] = [
         IpxLastBootSensor(controller, system_coordinator, "last_boot"),
@@ -64,38 +61,9 @@ async def async_setup_entry(
         elif device.get(CONF_TYPE) == TYPE_COUNTER:
             entities.append(CounterSensor(device, controller, coordinator))
         elif device.get(CONF_TYPE) == TYPE_XTHL:
-            entities.append(
-                XTHLSensor(
-                    device,
-                    controller,
-                    coordinator,
-                    SensorDeviceClass.TEMPERATURE,
-                    "°C",
-                    "TEMP",
-                    suffix_name="Temperature",
-                )
-            )
-            entities.append(
-                XTHLSensor(
-                    device,
-                    controller,
-                    coordinator,
-                    SensorDeviceClass.HUMIDITY,
-                    "%",
-                    "HUM",
-                    suffix_name="Humidity",
-                )
-            )
-            entities.append(
-                XTHLSensor(
-                    device,
-                    controller,
-                    coordinator,
-                    SensorDeviceClass.ILLUMINANCE,
-                    "lx",
-                    "LUM",
-                    suffix_name="Luminance",
-                )
+            entities.extend(
+                XTHLSensor(device, controller, coordinator, description)
+                for description in XTHL_SENSORS
             )
         elif device.get(CONF_TYPE) == TYPE_XENO:
             entities.append(
@@ -111,7 +79,7 @@ async def async_setup_entry(
 
 class AnalogInSensor(IpxEntity, SensorEntity):
     """Representation of a IPX sensor through analog input."""
-    
+
     _attr_state_class = SensorStateClass.MEASUREMENT
     _push_prefix = "A"
 
@@ -158,25 +126,62 @@ class VirtualAnalogInSensor(IpxEntity, SensorEntity):
         return self.coordinator.data[f"VA{self._id}"]
 
 
+@dataclass(frozen=True, kw_only=True)
+class XTHLSensorDescription:
+    """Description of a X-THL measurement."""
+
+    req_type: str
+    # English name, part of the unique ID of the entities created before the
+    # names were translated
+    unique_suffix: str
+    translation_key: str
+    device_class: SensorDeviceClass
+    unit: str
+
+
+XTHL_SENSORS = (
+    XTHLSensorDescription(
+        req_type="TEMP",
+        unique_suffix="Temperature",
+        translation_key="temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        unit=UnitOfTemperature.CELSIUS,
+    ),
+    XTHLSensorDescription(
+        req_type="HUM",
+        unique_suffix="Humidity",
+        translation_key="humidity",
+        device_class=SensorDeviceClass.HUMIDITY,
+        unit=UnitOfRatio.PERCENTAGE,
+    ),
+    XTHLSensorDescription(
+        req_type="LUM",
+        unique_suffix="Luminance",
+        translation_key="luminance",
+        device_class=SensorDeviceClass.ILLUMINANCE,
+        unit=LIGHT_LUX,
+    ),
+)
+
+
 class XTHLSensor(IpxEntity, SensorEntity):
     """Representation of a X-THL sensor."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
-        device_class: SensorDeviceClass,
-        unit_of_measurement: str,
-        req_type: str,
-        suffix_name: str,
+        coordinator: IpxDataUpdateCoordinator,
+        description: XTHLSensorDescription,
     ) -> None:
         """Initialize the XTHLSensor."""
-        super().__init__(device_config, ipx, coordinator, suffix_name)
-        self._attr_device_class = device_class
-        self._attr_native_unit_of_measurement = unit_of_measurement
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._req_type = req_type
+        super().__init__(device_config, ipx, coordinator, description.unique_suffix)
+        self._attr_translation_key = description.translation_key
+        self._attr_device_class = description.device_class
+        self._attr_native_unit_of_measurement = description.unit
+        self._req_type = description.req_type
 
     @property
     def push_key(self) -> str:
