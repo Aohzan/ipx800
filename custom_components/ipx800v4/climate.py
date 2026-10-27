@@ -72,7 +72,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
     ) -> None:
         """Initialize the X4FPClimate."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = X4FP(ipx, self._ext_id, self._id)
+        self.control = X4FP(ipx, self._required_ext_id, self._required_id)
         self._attr_supported_features = ClimateEntityFeature.PRESET_MODE
         self._attr_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]

@@ -59,7 +59,7 @@ class CounterNumber(IpxEntity, NumberEntity):
     ) -> None:
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = Counter(ipx, self._id)
+        self.control = Counter(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
@@ -91,7 +91,7 @@ class VirtualAnalogInNumber(IpxEntity, NumberEntity):
     ) -> None:
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = VAInput(ipx, self._id)
+        self.control = VAInput(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
