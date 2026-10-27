@@ -85,12 +85,15 @@ class IpxEntity(CoordinatorEntity[IpxDataUpdateCoordinator]):
     def _command_exception(
         self, translation_key: str, operation: str, err: Exception
     ) -> HomeAssistantError:
-        """Return the translated error of a write."""
+        """Return the translated error of a write.
+
+        Each operation has its own translation keys, a placeholder would stay
+        in English in the other languages.
+        """
         return HomeAssistantError(
             translation_domain=DOMAIN,
-            translation_key=translation_key,
+            translation_key=f"{translation_key}_{operation}",
             translation_placeholders={
-                "operation": operation,
                 "entity": self.entity_id or self._config_name,
                 "error": str(err),
             },

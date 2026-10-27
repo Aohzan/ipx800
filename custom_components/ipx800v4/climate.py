@@ -139,7 +139,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
         _LOGGER.debug(
             "set preset_mode to %s => id %s", preset_mode, switcher.get(preset_mode)
         )
-        async with self._command_error("set preset mode"):
+        async with self._command_error("set_preset_mode"):
             await self._async_write(
                 self.control.set_mode, switcher.get(preset_mode), retry=True
             )
@@ -147,7 +147,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
-        async with self._command_error("set HVAC mode"):
+        async with self._command_error("set_hvac_mode"):
             if hvac_mode == HVACMode.HEAT:
                 await self._async_write(self.control.set_mode, 0, retry=True)
             elif hvac_mode == HVACMode.OFF:
@@ -231,7 +231,7 @@ class RelayClimate(IpxEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set hvac mode."""
-        async with self._command_error("set HVAC mode"):
+        async with self._command_error("set_hvac_mode"):
             if hvac_mode == HVACMode.HEAT:
                 await self._async_write(self.control_minus.off, retry=True)
                 await self._async_write(self.control_plus.off, retry=True)
@@ -245,7 +245,7 @@ class RelayClimate(IpxEntity, ClimateEntity):
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set target preset mode."""
-        async with self._command_error("set preset mode"):
+        async with self._command_error("set_preset_mode"):
             if preset_mode == PRESET_COMFORT:
                 await self._async_write(self.control_minus.off, retry=True)
                 await self._async_write(self.control_plus.off, retry=True)

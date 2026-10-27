@@ -62,14 +62,113 @@
     "cannot_connect": {
       "message": "Communication with the IPX800 failed."
     },
-    "command_auth_failed": {
-      "message": "Cannot {operation} for {entity}: {error}. Check the configured credentials."
+    "command_auth_failed_close_cover": {
+      "message": "Cannot close cover for {entity}: {error}. Check the configured credentials."
     },
-    "command_failed": {
-      "message": "Cannot confirm {operation} for {entity}: {error}. Check device state before issuing another command."
+    "command_auth_failed_close_cover_tilt": {
+      "message": "Cannot close cover tilt for {entity}: {error}. Check the configured credentials."
     },
-    "command_interrupted": {
-      "message": "Cannot {operation} for {entity}: {error}"
+    "command_auth_failed_open_cover": {
+      "message": "Cannot open cover for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_open_cover_tilt": {
+      "message": "Cannot open cover tilt for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_set_cover_position": {
+      "message": "Cannot set cover position for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_set_hvac_mode": {
+      "message": "Cannot set HVAC mode for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_set_preset_mode": {
+      "message": "Cannot set preset mode for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_set_value": {
+      "message": "Cannot set value for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_stop_cover": {
+      "message": "Cannot stop cover for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_toggle": {
+      "message": "Cannot toggle for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_turn_off": {
+      "message": "Cannot turn off for {entity}: {error}. Check the configured credentials."
+    },
+    "command_auth_failed_turn_on": {
+      "message": "Cannot turn on for {entity}: {error}. Check the configured credentials."
+    },
+    "command_failed_close_cover": {
+      "message": "Cannot confirm close cover for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_close_cover_tilt": {
+      "message": "Cannot confirm close cover tilt for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_open_cover": {
+      "message": "Cannot confirm open cover for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_open_cover_tilt": {
+      "message": "Cannot confirm open cover tilt for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_set_cover_position": {
+      "message": "Cannot confirm set cover position for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_set_hvac_mode": {
+      "message": "Cannot confirm set HVAC mode for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_set_preset_mode": {
+      "message": "Cannot confirm set preset mode for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_set_value": {
+      "message": "Cannot confirm set value for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_stop_cover": {
+      "message": "Cannot confirm stop cover for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_toggle": {
+      "message": "Cannot confirm toggle for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_turn_off": {
+      "message": "Cannot confirm turn off for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_failed_turn_on": {
+      "message": "Cannot confirm turn on for {entity}: {error}. Check device state before issuing another command."
+    },
+    "command_interrupted_close_cover": {
+      "message": "Cannot close cover for {entity}: {error}"
+    },
+    "command_interrupted_close_cover_tilt": {
+      "message": "Cannot close cover tilt for {entity}: {error}"
+    },
+    "command_interrupted_open_cover": {
+      "message": "Cannot open cover for {entity}: {error}"
+    },
+    "command_interrupted_open_cover_tilt": {
+      "message": "Cannot open cover tilt for {entity}: {error}"
+    },
+    "command_interrupted_set_cover_position": {
+      "message": "Cannot set cover position for {entity}: {error}"
+    },
+    "command_interrupted_set_hvac_mode": {
+      "message": "Cannot set HVAC mode for {entity}: {error}"
+    },
+    "command_interrupted_set_preset_mode": {
+      "message": "Cannot set preset mode for {entity}: {error}"
+    },
+    "command_interrupted_set_value": {
+      "message": "Cannot set value for {entity}: {error}"
+    },
+    "command_interrupted_stop_cover": {
+      "message": "Cannot stop cover for {entity}: {error}"
+    },
+    "command_interrupted_toggle": {
+      "message": "Cannot toggle for {entity}: {error}"
+    },
+    "command_interrupted_turn_off": {
+      "message": "Cannot turn off for {entity}: {error}"
+    },
+    "command_interrupted_turn_on": {
+      "message": "Cannot turn on for {entity}: {error}"
     },
     "http_rejected": {
       "message": "The IPX800 rejected the HTTP request (HTTP {status})."

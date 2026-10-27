@@ -74,7 +74,7 @@ class CounterNumber(IpxEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
-        async with self._command_error("set value"):
+        async with self._command_error("set_value"):
             # The IPX800 counters are integers: send SetC02=12, not SetC02=12.0
             await self._async_write(self.control.set_value, round(value))
 
@@ -106,5 +106,5 @@ class VirtualAnalogInNumber(IpxEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
-        async with self._command_error("set value"):
+        async with self._command_error("set_value"):
             await self._async_write(self.control.set_value, value, retry=True)
