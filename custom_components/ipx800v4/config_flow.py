@@ -13,7 +13,6 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
-from homeassistant.helpers import config_validation as cv
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 
@@ -82,7 +81,7 @@ class Ipx800OptionsFlowHandler(OptionsFlowWithReload):
                     vol.Required(
                         CONF_SCAN_INTERVAL,
                         default=scan_interval,
-                    ): cv.positive_int,
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1)),
                 }
             ),
         )
