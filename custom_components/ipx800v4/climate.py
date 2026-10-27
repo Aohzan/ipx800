@@ -17,7 +17,6 @@ from homeassistant.components.climate import (
 from homeassistant.const import Platform, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CONF_TYPE,
@@ -31,7 +30,7 @@ from .const import (
     TYPE_RELAY,
     TYPE_X4FP,
 )
-from .coordinator import IpxConfigEntry
+from .coordinator import IpxConfigEntry, IpxDataUpdateCoordinator
 from .entity import IpxEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,7 +68,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the X4FPClimate."""
         super().__init__(device_config, ipx, coordinator)
@@ -165,7 +164,7 @@ class RelayClimate(IpxEntity, ClimateEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the RelayClimate."""
         super().__init__(device_config, ipx, coordinator)

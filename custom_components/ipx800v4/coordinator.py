@@ -1,6 +1,7 @@
 """Coordinate reads with bounded communication and missing-field recovery."""
 
 import asyncio
+from collections.abc import Awaitable, Callable, Coroutine
 from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -21,6 +22,7 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 from homeassistant.util.hass_dict import HassKey
@@ -61,7 +63,7 @@ class IpxTransientReadError(UpdateFailed):
     """A communication failure, with an optional bounded recovery delay."""
 
 
-class IpxDataUpdateCoordinator(DataUpdateCoordinator):
+class IpxDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Keep acquisition status separate from temporary cached availability.
 
     UpdateFailed.retry_after uses Home Assistant's existing polling timer and
@@ -70,11 +72,30 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
     shares that timer; the freshness timer only publishes expired data.
     """
 
+    config_entry: IpxConfigEntry
+
     def __init__(
-        self, *args, controller_device_id: str | None = None, **kwargs
+        self,
+        hass: HomeAssistant,
+        logger: logging.Logger,
+        *,
+        config_entry: IpxConfigEntry,
+        name: str,
+        update_method: Callable[[], Awaitable[dict[str, Any]]],
+        update_interval: timedelta,
+        request_refresh_debouncer: Debouncer[Coroutine[Any, Any, None]],
+        controller_device_id: str,
     ) -> None:
         """Initialize per-controller recovery state."""
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            hass,
+            logger,
+            config_entry=config_entry,
+            name=name,
+            update_method=update_method,
+            update_interval=update_interval,
+            request_refresh_debouncer=request_refresh_debouncer,
+        )
         # Registry id of the IPX device, the via device of configured devices.
         self.controller_device_id = controller_device_id
         self.commands = CommandManager()
@@ -125,9 +146,16 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             self._cover_refresh_task = None
 
     @property
+    def scan_interval(self) -> float:
+        """Return the polling interval in seconds, set at construction."""
+        if self.update_interval is None:
+            raise RuntimeError(f"{self.name}: the polling interval is not set")
+        return self.update_interval.total_seconds()
+
+    @property
     def recovery_delay(self) -> float:
         """Share the same bounded read interval for both recovery policies."""
-        return min(self.update_interval.total_seconds(), MAX_READ_RETRY_DELAY)
+        return min(self.scan_interval, MAX_READ_RETRY_DELAY)
 
     @staticmethod
     def _valid_field(key: str, value) -> bool:
@@ -197,7 +225,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
     @property
     def push_ttl(self) -> float:
         """Bound push-only availability to one scan plus the recovery window."""
-        interval = self.update_interval.total_seconds()
+        interval = self.scan_interval
         return interval + (MAX_READ_FAILURES - 1) * min(interval, MAX_READ_RETRY_DELAY)
 
     @callback
@@ -345,9 +373,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
                 type(err).__name__,
                 self.consecutive_failures,
                 self.last_successful_read,
-                retry_delay
-                if retry_delay is not None
-                else self.update_interval.total_seconds(),
+                retry_delay if retry_delay is not None else self.scan_interval,
             )
             raise IpxTransientReadError(
                 translation_domain=DOMAIN,
@@ -413,13 +439,24 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
             translation_domain=DOMAIN, translation_key="invalid_auth"
         ) from err
 
-    async def _async_refresh(self, *, log_failures=True, **kwargs) -> None:
+    async def _async_refresh(
+        self,
+        log_failures: bool = True,
+        raise_on_auth_failed: bool = False,
+        scheduled: bool = False,
+        raise_on_entry_error: bool = False,
+    ) -> None:
         """Publish the availability threshold while retaining real read failures."""
         was_available = self.data_available
         previous_update_success = self.last_update_success
         # Handle expected failure logging below: HA otherwise logs an error on
         # the first transient failure. Unexpected exceptions still get a traceback.
-        await super()._async_refresh(log_failures=False, **kwargs)
+        await super()._async_refresh(
+            log_failures=False,
+            raise_on_auth_failed=raise_on_auth_failed,
+            scheduled=scheduled,
+            raise_on_entry_error=raise_on_entry_error,
+        )
 
         if log_failures and not self.last_update_success:
             if isinstance(self.last_exception, IpxTransientReadError):
@@ -430,7 +467,7 @@ class IpxDataUpdateCoordinator(DataUpdateCoordinator):
                         self.name,
                         self.consecutive_failures,
                         self.last_successful_read,
-                        self.update_interval.total_seconds(),
+                        self.scan_interval,
                     )
             elif (previous_update_success or was_available) and isinstance(
                 self.last_exception, ConfigEntryError

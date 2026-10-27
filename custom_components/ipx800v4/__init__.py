@@ -3,7 +3,9 @@
 from datetime import timedelta
 from functools import partial
 import logging
+from typing import TypedDict
 
+from aiohttp import ClientSession
 import probatio
 from pypx800 import IPX800
 
@@ -147,6 +149,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
+class IpxClientOptions(TypedDict):
+    """Arguments shared by the polling and the command pypx800 clients."""
+
+    host: str
+    port: int
+    api_key: str
+    username: str | None
+    password: str | None
+    specific_devices_types: list[str]
+    session: ClientSession
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> bool:
     """Set up the IPX800v4."""
     config = entry.data
@@ -173,15 +187,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> bool:
             CONF_PASSWORD,
         )
 
-    client_options = {
-        "host": config[CONF_HOST],
-        "port": config[CONF_PORT],
-        "api_key": config[CONF_API_KEY],
-        "username": config.get(CONF_USERNAME),
-        "password": config.get(CONF_PASSWORD),
-        "specific_devices_types": specific_devices_types,
-        "session": session,
-    }
+    client_options = IpxClientOptions(
+        host=config[CONF_HOST],
+        port=config[CONF_PORT],
+        api_key=config[CONF_API_KEY],
+        username=config.get(CONF_USERNAME),
+        password=config.get(CONF_PASSWORD),
+        specific_devices_types=specific_devices_types,
+        session=session,
+    )
     ipx = IPX800(**client_options)
     # Share HA's session; replay policy is explicit at each command call site.
     # The polling client retains its existing request/recovery behavior.

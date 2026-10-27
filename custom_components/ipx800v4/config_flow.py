@@ -39,9 +39,7 @@ class IpxConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.hass.config_entries.async_schedule_reload(entry.entry_id)
             return self.async_abort(reason="already_configured")
 
-        return self.async_create_entry(
-            title=import_info.get(CONF_NAME), data=import_info
-        )
+        return self.async_create_entry(title=import_info[CONF_NAME], data=import_info)
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
