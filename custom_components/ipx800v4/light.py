@@ -16,7 +16,6 @@ from homeassistant.components.light import (
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CONF_DEFAULT_BRIGHTNESS,
@@ -30,7 +29,7 @@ from .const import (
     TYPE_XPWM_RGB,
     TYPE_XPWM_RGBW,
 )
-from .coordinator import IpxConfigEntry
+from .coordinator import IpxConfigEntry, IpxDataUpdateCoordinator
 from .entity import IpxEntity
 
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -84,7 +83,7 @@ class RelayLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
@@ -128,7 +127,7 @@ class XDimmerLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the class XDimmerLight."""
         super().__init__(device_config, ipx, coordinator)
@@ -199,7 +198,7 @@ class XPWMLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the XPWMLight."""
         super().__init__(device_config, ipx, coordinator)
@@ -284,7 +283,7 @@ class XPWMRGBLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the XPWMRGBLight."""
         super().__init__(device_config, ipx, coordinator)
@@ -445,7 +444,7 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the XPWMRGBWLight."""
         super().__init__(device_config, ipx, coordinator)

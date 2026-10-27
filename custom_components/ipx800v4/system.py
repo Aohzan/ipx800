@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 import logging
 import re
+from typing import Any
 from xml.etree import ElementTree
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, encode_basic_auth
@@ -39,7 +40,7 @@ class IpxSystemData:
         self._failed = False
         self._unauthenticated_failures = 0
 
-    async def async_get(self) -> dict:
+    async def async_get(self) -> dict[str, Any]:
         """Read diagnostics without making I/O entities unavailable on failure."""
         if self._unauthenticated_failures >= MAX_UNAUTHENTICATED_FAILURES:
             return {}
@@ -78,7 +79,7 @@ class IpxSystemData:
         self._unauthenticated_failures = 0
 
         now = dt_util.utcnow()
-        data = {}
+        data: dict[str, Any] = {}
         # GCE: wuc0 is seconds since boot; lps0 is loops per second, not CPU %.
         for tag, key in (("wuc0", "uptime"), ("lps0", "load")):
             value = root.findtext(tag, "").strip()

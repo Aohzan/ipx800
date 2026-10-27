@@ -1,6 +1,6 @@
 """Generic IPX800V4 entity."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from math import isfinite
 
@@ -62,7 +62,7 @@ class IpxEntity(CoordinatorEntity[IpxDataUpdateCoordinator]):
     @asynccontextmanager
     async def _command_error(
         self, operation: str, *, target: object = None
-    ) -> AsyncIterator[None]:
+    ) -> AsyncGenerator[None]:
         """Report expected write failures; keep refreshes outside this boundary."""
         try:
             async with self.coordinator.commands.operation(

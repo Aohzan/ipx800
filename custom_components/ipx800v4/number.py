@@ -6,7 +6,6 @@ from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CONF_TYPE,
@@ -14,7 +13,7 @@ from .const import (
     TYPE_COUNTER,
     TYPE_VIRTUALANALOGIN,
 )
-from .coordinator import IpxConfigEntry
+from .coordinator import IpxConfigEntry, IpxDataUpdateCoordinator
 from .entity import IpxEntity
 
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -56,7 +55,7 @@ class CounterNumber(IpxEntity, NumberEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
@@ -88,7 +87,7 @@ class VirtualAnalogInNumber(IpxEntity, NumberEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)

@@ -1,7 +1,7 @@
 """Single-attempt command transport and bounded, non-blocking write retries."""
 
 import asyncio
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -85,7 +85,7 @@ class IpxCommandClient(IPX800):
         except (JSONDecodeError, UnicodeDecodeError) as err:
             raise Ipx800RequestError("IPX800 returned invalid JSON content") from err
 
-    async def request_cgi(self, params: dict) -> str:
+    async def request_cgi(self, params: dict) -> str:  # ty: ignore[invalid-method-override]  # pypx800 annotates -> dict but returns the response text
         """Send once; keep retries at the explicitly opted-in operation level."""
         headers = None
         if self._username and self._password:
@@ -201,7 +201,7 @@ class CommandManager:
     @asynccontextmanager
     async def operation(
         self, keys: tuple[str, ...], target: object = None
-    ) -> AsyncIterator[None]:
+    ) -> AsyncGenerator[None]:
         """Run one user operation, interrupted when superseded or unloading."""
         # Identical absolute intents share a generation, not a success result.
         # An intervening conflicting command always starts a new generation.
