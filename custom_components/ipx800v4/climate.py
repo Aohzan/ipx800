@@ -74,7 +74,7 @@ class X4FPClimate(IpxEntity, ClimateEntity):
         super().__init__(device_config, ipx, coordinator)
         self.control = X4FP(ipx, self._required_ext_id, self._required_id)
         self._attr_supported_features = ClimateEntityFeature.PRESET_MODE
-        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
+        self._attr_native_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
         self._attr_preset_modes = [
             PRESET_COMFORT,
@@ -175,7 +175,7 @@ class RelayClimate(IpxEntity, ClimateEntity):
             | ClimateEntityFeature.TURN_OFF
             | ClimateEntityFeature.TURN_ON
         )
-        self._attr_temperature_unit = UnitOfTemperature.CELSIUS
+        self._attr_native_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
         self._attr_preset_modes = [PRESET_COMFORT, PRESET_ECO, PRESET_AWAY, PRESET_NONE]
 
