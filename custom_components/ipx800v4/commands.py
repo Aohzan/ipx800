@@ -13,6 +13,7 @@ from typing import Any
 from aiohttp import (
     ClientError,
     ClientResponseError,
+    ClientSession,
     ContentTypeError,
     InvalidURL,
     encode_basic_auth,
@@ -49,13 +50,23 @@ class CommandIntent:
 
 
 class IpxCommandClient(IPX800):
-    """Avoid pypx800 2.5.1's blocking sleep even after a single CGI failure."""
+    """Send each request once, check its HTTP status and classify its errors.
+
+    The retries are decided per operation, by the command layer.
+    """
+
+    @property
+    def _http(self) -> ClientSession:
+        """Return the HTTP session, Home Assistant always gives one."""
+        if self._session is None:
+            raise Ipx800CannotConnectError("IPX800 client without HTTP session")
+        return self._session
 
     async def request_api(self, params: dict) -> dict:
         """Check HTTP status and bound the complete JSON response read."""
         try:
             async with asyncio.timeout(self._request_timeout):
-                response = await self._session.get(
+                response = await self._http.get(
                     self._api_url, params={"key": self._api_key, **params}
                 )
                 try:
@@ -85,7 +96,7 @@ class IpxCommandClient(IPX800):
         except (JSONDecodeError, UnicodeDecodeError) as err:
             raise Ipx800RequestError("IPX800 returned invalid JSON content") from err
 
-    async def request_cgi(self, params: dict) -> str:  # ty: ignore[invalid-method-override]  # pypx800 annotates -> dict but returns the response text
+    async def request_cgi(self, params: dict) -> str:
         """Send once; keep retries at the explicitly opted-in operation level."""
         headers = None
         if self._username and self._password:
@@ -97,7 +108,7 @@ class IpxCommandClient(IPX800):
             }
         try:
             async with asyncio.timeout(self._request_timeout):
-                response = await self._session.get(
+                response = await self._http.get(
                     self._cgi_url, headers=headers, params=params
                 )
                 try:

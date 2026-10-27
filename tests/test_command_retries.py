@@ -189,19 +189,21 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
                     client.request_api.await_args_list, [call(params)] * attempts
                 )
 
-    async def test_cgi_error_never_calls_blocking_sleep(self):
+    async def test_cgi_error_sent_once_without_waiting(self):
         response = Mock(status=200, text=AsyncMock(return_value="Error"))
         session = Mock(get=AsyncMock(return_value=response))
         client = IpxCommandClient(
             "192.0.2.1", "SECRET", session=session, request_retries=1
         )
         with (
-            patch("pypx800.ipx800.sleep", side_effect=AssertionError("blocking sleep")),
+            patch("pypx800.ipx800.asyncio.sleep", new_callable=AsyncMock) as sleep,
             self.assertRaises(Ipx800RequestError),
         ):
             await XPWM(client, 1).off()
         session.get.assert_awaited_once()
         response.close.assert_called_once()
+        # The retries are decided per operation, not by the pypx800 loop
+        sleep.assert_not_awaited()
 
     async def test_device_can_disable_replay_for_scenario_outputs(self):
         entity, write = make_entity(RelaySwitch, TimeoutError())
