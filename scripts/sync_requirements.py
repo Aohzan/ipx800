@@ -62,7 +62,9 @@ def oldest_homeassistant() -> str:
     for requirement in pyproject["dependency-groups"]["dev"]:
         if match := re.fullmatch(r"homeassistant>=(\S+)", requirement):
             return match[1]
-    raise SystemExit("No homeassistant>= requirement in the dev group of pyproject.toml")
+    raise SystemExit(
+        "No homeassistant>= requirement in the dev group of pyproject.toml"
+    )
 
 
 def check(requirements: list[str]) -> None:
@@ -75,9 +77,16 @@ def check(requirements: list[str]) -> None:
             constraints.write_bytes(resp.read())
         result = subprocess.run(
             [
-                "uv", "pip", "compile", "--quiet", "--no-header",
-                "--python-version", python_version,
-                "--constraint", str(constraints), "-",
+                "uv",
+                "pip",
+                "compile",
+                "--quiet",
+                "--no-header",
+                "--python-version",
+                python_version,
+                "--constraint",
+                str(constraints),
+                "-",
             ],
             input="\n".join(requirements),
             text=True,
@@ -92,6 +101,7 @@ def check(requirements: list[str]) -> None:
 
 
 def main() -> None:
+    """Run the script."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--check",

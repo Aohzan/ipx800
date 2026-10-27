@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Start Home Assistant in debug mode with the integration of the repo.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+if [[ ! -d .venv ]]; then
+  scripts/setup
+fi
+
+# custom_components is a namespace package: Home Assistant finds the
+# integration of the repo through PYTHONPATH, no copy or link in config/
+export PYTHONPATH="${PWD}${PYTHONPATH:+:${PYTHONPATH}}"
+uv run hass -c config --debug
