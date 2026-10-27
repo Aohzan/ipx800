@@ -10,6 +10,6 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Aohzan/ipx800/issues",
   "loggers": ["pypx800"],
-  "requirements": ["pypx800==2.6.0"],
+  "requirements": ["pypx800==2.6.1"],
   "version": "3.17.0"
 }

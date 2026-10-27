@@ -1340,7 +1340,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pypx800", specifier = ">=2.6.0" }]
+requires-dist = [{ name = "pypx800", specifier = ">=2.6.1" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2210,15 +2210,15 @@ wheels = [
 
 [[package]]
 name = "pypx800"
-version = "2.6.0"
+version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "async-timeout" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/de/16/7d7da16ea51a21e411e48dcf0d34448461ea675cfe4655c7ca1a4fa5292f/pypx800-2.6.0.tar.gz", hash = "sha256:d6c8dd637adfa1e590fd9af54eb13d31b69d24ea51204d2fc5318b9574574951", size = 8647, upload-time = "2026-10-13T21:47:30.996Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/65/d6a3835ce73f92c681be2400f29e5d7828d7a5cee204bb8a9b217a22fd4a/pypx800-2.6.1.tar.gz", hash = "sha256:2f37b0b01a6adc9730cdee036f6e53c235466870d1a033687ed7f72130bb9a34", size = 8637, upload-time = "2026-10-27T20:40:07.196Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/a6/c47f3e7c31e77b9e4e481fbe514709042d6a545c30d624514045ffe812a7/pypx800-2.6.0-py3-none-any.whl", hash = "sha256:5a19b2bcb77b7a277ac8e3872a44b3b46d80a992d48c1373a182a780be0a9005", size = 12264, upload-time = "2026-10-13T21:47:29.657Z" },
+    { url = "https://files.pythonhosted.org/packages/95/34/258272c9cafc889636e93da4cb244913251cd4fa2b9d96e1a79d60d1f8c0/pypx800-2.6.1-py3-none-any.whl", hash = "sha256:20c8e7d15c178d6e7c437e6f3c16fa77d4a2c52ebe413549e71c7624f05afbc4", size = 12267, upload-time = "2026-10-27T20:40:05.812Z" },
 ]
 
 [[package]]
