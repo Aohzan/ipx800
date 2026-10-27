@@ -62,14 +62,113 @@
     "cannot_connect": {
       "message": "La communication avec l’IPX800 a échoué."
     },
-    "command_auth_failed": {
-      "message": "Impossible de {operation} pour {entity} : {error}. Vérifiez les identifiants configurés."
+    "command_auth_failed_close_cover": {
+      "message": "Impossible de fermer {entity} : {error}. Vérifiez les identifiants configurés."
     },
-    "command_failed": {
-      "message": "Impossible de confirmer {operation} pour {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    "command_auth_failed_close_cover_tilt": {
+      "message": "Impossible de fermer l’inclinaison de {entity} : {error}. Vérifiez les identifiants configurés."
     },
-    "command_interrupted": {
-      "message": "Impossible de {operation} pour {entity} : {error}"
+    "command_auth_failed_open_cover": {
+      "message": "Impossible d’ouvrir {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_open_cover_tilt": {
+      "message": "Impossible d’ouvrir l’inclinaison de {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_set_cover_position": {
+      "message": "Impossible de régler la position de {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_set_hvac_mode": {
+      "message": "Impossible de régler le mode de {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_set_preset_mode": {
+      "message": "Impossible de régler le préréglage de {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_set_value": {
+      "message": "Impossible de régler la valeur de {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_stop_cover": {
+      "message": "Impossible d’arrêter {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_toggle": {
+      "message": "Impossible de basculer {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_turn_off": {
+      "message": "Impossible d’éteindre {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_auth_failed_turn_on": {
+      "message": "Impossible d’allumer {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_failed_close_cover": {
+      "message": "Impossible de confirmer la fermeture de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_close_cover_tilt": {
+      "message": "Impossible de confirmer la fermeture de l’inclinaison de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_open_cover": {
+      "message": "Impossible de confirmer l’ouverture de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_open_cover_tilt": {
+      "message": "Impossible de confirmer l’ouverture de l’inclinaison de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_set_cover_position": {
+      "message": "Impossible de confirmer le réglage de la position de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_set_hvac_mode": {
+      "message": "Impossible de confirmer le réglage du mode de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_set_preset_mode": {
+      "message": "Impossible de confirmer le réglage du préréglage de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_set_value": {
+      "message": "Impossible de confirmer le réglage de la valeur de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_stop_cover": {
+      "message": "Impossible de confirmer l’arrêt de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_toggle": {
+      "message": "Impossible de confirmer le basculement de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_turn_off": {
+      "message": "Impossible de confirmer l’extinction de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_failed_turn_on": {
+      "message": "Impossible de confirmer l’allumage de {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_interrupted_close_cover": {
+      "message": "Impossible de fermer {entity} : {error}"
+    },
+    "command_interrupted_close_cover_tilt": {
+      "message": "Impossible de fermer l’inclinaison de {entity} : {error}"
+    },
+    "command_interrupted_open_cover": {
+      "message": "Impossible d’ouvrir {entity} : {error}"
+    },
+    "command_interrupted_open_cover_tilt": {
+      "message": "Impossible d’ouvrir l’inclinaison de {entity} : {error}"
+    },
+    "command_interrupted_set_cover_position": {
+      "message": "Impossible de régler la position de {entity} : {error}"
+    },
+    "command_interrupted_set_hvac_mode": {
+      "message": "Impossible de régler le mode de {entity} : {error}"
+    },
+    "command_interrupted_set_preset_mode": {
+      "message": "Impossible de régler le préréglage de {entity} : {error}"
+    },
+    "command_interrupted_set_value": {
+      "message": "Impossible de régler la valeur de {entity} : {error}"
+    },
+    "command_interrupted_stop_cover": {
+      "message": "Impossible d’arrêter {entity} : {error}"
+    },
+    "command_interrupted_toggle": {
+      "message": "Impossible de basculer {entity} : {error}"
+    },
+    "command_interrupted_turn_off": {
+      "message": "Impossible d’éteindre {entity} : {error}"
+    },
+    "command_interrupted_turn_on": {
+      "message": "Impossible d’allumer {entity} : {error}"
     },
     "http_rejected": {
       "message": "L’IPX800 a refusé la requête HTTP (HTTP {status})."

@@ -114,35 +114,35 @@ class X4VRCover(IpxEntity, CoverEntity):
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open cover."""
-        async with self._command_error("open cover", target=("position", 100)):
+        async with self._command_error("open_cover", target=("position", 100)):
             await self._async_move(self.control.on)
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close cover."""
-        async with self._command_error("close cover", target=("position", 0)):
+        async with self._command_error("close_cover", target=("position", 0)):
             await self._async_move(self.control.off)
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
-        async with self._command_error("stop cover", target=("stop",)):
+        async with self._command_error("stop_cover", target=("stop",)):
             await self._async_write(self.control.stop, retry=True)
         await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
         """Set the cover to a specific position."""
         async with self._command_error(
-            "set cover position", target=("position", kwargs[ATTR_POSITION])
+            "set_cover_position", target=("position", kwargs[ATTR_POSITION])
         ):
             await self._async_move(self.control.set_level, kwargs[ATTR_POSITION])
 
     async def async_open_cover_tilt(self, **kwargs: Any) -> None:
         """Open the cover tilt."""
-        async with self._command_error("open cover tilt"):
+        async with self._command_error("open_cover_tilt"):
             await self._async_move(self.control.set_pulse_up, 1, repeat=3, retry=False)
 
     async def async_close_cover_tilt(self, **kwargs: Any) -> None:
         """Close the cover tilt."""
-        async with self._command_error("close cover tilt"):
+        async with self._command_error("close_cover_tilt"):
             await self._async_move(
                 self.control.set_pulse_down, 1, repeat=3, retry=False
             )
