@@ -1,6 +1,6 @@
 """Generic IPX800V4 entity."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from math import isfinite
 
@@ -63,7 +63,7 @@ class IpxEntity(CoordinatorEntity[IpxDataUpdateCoordinator]):
     @asynccontextmanager
     async def _command_error(
         self, operation: str, *, target: object = None
-    ) -> AsyncIterator[None]:
+    ) -> AsyncGenerator[None]:
         """Report expected write failures; keep refreshes outside this boundary."""
         try:
             async with self.coordinator.commands.operation(
@@ -173,9 +173,9 @@ class IpxEntity(CoordinatorEntity[IpxDataUpdateCoordinator]):
         )
         self._ipx_type = device_config[CONF_TYPE]
         self._component = device_config[CONF_COMPONENT]
-        self._id = device_config.get(CONF_ID)
-        self._ext_id = device_config.get(CONF_EXT_ID)
-        self._ids = device_config.get(CONF_IDS, [])
+        self._id: int | None = device_config.get(CONF_ID)
+        self._ext_id: int | None = device_config.get(CONF_EXT_ID)
+        self._ids: list[int] = device_config.get(CONF_IDS, [])
         self._invert_value = device_config[CONF_INVERT_VALUE]
 
         self._config_name: str = device_config[CONF_NAME]
@@ -236,6 +236,20 @@ class IpxEntity(CoordinatorEntity[IpxDataUpdateCoordinator]):
             configuration_url=configuration_url,
             via_device_id=coordinator.controller_device_id,
         )
+
+    @property
+    def _required_id(self) -> int:
+        """Return the id, required by build_device_list for single-channel types."""
+        if self._id is None:
+            raise ValueError(f"IPX800 device {self._config_name} has no {CONF_ID}")
+        return self._id
+
+    @property
+    def _required_ext_id(self) -> int:
+        """Return the extension id, required by build_device_list for X-4VR/X-4FP."""
+        if self._ext_id is None:
+            raise ValueError(f"IPX800 device {self._config_name} has no {CONF_EXT_ID}")
+        return self._ext_id
 
     @property
     def required_keys(self) -> tuple[str, ...]:

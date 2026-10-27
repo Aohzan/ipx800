@@ -8,6 +8,7 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.typing import WebSocketGenerator
 
+from custom_components.ipx800v4 import build_device_list
 from custom_components.ipx800v4.const import DOMAIN
 from custom_components.ipx800v4.coordinator import PUSH_ENTRIES
 from homeassistant.config_entries import ConfigEntryState
@@ -284,3 +285,19 @@ async def test_upgrade_keeps_entities_of_a_previous_version(
         hass.states.get("sensor.living_room_temperature").attributes["friendly_name"]
         == "Living room Temperature"
     )
+
+
+def test_devices_without_extension_id_are_skipped() -> None:
+    """Test X-4VR and X-4FP devices need the id of their extension."""
+    devices = [
+        {"name": name, "component": component, "type": device_type, "id": 1}
+        for name, component, device_type in (
+            ("Shutter", "cover", "x4vr"),
+            ("Blind", "cover", "x4vr_bso"),
+            ("Bathroom", "climate", "x4fp"),
+        )
+    ]
+    assert build_device_list(devices) == []
+    assert build_device_list([{**devices[2], "ext_id": 1}]) == [
+        {**devices[2], "ext_id": 1}
+    ]

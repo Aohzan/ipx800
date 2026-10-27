@@ -90,6 +90,7 @@ class CoordinatorTestCase(unittest.IsolatedAsyncioTestCase):
             logger,
             name=f"Test IPX {len(self.coordinators)} (192.0.2.1)",
             config_entry=entry,
+            controller_device_id="controller",
             update_method=reader,
             update_interval=timedelta(seconds=interval),
             request_refresh_debouncer=Debouncer(

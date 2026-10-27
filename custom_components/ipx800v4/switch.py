@@ -8,7 +8,6 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CONF_TYPE,
@@ -18,7 +17,7 @@ from .const import (
     TYPE_VIRTUALOUT,
     TYPE_XENO,
 )
-from .coordinator import IpxConfigEntry
+from .coordinator import IpxConfigEntry, IpxDataUpdateCoordinator
 from .entity import IpxEntity
 
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -60,11 +59,11 @@ class RelaySwitch(IpxEntity, SwitchEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the RelaySwitch."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = Relay(ipx, self._id)
+        self.control = Relay(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
@@ -105,11 +104,11 @@ class VirtualOutSwitch(IpxEntity, SwitchEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the VirtualOutSwitch."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = VOutput(ipx, self._id)
+        self.control = VOutput(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
@@ -150,11 +149,11 @@ class VirtualInSwitch(IpxEntity, SwitchEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the VirtualInSwitch."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = VInput(ipx, self._id)
+        self.control = VInput(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:
@@ -216,11 +215,11 @@ class XENOSwitch(IpxEntity, SwitchEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the XENOSwitch."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = XENOActuator(ipx, self._id)
+        self.control = XENOActuator(ipx, self._required_id)
 
     @property
     def required_keys(self) -> tuple[str, ...]:

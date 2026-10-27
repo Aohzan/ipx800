@@ -16,7 +16,6 @@ from homeassistant.components.light import (
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CONF_DEFAULT_BRIGHTNESS,
@@ -30,7 +29,7 @@ from .const import (
     TYPE_XPWM_RGB,
     TYPE_XPWM_RGBW,
 )
-from .coordinator import IpxConfigEntry
+from .coordinator import IpxConfigEntry, IpxDataUpdateCoordinator
 from .entity import IpxEntity
 
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -84,11 +83,11 @@ class RelayLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the RelayLight."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = Relay(ipx, self._id)
+        self.control = Relay(ipx, self._required_id)
         self._attr_supported_color_modes = {ColorMode.ONOFF}
         self._attr_color_mode = ColorMode.ONOFF
 
@@ -128,11 +127,11 @@ class XDimmerLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the class XDimmerLight."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = XDimmer(ipx, self._id)
+        self.control = XDimmer(ipx, self._required_id)
         self._transition = device_config.get(CONF_TRANSITION, DEFAULT_TRANSITION)
         self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         self._attr_color_mode = ColorMode.BRIGHTNESS
@@ -199,11 +198,11 @@ class XPWMLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the XPWMLight."""
         super().__init__(device_config, ipx, coordinator)
-        self.control = XPWM(ipx, self._id)
+        self.control = XPWM(ipx, self._required_id)
 
         self._default_brightness = scaleto100(
             device_config.get(CONF_DEFAULT_BRIGHTNESS, 255)
@@ -284,7 +283,7 @@ class XPWMRGBLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the XPWMRGBLight."""
         super().__init__(device_config, ipx, coordinator)
@@ -445,7 +444,7 @@ class XPWMRGBWLight(IpxEntity, LightEntity):
         self,
         device_config: dict,
         ipx: IPX800,
-        coordinator: DataUpdateCoordinator,
+        coordinator: IpxDataUpdateCoordinator,
     ) -> None:
         """Initialize the XPWMRGBWLight."""
         super().__init__(device_config, ipx, coordinator)

@@ -3,9 +3,11 @@
 from datetime import timedelta
 from functools import partial
 import logging
+from typing import TypedDict
 
+from aiohttp import ClientSession
+import probatio
 from pypx800 import IPX800
-import voluptuous as vol
 
 from homeassistant.config_entries import SOURCE_IMPORT
 from homeassistant.const import (
@@ -54,6 +56,7 @@ from .const import (
     TYPE_COUNTER,
     TYPE_RELAY,
     TYPE_VIRTUALANALOGIN,
+    TYPE_X4FP,
     TYPE_X4VR,
     TYPE_X4VR_BSO,
     TYPE_XPWM,
@@ -78,45 +81,49 @@ from .system import IpxSystemData
 
 _LOGGER = logging.getLogger(__name__)
 
-DEVICE_CONFIG_SCHEMA_ENTRY = vol.Schema(
+DEVICE_CONFIG_SCHEMA_ENTRY = probatio.Schema(
     {
-        vol.Optional(CONF_RETRY_COMMANDS, default=True): cv.boolean,
-        vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_COMPONENT): cv.string,
-        vol.Required(CONF_TYPE): cv.string,
-        vol.Optional(CONF_ID): cv.positive_int,
-        vol.Optional(CONF_IDS): cv.ensure_list,
-        vol.Optional(CONF_INVERT_VALUE, default=False): cv.boolean,
-        vol.Optional(CONF_EXT_ID): cv.positive_int,
-        vol.Optional(CONF_DEFAULT_BRIGHTNESS): cv.positive_int,
-        vol.Optional(CONF_ICON): cv.icon,
-        vol.Optional(CONF_TRANSITION, default=DEFAULT_TRANSITION): vol.Coerce(float),
-        vol.Optional(CONF_DEVICE_CLASS): cv.string,
-        vol.Optional(CONF_UNIT_OF_MEASUREMENT): cv.string,
+        probatio.Optional(CONF_RETRY_COMMANDS, default=True): cv.boolean,
+        probatio.Required(CONF_NAME): cv.string,
+        probatio.Required(CONF_COMPONENT): cv.string,
+        probatio.Required(CONF_TYPE): cv.string,
+        probatio.Optional(CONF_ID): cv.positive_int,
+        probatio.Optional(CONF_IDS): cv.ensure_list,
+        probatio.Optional(CONF_INVERT_VALUE, default=False): cv.boolean,
+        probatio.Optional(CONF_EXT_ID): cv.positive_int,
+        probatio.Optional(CONF_DEFAULT_BRIGHTNESS): cv.positive_int,
+        probatio.Optional(CONF_ICON): cv.icon,
+        probatio.Optional(CONF_TRANSITION, default=DEFAULT_TRANSITION): probatio.Coerce(
+            float
+        ),
+        probatio.Optional(CONF_DEVICE_CLASS): cv.string,
+        probatio.Optional(CONF_UNIT_OF_MEASUREMENT): cv.string,
     }
 )
 
-GATEWAY_CONFIG = vol.Schema(
+GATEWAY_CONFIG = probatio.Schema(
     {
-        vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_HOST): cv.string,
-        vol.Optional(CONF_PORT, default=80): cv.port,
-        vol.Required(CONF_API_KEY): cv.string,
-        vol.Optional(CONF_USERNAME): cv.string,
-        vol.Optional(CONF_PASSWORD): cv.string,
-        vol.Optional(CONF_SCAN_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional(CONF_PUSH_PASSWORD): cv.string,
-        vol.Optional(CONF_PUSH_CHECK_HOST, default=True): cv.boolean,
-        vol.Optional(CONF_DEVICES, default=[]): vol.All(
+        probatio.Required(CONF_NAME): cv.string,
+        probatio.Required(CONF_HOST): cv.string,
+        probatio.Optional(CONF_PORT, default=80): cv.port,
+        probatio.Required(CONF_API_KEY): cv.string,
+        probatio.Optional(CONF_USERNAME): cv.string,
+        probatio.Optional(CONF_PASSWORD): cv.string,
+        probatio.Optional(CONF_SCAN_INTERVAL): probatio.All(
+            probatio.Coerce(int), probatio.Range(min=1)
+        ),
+        probatio.Optional(CONF_PUSH_PASSWORD): cv.string,
+        probatio.Optional(CONF_PUSH_CHECK_HOST, default=True): cv.boolean,
+        probatio.Optional(CONF_DEVICES, default=[]): probatio.All(
             cv.ensure_list, [DEVICE_CONFIG_SCHEMA_ENTRY]
         ),
     },
-    extra=vol.ALLOW_EXTRA,
+    extra=probatio.ALLOW_EXTRA,
 )
 
-CONFIG_SCHEMA = vol.Schema(
-    {DOMAIN: vol.All(cv.ensure_list, [GATEWAY_CONFIG])},
-    extra=vol.ALLOW_EXTRA,
+CONFIG_SCHEMA = probatio.Schema(
+    {DOMAIN: probatio.All(cv.ensure_list, [GATEWAY_CONFIG])},
+    extra=probatio.ALLOW_EXTRA,
 )
 
 
@@ -141,6 +148,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             )
 
     return True
+
+
+class IpxClientOptions(TypedDict):
+    """Arguments shared by the polling and the command pypx800 clients."""
+
+    host: str
+    port: int
+    api_key: str
+    username: str | None
+    password: str | None
+    specific_devices_types: list[str]
+    session: ClientSession
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> bool:
@@ -169,15 +188,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> bool:
             CONF_PASSWORD,
         )
 
-    client_options = {
-        "host": config[CONF_HOST],
-        "port": config[CONF_PORT],
-        "api_key": config[CONF_API_KEY],
-        "username": config.get(CONF_USERNAME),
-        "password": config.get(CONF_PASSWORD),
-        "specific_devices_types": specific_devices_types,
-        "session": session,
-    }
+    client_options = IpxClientOptions(
+        host=config[CONF_HOST],
+        port=config[CONF_PORT],
+        api_key=config[CONF_API_KEY],
+        username=config.get(CONF_USERNAME),
+        password=config.get(CONF_PASSWORD),
+        specific_devices_types=specific_devices_types,
+        session=session,
+    )
     ipx = IPX800(**client_options)
     # Share HA's session; replay policy is explicit at each command call site.
     # The polling client retains its existing request/recovery behavior.
@@ -327,15 +346,15 @@ def build_device_list(devices_config: list) -> list:
             )
             continue
 
-        # Check if X4VR have extension id set
+        # Check if X4VR and X4FP have extension id set
         if (
-            device_config[CONF_TYPE] == TYPE_X4VR
-            or device_config[CONF_TYPE] == TYPE_X4VR_BSO
-        ) and CONF_EXT_ID not in device_config:
+            device_config[CONF_TYPE] in (TYPE_X4VR, TYPE_X4VR_BSO, TYPE_X4FP)
+            and CONF_EXT_ID not in device_config
+        ):
             _LOGGER.error(
                 "Device %s skipped: %s must have %s set",
                 device_config[CONF_NAME],
-                TYPE_X4VR,
+                device_config[CONF_TYPE],
                 CONF_EXT_ID,
             )
             continue
