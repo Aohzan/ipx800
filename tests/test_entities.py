@@ -9,6 +9,11 @@ from pytest_homeassistant_custom_component.common import (
 )
 from syrupy.assertion import SnapshotAssertion
 
+from homeassistant.components.number import (
+    ATTR_VALUE,
+    DOMAIN as NUMBER_DOMAIN,
+    SERVICE_SET_VALUE,
+)
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.const import ATTR_ENTITY_ID, SERVICE_TURN_OFF, Platform
 from homeassistant.core import HomeAssistant
@@ -105,3 +110,28 @@ async def test_command_error_is_translated(
         )
     assert raised.value.translation_key == "command_failed"
     assert str(raised.value).startswith("Cannot confirm turn off for switch.boiler: ")
+
+
+@pytest.mark.parametrize(("value", "sent"), [(12.0, 12), (12.6, 13)])
+async def test_counter_number_sends_an_integer(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_clients: MagicMock,
+    mock_command_client: MagicMock,
+    value: float,
+    sent: int,
+) -> None:
+    """Test a counter number sends an integer, number.set_value gives a float."""
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        NUMBER_DOMAIN,
+        SERVICE_SET_VALUE,
+        {ATTR_ENTITY_ID: "number.pulse_counter", ATTR_VALUE: value},
+        blocking=True,
+    )
+    mock_command_client.request_api.assert_awaited_with({"SetC02": sent})
+    (params,) = mock_command_client.request_api.await_args.args
+    assert type(params["SetC02"]) is int
