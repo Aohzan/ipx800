@@ -1,17 +1,21 @@
 """Regression cases from PR #86: alias intents, deadlines and refusals."""
 
+# Regression tests written with unittest, run by pytest
+# ruff: noqa: D101, D102, PT009, PT027
+
 import asyncio
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
-from homeassistant.exceptions import HomeAssistantError
-from pypx800 import Relay, XPWM, Ipx800RequestError
-from test_commands import make_entity
+from pypx800 import XPWM, Ipx800RequestError, Relay
 
 from custom_components.ipx800v4.commands import IpxCommandClient
 from custom_components.ipx800v4.cover import X4VRCover
 from custom_components.ipx800v4.light import RelayLight, XPWMRGBWLight
 from custom_components.ipx800v4.switch import RelaySwitch
+from homeassistant.exceptions import HomeAssistantError
+
+from .helpers import assert_raises_message, error_message, make_entity
 
 
 class ReviewTests(unittest.IsolatedAsyncioTestCase):
@@ -59,9 +63,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
             patch(
                 "custom_components.ipx800v4.commands.asyncio.sleep", side_effect=backoff
             ),
-            self.assertRaisesRegex(
-                HomeAssistantError, "turn on.*switch.test_ipx.*superseded"
-            ),
+            assert_raises_message(self, "turn on.*switch.test_ipx.*superseded"),
         ):
             await first.async_turn_on()
         first_write.assert_awaited_once()
@@ -78,7 +80,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
             patch(
                 "custom_components.ipx800v4.commands.asyncio.sleep", side_effect=backoff
             ),
-            self.assertRaisesRegex(HomeAssistantError, "attempts: 3, retries: 2"),
+            assert_raises_message(self, "attempts: 3, retries: 2"),
         ):
             await first.async_turn_off()
         self.assertEqual(first_write.await_count, 3)
@@ -95,7 +97,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
         lock.release()
         results = await asyncio.gather(*tasks, return_exceptions=True)
         self.assertIsInstance(results[0], HomeAssistantError)
-        self.assertIn("superseded", str(results[0]))
+        self.assertIn("superseded", error_message(results[0]))
         self.assertIsNone(results[1])
         first_write.assert_not_awaited()
 
@@ -112,7 +114,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
                     )
                     with self.assertRaises(HomeAssistantError) as caught:
                         await entity.async_turn_off()
-                    message = str(caught.exception)
+                    message = error_message(caught.exception)
                     for text in (
                         "Cannot turn off",
                         entity.entity_id,
@@ -129,9 +131,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
     async def test_unload_error_has_entity_and_operation(self):
         entity, write = make_entity(RelaySwitch)
         entity.coordinator.commands.shutdown()
-        with self.assertRaisesRegex(
-            HomeAssistantError, "turn off.*switch.test_ipx.*unloading"
-        ):
+        with assert_raises_message(self, "turn off.*switch.test_ipx.*unloading"):
             await entity.async_turn_off()
         write.assert_not_awaited()
 
@@ -150,9 +150,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
         write.side_effect = slow_write
         with (
             patch("custom_components.ipx800v4.commands.COMMAND_TIMEOUT", 0.06),
-            self.assertRaisesRegex(
-                HomeAssistantError, "turn off.*switch.test_ipx.*time budget"
-            ),
+            assert_raises_message(self, "turn off.*switch.test_ipx.*time budget"),
         ):
             await asyncio.wait_for(entity.async_turn_off(), 0.5)
         self.assertEqual(calls, 2)
@@ -166,7 +164,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
         entity, write = make_entity(RelaySwitch, TimeoutError())
         with (
             patch("custom_components.ipx800v4.commands.COMMAND_TIMEOUT", 0.02),
-            self.assertRaisesRegex(HomeAssistantError, "time budget"),
+            assert_raises_message(self, "time budget"),
         ):
             await asyncio.wait_for(entity.async_turn_off(), 0.5)
         write.assert_awaited_once()
@@ -177,7 +175,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
         async with lock:
             with (
                 patch("custom_components.ipx800v4.commands.COMMAND_TIMEOUT", 0.02),
-                self.assertRaisesRegex(HomeAssistantError, "time budget"),
+                assert_raises_message(self, "time budget"),
             ):
                 await asyncio.wait_for(entity.async_turn_off(), 0.5)
         write.assert_not_awaited()
@@ -193,7 +191,7 @@ class ReviewTests(unittest.IsolatedAsyncioTestCase):
         entity.control = Relay(client, 1)
         with (
             patch("custom_components.ipx800v4.commands.COMMAND_TIMEOUT", 0.02),
-            self.assertRaisesRegex(HomeAssistantError, "time budget"),
+            assert_raises_message(self, "time budget"),
         ):
             await asyncio.wait_for(entity.async_turn_off(), 0.5)
         session.get.assert_awaited_once()

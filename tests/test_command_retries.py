@@ -1,12 +1,14 @@
 """Exercise retry transport, fixed targets and competing command intents."""
 
+# Regression tests written with unittest, run by pytest
+# ruff: noqa: D101, D102, PT009, PT027
+
 import asyncio
-import unittest
 from types import SimpleNamespace
+import unittest
 from unittest.mock import AsyncMock, Mock, call, patch
 
 from aiohttp import ClientResponseError, InvalidURL
-from homeassistant.exceptions import HomeAssistantError
 from pypx800 import (
     X4VR,
     XPWM,
@@ -14,12 +16,14 @@ from pypx800 import (
     Ipx800InvalidAuthError,
     Ipx800RequestError,
 )
-from test_commands import make_entity
 
-from custom_components.ipx800v4.commands import IpxCommandClient, InvalidCommandResponse
+from custom_components.ipx800v4.commands import InvalidCommandResponse, IpxCommandClient
 from custom_components.ipx800v4.cover import X4VRCover
 from custom_components.ipx800v4.light import RelayLight, XPWMRGBLight
 from custom_components.ipx800v4.switch import RelaySwitch
+from homeassistant.exceptions import HomeAssistantError
+
+from .helpers import assert_raises_message, error_message, make_entity
 
 
 class RetryTests(unittest.IsolatedAsyncioTestCase):
@@ -96,7 +100,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.wait_for(entity.async_stop_cover(), 1)
             stop.assert_awaited_once()
             resume.set()
-            with self.assertRaisesRegex(HomeAssistantError, "superseded"):
+            with assert_raises_message(self, "superseded"):
                 await task
         opening.assert_awaited_once()
 
@@ -124,7 +128,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         self.assertEqual(calls, ["on"])
         finish.set()
-        with self.assertRaisesRegex(HomeAssistantError, "superseded"):
+        with assert_raises_message(self, "superseded"):
             await old
         await new
         self.assertEqual(calls, ["on", "off"])
@@ -151,7 +155,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
             patch(
                 "custom_components.ipx800v4.commands.asyncio.sleep", side_effect=unload
             ),
-            self.assertRaisesRegex(HomeAssistantError, "unloading"),
+            assert_raises_message(self, "unloading"),
         ):
             await entity.async_turn_on()
         write.assert_awaited_once()
@@ -296,7 +300,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
                     self.assertRaises(HomeAssistantError) as raised,
                 ):
                     await entity.async_turn_on()
-                message = str(raised.exception)
+                message = error_message(raised.exception)
                 self.assertIn(reason, message)
                 self.assertIn(
                     "attempts: 3, retries: 2" if enabled else "attempts: 1, retries: 0",
@@ -351,7 +355,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.close.call_count, attempts)
                 self.assertIn(
                     f"attempts: {attempts}, retries: {attempts - 1}",
-                    str(raised.exception),
+                    error_message(raised.exception),
                 )
 
     async def test_timeout_covers_entire_json_body_without_blocking_loop(self):
@@ -373,7 +377,7 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         entity.control = Relay(client, 1)
         with (
             patch("custom_components.ipx800v4.commands.RETRY_DELAYS", (0, 0)),
-            self.assertRaisesRegex(HomeAssistantError, "request timeout.*attempts: 3"),
+            assert_raises_message(self, "request timeout.*attempts: 3"),
         ):
             await asyncio.wait_for(entity.async_turn_on(), 1)
         self.assertEqual(session.get.await_count, 3)

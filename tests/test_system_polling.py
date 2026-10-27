@@ -1,21 +1,19 @@
 """XML diagnostics have a polling schedule independent of I/O refreshes."""
 
+# Regression tests written with unittest, run by pytest
+# ruff: noqa: D101, D102, PT009
+
 import asyncio
 from types import SimpleNamespace
-import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
-import test_coordinator
 from custom_components.ipx800v4 import async_setup_entry
-from custom_components.ipx800v4.const import COORDINATOR, SYSTEM_COORDINATOR
 from custom_components.ipx800v4.sensor import IpxLoadSensor
 
+from .helpers import CoordinatorTestCase
 
-class SystemPollingTests(unittest.IsolatedAsyncioTestCase):
-    asyncSetUp = test_coordinator.ReadRecoveryTests.asyncSetUp
-    asyncTearDown = test_coordinator.ReadRecoveryTests.asyncTearDown
-    make_coordinator = test_coordinator.ReadRecoveryTests.make_coordinator
 
+class SystemPollingTests(CoordinatorTestCase):
     async def test_pushes_do_not_read_xml_or_postpone_its_timer(self):
         template, _ = self.make_coordinator()
         hass, entry = template.hass, template.config_entry
@@ -23,8 +21,12 @@ class SystemPollingTests(unittest.IsolatedAsyncioTestCase):
         hass.config_entries = SimpleNamespace(async_forward_entry_setups=AsyncMock())
         entry.entry_id = "ipx"
         entry.data = {
-            "host": "192.0.2.1", "port": 80, "api_key": "test",
-            "name": "IPX", "scan_interval": 300, "devices": [],
+            "host": "192.0.2.1",
+            "port": 80,
+            "api_key": "test",
+            "name": "IPX",
+            "scan_interval": 300,
+            "devices": [],
         }
         entry.options = {}
         ipx = Mock(host="192.0.2.1", global_get=AsyncMock(return_value={"R1": 1}))
@@ -36,8 +38,8 @@ class SystemPollingTests(unittest.IsolatedAsyncioTestCase):
             patch("custom_components.ipx800v4.IpxSystemData", return_value=system),
         ):
             await async_setup_entry(hass, entry)
-        runtime = hass.data["ipx800v4"]["ipx"]
-        io, xml = runtime[COORDINATOR], runtime[SYSTEM_COORDINATOR]
+        runtime = entry.runtime_data
+        io, xml = runtime.coordinator, runtime.system_coordinator
         self.coordinators.extend((io, xml))
         io.async_add_listener(Mock())
         xml.async_add_listener(Mock())

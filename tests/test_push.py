@@ -1,23 +1,29 @@
 """Direct push mapping, atomic validation, freshness and read races."""
 
+# Regression tests written with unittest, run by pytest
+# ruff: noqa: D102, PT009, PT027
+
 import asyncio
 from time import monotonic
 from types import SimpleNamespace
-import unittest
 from unittest.mock import Mock, patch
 
 from aiohttp import web
 from pypx800 import Ipx800CannotConnectError
 
 from custom_components.ipx800v4.binary_sensor import DigitalInBinarySensor
+from custom_components.ipx800v4.const import DOMAIN
 from custom_components.ipx800v4.light import XPWMLight
+from custom_components.ipx800v4.push import (
+    IpxRequestBulkUpdateView,
+    IpxRequestDataView,
+    IpxRequestView,
+)
 from custom_components.ipx800v4.sensor import XTHLSensor
 from custom_components.ipx800v4.switch import RelaySwitch, VirtualOutSwitch
-from custom_components.ipx800v4.const import COORDINATOR, DOMAIN
-from custom_components.ipx800v4.push import (
-    IpxRequestView, IpxRequestDataView, IpxRequestBulkUpdateView,
-)
-import test_coordinator
+from homeassistant.helpers.http import KEY_HASS
+
+from .helpers import CoordinatorTestCase
 
 
 def entity(cls, coordinator, entity_id, field_id=1, invert=False):
@@ -31,13 +37,8 @@ def entity(cls, coordinator, entity_id, field_id=1, invert=False):
     return result
 
 
-class PushTests(unittest.IsolatedAsyncioTestCase):
+class PushTests(CoordinatorTestCase):
     """Use the real coordinator and platform state readers."""
-
-    asyncSetUp = test_coordinator.ReadRecoveryTests.asyncSetUp
-    asyncTearDown = test_coordinator.ReadRecoveryTests.asyncTearDown
-    make_coordinator = test_coordinator.ReadRecoveryTests.make_coordinator
-    assert_next_read = test_coordinator.ReadRecoveryTests.assert_next_read
 
     async def test_push_does_not_reset_failures_or_recovery_timer(self):
         coordinator, reader = self.make_coordinator()
@@ -81,8 +82,10 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
             await coordinator.async_refresh()
         coordinator.async_apply_push({"R1": 0})
         self.assertTrue(coordinator.fields_available("R1"))
-        with patch("custom_components.ipx800v4.coordinator.monotonic",
-                   return_value=monotonic() + coordinator.push_ttl + 1):
+        with patch(
+            "custom_components.ipx800v4.coordinator.monotonic",
+            return_value=monotonic() + coordinator.push_ttl + 1,
+        ):
             coordinator._expire_fields()
         self.assertFalse(coordinator.fields_available("R1"))
         self.assertEqual(coordinator.field_push_times, {})
@@ -113,16 +116,19 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(coordinator.data["R1"], 1)
 
     async def test_platform_conversions_and_atomic_rejection(self):
-        coordinator, reader = self.make_coordinator()
+        coordinator, _ = self.make_coordinator()
         await coordinator.async_config_entry_first_refresh()
-        inverted = entity(DigitalInBinarySensor, coordinator, "binary_sensor.d", invert=True)
+        inverted = entity(
+            DigitalInBinarySensor, coordinator, "binary_sensor.d", invert=True
+        )
         switch = entity(VirtualOutSwitch, coordinator, "switch.v", invert=True)
         pwm = entity(XPWMLight, coordinator, "light.pwm")
         thl = entity(XTHLSensor, coordinator, "sensor.temp")
         thl._req_type = "TEMP"
         view = IpxRequestView()
-        view._apply(coordinator, [(inverted, "on"), (switch, "on"),
-                                  (pwm, "42"), (thl, "21.5")])
+        view._apply(
+            coordinator, [(inverted, "on"), (switch, "on"), (pwm, "42"), (thl, "21.5")]
+        )
         self.assertEqual(coordinator.data["D1"], 0)
         self.assertTrue(inverted.is_on)
         self.assertTrue(switch.is_on)  # Switch platform does not invert values.
@@ -130,8 +136,13 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(thl.native_value, 21.5)
         before = dict(coordinator.data)
         times = dict(coordinator.field_push_times)
-        for invalid, value in [(inverted, "bad"), (pwm, "101"),
-                               (pwm, "on"), (thl, "nan"), (thl, "inf")]:
+        for invalid, value in [
+            (inverted, "bad"),
+            (pwm, "101"),
+            (pwm, "on"),
+            (thl, "nan"),
+            (thl, "inf"),
+        ]:
             with self.subTest(value=value), self.assertRaises(web.HTTPBadRequest):
                 view._apply(coordinator, [(inverted, "off"), (invalid, value)])
             self.assertEqual(coordinator.data, before)
@@ -163,43 +174,61 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(coordinator.consecutive_failures, 2)
 
     async def test_registry_renames_cross_instance_and_bad_batches(self):
-        coordinator, reader = self.make_coordinator()
+        coordinator, _ = self.make_coordinator()
         await coordinator.async_config_entry_first_refresh()
         coordinator.config_entry.entry_id = "a"
         relay = entity(RelaySwitch, coordinator, "switch.renamed")
         coordinator.push_entities["stable-id"] = relay
         entries = {
             "switch.renamed": SimpleNamespace(
-                entity_id="switch.renamed", platform=DOMAIN,
-                config_entry_id="a", unique_id="stable-id"),
+                entity_id="switch.renamed",
+                platform=DOMAIN,
+                config_entry_id="a",
+                unique_id="stable-id",
+            ),
             "switch.other": SimpleNamespace(
-                entity_id="switch.other", platform=DOMAIN,
-                config_entry_id="b", unique_id="stable-id"),
+                entity_id="switch.other",
+                platform=DOMAIN,
+                config_entry_id="b",
+                unique_id="stable-id",
+            ),
             "switch.foreign": SimpleNamespace(
-                entity_id="switch.foreign", platform="other",
-                config_entry_id="a", unique_id="stable-id"),
+                entity_id="switch.foreign",
+                platform="other",
+                config_entry_id="a",
+                unique_id="stable-id",
+            ),
         }
         registry = SimpleNamespace(async_get=entries.get)
-        request = SimpleNamespace(app={"hass": object()})
-        with patch("custom_components.ipx800v4.push.er.async_get", return_value=registry):
+        request = SimpleNamespace(app={KEY_HASS: object()})
+        with patch(
+            "custom_components.ipx800v4.push.er.async_get", return_value=registry
+        ):
             view = IpxRequestView()
-            view._entry = Mock(return_value={COORDINATOR: coordinator})
-            self.assertEqual((await view.get(request, "switch.renamed", "off")).status, 200)
+            view._entry = Mock(return_value=SimpleNamespace(coordinator=coordinator))
+            self.assertEqual(
+                (await view.get(request, "switch.renamed", "off")).status, 200
+            )
             self.assertFalse(relay.is_on)
             for target in ("switch.old_name", "switch.other", "switch.foreign"):
                 with self.assertRaises(web.HTTPNotFound):
                     await view.get(request, target, "on")
             batch = IpxRequestDataView()
             batch._entry = view._entry
-            for payload in ("switch.renamed=on&broken", "switch.renamed=",
-                            "switch.renamed=on&switch.other=on"):
+            for payload in (
+                "switch.renamed=on&broken",
+                "switch.renamed=",
+                "switch.renamed=on&switch.other=on",
+            ):
                 with self.assertRaises(web.HTTPClientError):
                     await batch.get(request, payload)
                 self.assertFalse(relay.is_on)
             bulk = IpxRequestBulkUpdateView()
             bulk._entry = view._entry
-            with patch("custom_components.ipx800v4.push.er.async_entries_for_config_entry",
-                       return_value=[entries["switch.renamed"]]):
+            with patch(
+                "custom_components.ipx800v4.push.er.async_entries_for_config_entry",
+                return_value=[entries["switch.renamed"]],
+            ):
                 self.assertEqual((await bulk.get(request, "relay", "1")).status, 200)
                 self.assertTrue(relay.is_on)
                 with self.assertRaises(web.HTTPBadRequest):
@@ -210,8 +239,9 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
         coordinator, reader = self.make_coordinator()
         await coordinator.async_config_entry_first_refresh()
         coordinator.config_entry.entry_id = "a"
-        inverted = entity(DigitalInBinarySensor, coordinator, "binary_sensor.renamed",
-                          invert=True)
+        inverted = entity(
+            DigitalInBinarySensor, coordinator, "binary_sensor.renamed", invert=True
+        )
         second = entity(DigitalInBinarySensor, coordinator, "binary_sensor.second", 2)
         coordinator.register_fields(inverted.required_keys)
         coordinator.register_fields(second.required_keys)
@@ -224,12 +254,15 @@ class PushTests(unittest.IsolatedAsyncioTestCase):
         for _ in range(3):
             await coordinator.async_refresh()
         view = IpxRequestBulkUpdateView()
-        view._entry = Mock(return_value={COORDINATOR: coordinator})
-        with patch("custom_components.ipx800v4.push.er.async_get"), patch(
-            "custom_components.ipx800v4.push.er.async_entries_for_config_entry",
-            return_value=registry_entries,
+        view._entry = Mock(return_value=SimpleNamespace(coordinator=coordinator))
+        with (
+            patch("custom_components.ipx800v4.push.er.async_get"),
+            patch(
+                "custom_components.ipx800v4.push.er.async_entries_for_config_entry",
+                return_value=registry_entries,
+            ),
         ):
-            request = SimpleNamespace(app={"hass": object()})
+            request = SimpleNamespace(app={KEY_HASS: object()})
             await view.get(request, "digitalin", "0")
             self.assertTrue(inverted.is_on)
             self.assertTrue(inverted.available)

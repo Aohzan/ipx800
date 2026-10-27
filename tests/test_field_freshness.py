@@ -1,28 +1,27 @@
 """Bounded missing-field recovery using the real HA coordinator scheduler."""
 
+# Regression tests written with unittest, run by pytest
+# ruff: noqa: D102, PT009
+
 import asyncio
-import unittest
 from time import monotonic
+import unittest
 from unittest.mock import Mock, patch
 
-import test_coordinator
 from pypx800 import Ipx800CannotConnectError
 
 from custom_components.ipx800v4.light import XPWMRGBLight
 from custom_components.ipx800v4.switch import RelaySwitch
 
+from .helpers import CoordinatorTestCase
 
-class FieldFreshnessTests(unittest.IsolatedAsyncioTestCase):
+
+class FieldFreshnessTests(CoordinatorTestCase):
     """Exercise omissions independently of global read failures and pushes."""
-
-    asyncSetUp = test_coordinator.ReadRecoveryTests.asyncSetUp
-    asyncTearDown = test_coordinator.ReadRecoveryTests.asyncTearDown
-    make_coordinator = test_coordinator.ReadRecoveryTests.make_coordinator
-    assert_next_read = test_coordinator.ReadRecoveryTests.assert_next_read
 
     async def setup_fields(self, interval=300, keys=("R1", "PWM1", "PWM2", "PWM3")):
         coordinator, reader = self.make_coordinator(interval)
-        reader.return_value = {key: 1 for key in keys}
+        reader.return_value = dict.fromkeys(keys, 1)
         await coordinator.async_config_entry_first_refresh()
         coordinator.register_fields(keys)
         coordinator.async_add_listener(Mock())
