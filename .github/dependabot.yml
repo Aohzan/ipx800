@@ -1,16 +1,25 @@
-# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 version: 2
 updates:
-  - package-ecosystem: "uv"
-    directory: "/"
+  # Runtime requirement: a "fix" commit releases the new manifest pin
+  - package-ecosystem: uv
+    directory: /
     schedule:
-      interval: "daily"
-    # Only the libraries pinned in manifest.json: Dependabot bumps them in
-    # uv.lock and the release copies the locked versions to the manifest
-    # (scripts/sync_requirements.py).
-    allow:
-      - dependency-name: "pypx800"
-    # "fix(deps): ..." so semantic-release ships the new library version.
+      interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
-      prefix: "fix"
-      include: "scope"
+      prefix: fix
+      prefix-development: chore
+      include: scope
+    groups:
+      dev-tools:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
