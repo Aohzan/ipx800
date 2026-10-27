@@ -85,6 +85,29 @@ async def test_setup_invalid_auth(
     assert issue_registry.async_get_issue(DOMAIN, issue_id) is None
 
 
+async def test_invalid_auth_issue_deleted_after_reload(
+    hass: HomeAssistant,
+    issue_registry: ir.IssueRegistry,
+    mock_config_entry: MockConfigEntry,
+    mock_clients: MagicMock,
+) -> None:
+    """Test the repair issue is deleted once a reloaded entry reads the IPX800."""
+    mock_clients.global_get.side_effect = Ipx800InvalidAuthError
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+    issue_id = f"invalid_auth_{mock_config_entry.entry_id}"
+    assert issue_registry.async_get_issue(DOMAIN, issue_id) is not None
+
+    # The credentials are fixed in configuration.yaml, then the entry reloaded
+    mock_clients.global_get.side_effect = None
+    assert await hass.config_entries.async_reload(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert issue_registry.async_get_issue(DOMAIN, issue_id) is None
+
+
 async def test_import_from_yaml(hass: HomeAssistant, mock_clients: MagicMock) -> None:
     """Test the YAML configuration creates the entry, and updates it."""
     assert await async_setup_component(hass, DOMAIN, {DOMAIN: [YAML_CONFIG]})
