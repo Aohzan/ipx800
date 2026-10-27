@@ -1,6 +1,7 @@
 {
   "domain": "ipx800v4",
   "name": "GCE IPX800 V4",
+  "categories": ["hubs_protocols.building_automation"],
   "codeowners": ["@Aohzan"],
   "config_flow": true,
   "dependencies": ["http"],
