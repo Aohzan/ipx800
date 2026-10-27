@@ -288,8 +288,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: IpxConfigEntry) -> bool:
     """Unload a config entry, the coordinators are shut down with it."""
-    if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        return False
+    await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
     _async_remove_entry_data(hass, entry.entry_id, entry.runtime_data)
     return True
 
