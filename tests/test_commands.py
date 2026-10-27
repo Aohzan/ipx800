@@ -317,7 +317,10 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     text=AsyncMock(return_value="Error"),
                 )
             )
-            with patch("pypx800.ipx800.sleep"), self.assertRaises(Ipx800RequestError):
+            with (
+                patch("pypx800.ipx800.asyncio.sleep", new_callable=AsyncMock),
+                self.assertRaises(Ipx800RequestError),
+            ):
                 await getattr(control, command)()
             session.get.assert_awaited_once()
 
