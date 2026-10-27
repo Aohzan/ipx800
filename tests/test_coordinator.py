@@ -1,12 +1,9 @@
-"""Regression coverage for bounded IPX read recovery.
+"""Regression coverage for bounded IPX read recovery."""
 
-Run with the project's dependencies installed: python -m unittest discover -s tests
-"""
+# Regression tests written with unittest, run by pytest
+# ruff: noqa: D102, PT009, PT027
 
 import asyncio
-from datetime import timedelta
-import logging
-from types import SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock, Mock, call, patch
 
@@ -15,69 +12,14 @@ from pypx800 import (
     Ipx800InvalidAuthError,
     Ipx800RequestError,
 )
-from homeassistant.config_entries import ConfigEntryState
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers.debounce import Debouncer
 
-from custom_components.ipx800v4.coordinator import IpxDataUpdateCoordinator
+from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+
+from .helpers import CoordinatorTestCase
 
 
-class ReadRecoveryTests(unittest.IsolatedAsyncioTestCase):
+class ReadRecoveryTests(CoordinatorTestCase):
     """Exercise HA's polling timer, debounce and listener handling."""
-
-    async def asyncSetUp(self):
-        self.coordinators = []
-        self.tasks = []
-
-    async def asyncTearDown(self):
-        for coordinator in self.coordinators:
-            await coordinator.async_shutdown()
-        if self.tasks:
-            await asyncio.gather(*self.tasks, return_exceptions=True)
-
-    def make_coordinator(self, interval=300):
-        loop = asyncio.get_running_loop()
-
-        def create_task(coro, *args, **kwargs):
-            task = loop.create_task(coro)
-            self.tasks.append(task)
-            return task
-
-        hass = SimpleNamespace(
-            loop=loop,
-            is_stopping=False,
-            async_create_task=create_task,
-            async_create_background_task=create_task,
-            async_run_hass_job=lambda job, **kwargs: create_task(job.target()),
-        )
-        entry = Mock(
-            pref_disable_polling=False,
-            state=ConfigEntryState.SETUP_IN_PROGRESS,
-        )
-        entry.async_create_background_task.side_effect = (
-            lambda hass, coro, **kwargs: create_task(coro)
-        )
-        reader = AsyncMock(return_value={"R1": 1, "system": {"load": 10}})
-        logger = logging.getLogger("ipx800_test")
-        coordinator = IpxDataUpdateCoordinator(
-            hass,
-            logger,
-            name=f"Test IPX {len(self.coordinators)} (192.0.2.1)",
-            config_entry=entry,
-            update_method=reader,
-            update_interval=timedelta(seconds=interval),
-            request_refresh_debouncer=Debouncer(
-                hass, logger, cooldown=0.5, immediate=False
-            ),
-        )
-        self.coordinators.append(coordinator)
-        return coordinator, reader
-
-    def assert_next_read(self, coordinator, delay):
-        timer = coordinator._unsub_refresh.__self__
-        remaining = timer.when() - asyncio.get_running_loop().time()
-        self.assertAlmostEqual(remaining, delay, delta=1)
-        return timer
 
     async def test_bounded_failures_and_recovery(self):
         for interval in (300, 10):
@@ -87,7 +29,9 @@ class ReadRecoveryTests(unittest.IsolatedAsyncioTestCase):
                 await coordinator.async_config_entry_first_refresh()
                 availability = []
                 coordinator.async_add_listener(
-                    lambda: availability.append(coordinator.data_available)
+                    lambda availability=availability, coordinator=coordinator: (
+                        availability.append(coordinator.data_available)
+                    )
                 )
                 snapshot = coordinator.data
                 timestamp = coordinator.last_successful_read
@@ -159,25 +103,35 @@ class ReadRecoveryTests(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue(coordinator.data_available)
                 pending = self.assert_next_read(coordinator, 15)
                 reader.side_effect = error()
-                await coordinator.async_refresh()
+                with patch("custom_components.ipx800v4.coordinator.ir") as issues:
+                    await coordinator.async_refresh()
                 self.assertFalse(coordinator.data_available)
                 self.assertTrue(pending.cancelled())
                 self.assertEqual(listener.call_count, 2)
+                if error is not ValueError:
+                    self.assertIsInstance(coordinator.last_exception, ConfigEntryError)
+                # The YAML-only entry has no reauthentication: a repair issue
+                # asks to fix the credentials, the polling continues.
+                coordinator.config_entry.async_start_reauth_if_available.assert_not_called()
+                self.assertEqual(
+                    issues.async_create_issue.call_count,
+                    1 if error is Ipx800InvalidAuthError else 0,
+                )
+                self.assert_next_read(coordinator, 300)
                 if error is Ipx800InvalidAuthError:
-                    # HA 2026.9 renamed the reauthentication helper.
-                    self.assertEqual(
-                        coordinator.config_entry.async_start_reauth.call_count
-                        + coordinator.config_entry.async_start_reauth_if_available.call_count,
-                        1,
-                    )
-                    self.assertIsNone(coordinator._unsub_refresh)
-                else:
-                    self.assert_next_read(coordinator, 300)
+                    reader.side_effect = None
+                    with patch("custom_components.ipx800v4.coordinator.ir") as issues:
+                        await coordinator.async_refresh()
+                        await coordinator.async_refresh()
+                    issues.async_delete_issue.assert_called_once()
 
     async def test_startup_auth_error_is_not_setup_retry(self):
         coordinator, reader = self.make_coordinator()
         reader.side_effect = Ipx800InvalidAuthError()
-        with self.assertRaises(ConfigEntryAuthFailed):
+        with (
+            patch("custom_components.ipx800v4.coordinator.ir"),
+            self.assertRaises(ConfigEntryError),
+        ):
             await coordinator.async_config_entry_first_refresh()
 
     async def test_shutdown_does_not_affect_other_controller(self):

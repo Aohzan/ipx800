@@ -1,15 +1,18 @@
 """Exercise real XML parsing and diagnostics request failure handling."""
 
-from datetime import datetime, timedelta, timezone
+# Regression tests written with unittest, run by pytest
+# ruff: noqa: D101, D102, PT009
+
+from datetime import UTC, datetime, timedelta
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 from zoneinfo import ZoneInfo
 
-from aiohttp import BasicAuth, ClientConnectionError, ClientResponseError
+from aiohttp import ClientConnectionError, ClientResponseError, encode_basic_auth
 
 from custom_components.ipx800v4.system import IpxSystemData
 
-NOW = datetime(2026, 9, 10, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 9, 10, 12, 0, 0, tzinfo=UTC)
 LOGGER = "custom_components.ipx800v4.system"
 
 
@@ -36,32 +39,44 @@ class SystemDataTests(unittest.IsolatedAsyncioTestCase):
                 "<date>10/09/2026</date><heure>12:00:00</heure>"
                 "<mac>AA:BB:CC:DD:EE:FF</mac></response>"
             )
-        self.assertEqual(data, {
-            "uptime": 3600, "load": 1234,
-            "last_boot": NOW - timedelta(hours=1),
-            "clock_offset": 0, "clock_in_sync": True,
-            "mac": "aa:bb:cc:dd:ee:ff",
-        })
+        self.assertEqual(
+            data,
+            {
+                "uptime": 3600,
+                "load": 1234,
+                "last_boot": NOW - timedelta(hours=1),
+                "clock_offset": 0,
+                "clock_in_sync": True,
+                "mac": "aa:bb:cc:dd:ee:ff",
+            },
+        )
         args, kwargs = self.session.get.call_args
         self.assertEqual(args, ("http://192.0.2.1:8080/user/status.xml",))
-        self.assertIsNone(kwargs["auth"])
+        self.assertIsNone(kwargs["headers"])
         self.assertEqual(kwargs["timeout"].total, 5)
         self.response.raise_for_status.assert_called_once()
 
     async def test_partial_snapshot_does_not_reuse_missing_fields(self):
         await self.read_xml("<response><wuc0>10</wuc0><lps0>20</lps0></response>")
-        self.assertEqual(await self.read_xml("<response><lps0>30</lps0></response>"), {"load": 30})
+        self.assertEqual(
+            await self.read_xml("<response><lps0>30</lps0></response>"), {"load": 30}
+        )
         self.assertEqual(await self.read_xml("<response />"), {})
 
     async def test_invalid_numeric_clock_and_mac_fields_are_ignored(self):
         for value in ("-1", "1.5", "NaN", "١٢", "12345678901", ""):
             with self.subTest(value=value):
-                self.assertEqual(await self.read_xml(
-                    f"<response><wuc0>{value}</wuc0><lps0>{value}</lps0>"
-                    "<date>31/02/2026</date><heure>25:00:00</heure>"
-                    "<mac>AA:BB:CC:DD:EE:GG</mac></response>"
-                ), {})
-        data = await self.read_xml("<response><wuc0> 0 </wuc0><lps0> 42 </lps0></response>")
+                self.assertEqual(
+                    await self.read_xml(
+                        f"<response><wuc0>{value}</wuc0><lps0>{value}</lps0>"
+                        "<date>31/02/2026</date><heure>25:00:00</heure>"
+                        "<mac>AA:BB:CC:DD:EE:GG</mac></response>"
+                    ),
+                    {},
+                )
+        data = await self.read_xml(
+            "<response><wuc0> 0 </wuc0><lps0> 42 </lps0></response>"
+        )
         self.assertEqual(data, {"uptime": 0, "last_boot": NOW, "load": 42})
 
     async def test_boot_time_stability_and_reboot_detection(self):
@@ -95,7 +110,9 @@ class SystemDataTests(unittest.IsolatedAsyncioTestCase):
         with self.assertLogs(LOGGER, level="WARNING"):
             for xml in ("<response>", "<html>login</html>"):
                 self.assertEqual(await self.read_xml(xml), {})
-        self.assertEqual(await self.read_xml("<response><lps0>42</lps0></response>"), {"load": 42})
+        self.assertEqual(
+            await self.read_xml("<response><lps0>42</lps0></response>"), {"load": 42}
+        )
 
     async def test_network_timeout_and_http_errors_return_empty_snapshot(self):
         for error in (
@@ -110,7 +127,10 @@ class SystemDataTests(unittest.IsolatedAsyncioTestCase):
                 with self.assertLogs(LOGGER, level="WARNING"):
                     self.assertEqual(await self.reader.async_get(), {})
                 self.response.raise_for_status.side_effect = None
-                self.assertEqual(await self.read_xml("<response><lps0>42</lps0></response>"), {"load": 42})
+                self.assertEqual(
+                    await self.read_xml("<response><lps0>42</lps0></response>"),
+                    {"load": 42},
+                )
 
     async def test_five_consecutive_failures_stop_requests_without_credentials(self):
         self.session.get.side_effect = ClientConnectionError("offline")
@@ -132,11 +152,19 @@ class SystemDataTests(unittest.IsolatedAsyncioTestCase):
     async def test_credentials_are_sent_and_failures_do_not_disable_polling(self):
         for password in (None, "secret"):
             with self.subTest(password=password):
-                self.reader = IpxSystemData(self.session, "192.0.2.1", 80, "admin", password)
+                self.reader = IpxSystemData(
+                    self.session, "192.0.2.1", 80, "admin", password
+                )
                 self.session.get.reset_mock()
                 with self.assertLogs(LOGGER, level="WARNING"):
                     for _ in range(7):
                         await self.read_xml("invalid XML")
                 self.assertEqual(self.session.get.call_count, 7)
-                self.assertEqual(self.session.get.call_args.kwargs["auth"], BasicAuth("admin", password or ""))
-                self.assertEqual(await self.read_xml("<response><lps0>42</lps0></response>"), {"load": 42})
+                self.assertEqual(
+                    self.session.get.call_args.kwargs["headers"],
+                    {"Authorization": encode_basic_auth("admin", password or "")},
+                )
+                self.assertEqual(
+                    await self.read_xml("<response><lps0>42</lps0></response>"),
+                    {"load": 42},
+                )

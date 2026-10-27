@@ -1,15 +1,14 @@
 """Command failures reach callers with bounded retries and no fabricated state changes."""
 
+# Regression tests written with unittest, run by pytest
+# ruff: noqa: D101, D102, PT009, PT027
+
 import asyncio
-import unittest
 from copy import deepcopy
 from types import SimpleNamespace
+import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
-import test_coordinator
-from homeassistant.components.climate import PRESET_ECO, HVACMode
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from pypx800 import (
     IPX800,
     XPWM,
@@ -20,8 +19,8 @@ from pypx800 import (
 )
 
 from custom_components.ipx800v4 import async_setup_entry
-from custom_components.ipx800v4.commands import CommandManager, IpxCommandClient
 from custom_components.ipx800v4.climate import RelayClimate, X4FPClimate
+from custom_components.ipx800v4.commands import IpxCommandClient
 from custom_components.ipx800v4.cover import X4VRCover
 from custom_components.ipx800v4.light import (
     RelayLight,
@@ -38,6 +37,11 @@ from custom_components.ipx800v4.switch import (
     XENOActuator,
     XENOSwitch,
 )
+from homeassistant.components.climate import PRESET_ECO, HVACMode
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+
+from .helpers import CoordinatorTestCase, error_message, make_entity
 
 CASES = (
     [
@@ -87,64 +91,6 @@ CASES = (
 )
 
 
-def make_entity(cls, error=None):
-    """Keep platform methods and state readers real, replacing only I/O."""
-    entity = cls.__new__(cls)
-    entity.entity_id = "switch.test_ipx"
-    entity._id = entity._ext_id = 1
-    entity._ids = [1, 2, 3, 4]
-    entity._retry_commands = True
-    entity._transition = 0
-    entity._default_brightness = 100
-    entity.coordinator = SimpleNamespace(
-        commands=CommandManager(),
-        data={
-            "R1": 1,
-            "R2": 0,
-            "VI1": 1,
-            "VO1": 1,
-            "PWM1": 25,
-            "PWM2": 50,
-            "PWM3": 75,
-            "PWM4": 100,
-            "G1": {"Etat": "ON", "Valeur": 50},
-            "VR1-1": 50,
-            "FP1 Zone 1": "Comfort",
-            "C1": 12,
-            "VA1": 12,
-            "ENO ACTIONNEUR1": 1,
-        },
-        async_request_refresh=AsyncMock(),
-    )
-    controls = ["control", "control_minus", "control_plus"] + [
-        f"xpwm_{mode}_{channel}" for mode in ("rgb", "rgbw") for channel in "rgbw"
-    ]
-    write = AsyncMock(side_effect=error)
-    for name in controls:
-        setattr(
-            entity,
-            name,
-            SimpleNamespace(
-                **{
-                    method: write
-                    for method in (
-                        "on",
-                        "off",
-                        "toggle",
-                        "set_level",
-                        "set_mode",
-                        "stop",
-                        "set_pulse_up",
-                        "set_pulse_down",
-                        "set_value",
-                    )
-                }
-            ),
-        )
-    entity.coordinator.async_track_cover_movement = Mock()
-    return entity, write
-
-
 class CommandTests(unittest.IsolatedAsyncioTestCase):
     async def test_expected_errors_across_all_platform_commands(self):
         for cls, method, kwargs in CASES:
@@ -168,9 +114,9 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     ):
                         await getattr(entity, method)(**kwargs)
                     self.assertIs(raised.exception.__cause__, error)
-                    self.assertIn(entity.entity_id, str(raised.exception))
-                    self.assertNotIn("SECRET", str(raised.exception))
-                    self.assertNotIn("password", str(raised.exception))
+                    self.assertIn(entity.entity_id, error_message(raised.exception))
+                    self.assertNotIn("SECRET", error_message(raised.exception))
+                    self.assertNotIn("password", error_message(raised.exception))
                     retries = (
                         error_type
                         in (Ipx800RequestError, Ipx800CannotConnectError, TimeoutError)
@@ -273,7 +219,9 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
                     }
                     levels = []
 
-                    async def update_during_write(value, transition):
+                    async def update_during_write(
+                        value, transition, levels=levels, expire=expire, entity=entity
+                    ):
                         levels.append(value)
                         if expire:
                             entity.coordinator.data.clear()
@@ -345,7 +293,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
             ),
             patch("custom_components.ipx800v4.Debouncer"),
             patch(
-                "custom_components.ipx800v4.DataUpdateCoordinator",
+                "custom_components.ipx800v4.IpxSystemCoordinator",
                 return_value=Mock(async_refresh=AsyncMock()),
             ),
             patch("custom_components.ipx800v4.IPX800", wraps=IPX800) as factory,
@@ -356,7 +304,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
             await async_setup_entry(hass, entry)
         self.assertNotIn("request_retries", factory.call_args_list[0].kwargs)
         self.assertEqual(command_factory.call_args.kwargs["request_retries"], 1)
-        client = hass.data["ipx800v4"]["test"]["controller"]
+        client = entry.runtime_data.controller
         # Use real pypx800 API and CGI write paths with unsuccessful responses.
         for control, command in (
             (Relay(client, 1), "toggle"),
@@ -374,12 +322,7 @@ class CommandTests(unittest.IsolatedAsyncioTestCase):
             session.get.assert_awaited_once()
 
 
-class CommandReadRecoveryTests(unittest.IsolatedAsyncioTestCase):
-    asyncSetUp = test_coordinator.ReadRecoveryTests.asyncSetUp
-    asyncTearDown = test_coordinator.ReadRecoveryTests.asyncTearDown
-    make_coordinator = test_coordinator.ReadRecoveryTests.make_coordinator
-    assert_next_read = test_coordinator.ReadRecoveryTests.assert_next_read
-
+class CommandReadRecoveryTests(CoordinatorTestCase):
     async def test_successful_write_then_failed_pull_only_retries_reads(self):
         coordinator, reader = self.make_coordinator()
         await coordinator.async_config_entry_first_refresh()
