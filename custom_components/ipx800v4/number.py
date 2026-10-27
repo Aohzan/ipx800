@@ -50,6 +50,7 @@ class CounterNumber(IpxEntity, NumberEntity):
     _attr_mode = NumberMode.BOX
     _attr_native_min_value = 0
     _attr_native_max_value = 21474836
+    _attr_native_step = 1
 
     def __init__(
         self,
@@ -74,7 +75,8 @@ class CounterNumber(IpxEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         async with self._command_error("set value"):
-            await self._async_write(self.control.set_value, value)
+            # The IPX800 counters are integers: send SetC02=12, not SetC02=12.0
+            await self._async_write(self.control.set_value, round(value))
 
 
 class VirtualAnalogInNumber(IpxEntity, NumberEntity):
