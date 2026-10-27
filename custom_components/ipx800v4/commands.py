@@ -1,29 +1,30 @@
 """Single-attempt command transport and bounded, non-blocking write retries."""
 
 import asyncio
-import logging
-import socket
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from json import JSONDecodeError
+import logging
+import socket
 from typing import Any
 
 from aiohttp import (
-    BasicAuth,
     ClientError,
     ClientResponseError,
     ContentTypeError,
     InvalidURL,
+    encode_basic_auth,
 )
-from homeassistant.exceptions import HomeAssistantError
 from pypx800 import (
     IPX800,
     Ipx800CannotConnectError,
     Ipx800InvalidAuthError,
     Ipx800RequestError,
 )
+
+from homeassistant.exceptions import HomeAssistantError
 
 _LOGGER = logging.getLogger(__name__)
 RETRY_DELAYS = (1, 2)
@@ -86,13 +87,18 @@ class IpxCommandClient(IPX800):
 
     async def request_cgi(self, params: dict) -> str:
         """Send once; keep retries at the explicitly opted-in operation level."""
-        auth = None
+        headers = None
         if self._username and self._password:
-            auth = BasicAuth(self._username, self._password)
+            # Latin-1 encoded like aiohttp.BasicAuth did
+            headers = {
+                "Authorization": encode_basic_auth(
+                    self._username, self._password, "latin1"
+                )
+            }
         try:
             async with asyncio.timeout(self._request_timeout):
                 response = await self._session.get(
-                    self._cgi_url, auth=auth, params=params
+                    self._cgi_url, headers=headers, params=params
                 )
                 try:
                     if response.status in (401, 403):
@@ -159,6 +165,7 @@ class CommandFailure(Exception):
     """Carry the failed write's real attempt count without exposing its URL."""
 
     def __init__(self, error: Exception, attempts: int, retry_enabled: bool) -> None:
+        """Describe the failure from the last error of the write."""
         self.error = error
         reason, retryable = error_details(error)
         cause = error.__cause__
@@ -182,6 +189,7 @@ class CommandManager:
     """Coordinate overlapping outputs, including aliases in different platforms."""
 
     def __init__(self) -> None:
+        """Initialize the command state of a controller."""
         self._closed = False
         self._versions: dict[str, CommandIntent] = {}
         self._locks: dict[str, asyncio.Lock] = {}
@@ -194,6 +202,7 @@ class CommandManager:
     async def operation(
         self, keys: tuple[str, ...], target: object = None
     ) -> AsyncIterator[None]:
+        """Run one user operation, interrupted when superseded or unloading."""
         # Identical absolute intents share a generation, not a success result.
         # An intervening conflicting command always starts a new generation.
         keys = tuple(sorted(set(keys)))
@@ -252,7 +261,6 @@ class CommandManager:
                         )
                     _CURRENT_COMMAND.get()()
                     await command(*args, **kwargs)
-                return
             except (
                 Ipx800CannotConnectError,
                 Ipx800RequestError,
@@ -274,3 +282,5 @@ class CommandManager:
                     RETRY_DELAYS[attempt],
                 )
                 await asyncio.sleep(RETRY_DELAYS[attempt])
+            else:
+                return

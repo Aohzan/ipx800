@@ -2,21 +2,32 @@
   "config": {
     "step": {
       "user": {
-        "description": "Configuration depuis le fichier configuration.yaml, voir la documentation pour plus de détails."
+        "description": "La configuration se fait dans configuration.yaml, voir la documentation pour plus de détails."
       }
+    },
+    "abort": {
+      "yaml_only": "L’IPX800 V4 se configure dans configuration.yaml, voir la documentation pour plus de détails."
     }
   },
   "options": {
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Interval de scan"
+          "scan_interval": "Intervalle de scan"
+        },
+        "data_description": {
+          "scan_interval": "Secondes entre deux lectures de l’IPX800, remplace le scan_interval de configuration.yaml."
         },
         "title": "Options IPX800 V4"
       }
     }
   },
   "entity": {
+    "binary_sensor": {
+      "clock_in_sync": {
+        "name": "À l’heure"
+      }
+    },
     "climate": {
       "ipx800v4_climate": {
         "state_attributes": {
@@ -30,17 +41,53 @@
       }
     },
     "sensor": {
+      "humidity": {
+        "name": "Humidité"
+      },
       "last_boot": {
         "name": "Dernier démarrage"
       },
       "load": {
         "name": "Charge"
+      },
+      "luminance": {
+        "name": "Luminosité"
+      },
+      "temperature": {
+        "name": "Température"
       }
+    }
+  },
+  "exceptions": {
+    "cannot_connect": {
+      "message": "La communication avec l’IPX800 a échoué."
     },
-    "binary_sensor": {
-      "clock_in_sync": {
-        "name": "À l’heure"
-      }
+    "command_auth_failed": {
+      "message": "Impossible de {operation} pour {entity} : {error}. Vérifiez les identifiants configurés."
+    },
+    "command_failed": {
+      "message": "Impossible de confirmer {operation} pour {entity} : {error}. Vérifiez l’état de l’équipement avant une nouvelle commande."
+    },
+    "command_interrupted": {
+      "message": "Impossible de {operation} pour {entity} : {error}"
+    },
+    "http_rejected": {
+      "message": "L’IPX800 a refusé la requête HTTP (HTTP {status})."
+    },
+    "invalid_auth": {
+      "message": "L’IPX800 a refusé la clé API ou les identifiants web."
+    },
+    "invalid_url": {
+      "message": "URL de l’IPX800 invalide, vérifiez l’hôte et le port."
+    },
+    "request_rejected": {
+      "message": "L’IPX800 a refusé la requête API."
+    }
+  },
+  "issues": {
+    "invalid_auth": {
+      "title": "IPX800 {name} : échec de l’authentification",
+      "description": "L’IPX800 {name} a refusé la clé API ou les identifiants web. Corrigez `api_key`, `username` et `password` de cet IPX800 dans configuration.yaml, puis redémarrez Home Assistant."
     }
   }
 }

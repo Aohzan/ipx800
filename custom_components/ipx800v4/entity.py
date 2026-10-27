@@ -11,25 +11,23 @@ from homeassistant.const import (
     CONF_ICON,
     CONF_NAME,
     CONF_UNIT_OF_MEASUREMENT,
-    MAJOR_VERSION,
-    MINOR_VERSION,
     EntityCategory,
 )
+from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-)
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
+from .commands import CommandFailure, CommandInterrupted, error_details
 from .const import (
     CONF_COMPONENT,
     CONF_EXT_ID,
     CONF_ID,
     CONF_IDS,
     CONF_INVERT_VALUE,
-    CONF_TRANSITION,
     CONF_RETRY_COMMANDS,
+    CONF_TRANSITION,
     CONF_TYPE,
     DEFAULT_TRANSITION,
     DOMAIN,
@@ -47,13 +45,17 @@ from .const import (
     TYPE_XPWM_RGBW,
     TYPE_XTHL,
 )
-from .coordinator import IpxDataUpdateCoordinator
-from .commands import CommandFailure, CommandInterrupted, error_details
+from .coordinator import IpxDataUpdateCoordinator, IpxSystemCoordinator
 
 
-class IpxEntity(CoordinatorEntity):
-    """Representation of a IPX800 generic device entity."""
+class IpxEntity(CoordinatorEntity[IpxDataUpdateCoordinator]):
+    """Representation of a IPX800 generic device entity.
 
+    Each configured device has its own device in the registry, named by the
+    user, and its main entity takes the device name.
+    """
+
+    _attr_has_entity_name = True
     _push_prefix: str | None = None
     _push_binary = False
     _push_invert = False
@@ -69,19 +71,31 @@ class IpxEntity(CoordinatorEntity):
             ):
                 yield
         except CommandInterrupted as err:
-            raise HomeAssistantError(
-                f"Cannot {operation} for {self.entity_id or self.name}: {err}"
+            raise self._command_exception(
+                "command_interrupted", operation, err
             ) from err
         except CommandFailure as err:
             if error_details(err.error)[0].startswith("authentication failed"):
-                raise HomeAssistantError(
-                    f"Cannot {operation} for {self.entity_id or self.name}: "
-                    f"{err}. Check the configured credentials."
+                raise self._command_exception(
+                    "command_auth_failed", operation, err
                 ) from err.error
-            raise HomeAssistantError(
-                f"Cannot confirm {operation} for {self.entity_id or self.name}: "
-                f"{err}. Check device state before issuing another command."
+            raise self._command_exception(
+                "command_failed", operation, err
             ) from err.error
+
+    def _command_exception(
+        self, translation_key: str, operation: str, err: Exception
+    ) -> HomeAssistantError:
+        """Return the translated error of a write."""
+        return HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key=translation_key,
+            translation_placeholders={
+                "operation": operation,
+                "entity": self.entity_id or self._config_name,
+                "error": str(err),
+            },
+        )
 
     async def _async_write(self, command, *args, retry: bool = False, **kwargs) -> None:
         """Execute one write with an explicit replay policy and fixed arguments."""
@@ -102,6 +116,11 @@ class IpxEntity(CoordinatorEntity):
         await super().async_added_to_hass()
         self.coordinator.push_entities[self.unique_id] = self
         self.async_on_remove(self._remove_push_entity)
+
+    @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Keep the push registration, the push views resolve entity IDs live."""
+        super().async_entity_id_changed(old_entity_id)
 
     def _remove_push_entity(self) -> None:
         """Do not remove a replacement entity during late cleanup."""
@@ -156,16 +175,20 @@ class IpxEntity(CoordinatorEntity):
         self._ids = device_config.get(CONF_IDS, [])
         self._invert_value = device_config[CONF_INVERT_VALUE]
 
-        self._attr_name: str = device_config[CONF_NAME]
+        self._config_name: str = device_config[CONF_NAME]
+        unique_name = self._config_name
         if suffix_name:
-            self._attr_name = f"{self._attr_name} {suffix_name}"
+            # The name of a secondary entity comes from its translation key
+            unique_name = f"{unique_name} {suffix_name}"
+        else:
+            self._attr_name = None
         self._attr_device_class = device_config.get(CONF_DEVICE_CLASS)
         self._attr_native_unit_of_measurement = device_config.get(
             CONF_UNIT_OF_MEASUREMENT
         )
         self._attr_icon = device_config.get(CONF_ICON)
         self._attr_unique_id = "_".join(
-            [DOMAIN, self.ipx.host, self._component, slugify(self._attr_name)]
+            [DOMAIN, self.ipx.host, self._component, slugify(unique_name)]
         )
 
         configuration_url = f"http://{self.ipx.host}:{self.ipx.port}/admin/"
@@ -200,18 +223,16 @@ class IpxEntity(CoordinatorEntity):
         else:
             configuration_url += "periph.htm"
 
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, slugify(device_config[CONF_NAME]))},
-            "name": device_config[CONF_NAME],
-            "manufacturer": "GCE",
-            "model": "IPX800 V4",
-            "configuration_url": configuration_url,
-        }
-        # Home Assistant 2026.8 deprecates via_device, removed in 2027.8.
-        if (MAJOR_VERSION, MINOR_VERSION) >= (2026, 8):
-            self._attr_device_info["via_device_id"] = coordinator.controller_device_id
-        else:
-            self._attr_device_info["via_device"] = (DOMAIN, self.ipx.host)
+        # Device identifiers are unique per config entry: devices having the
+        # same name on two IPX800 are distinct devices.
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, slugify(self._config_name))},
+            name=self._config_name,
+            manufacturer="GCE",
+            model="IPX800 V4",
+            configuration_url=configuration_url,
+            via_device_id=coordinator.controller_device_id,
+        )
 
     @property
     def required_keys(self) -> tuple[str, ...]:
@@ -224,21 +245,21 @@ class IpxEntity(CoordinatorEntity):
         return self.coordinator.fields_available(*self.required_keys)
 
 
-class IpxDiagnosticEntity(CoordinatorEntity):
+class IpxDiagnosticEntity(CoordinatorEntity[IpxSystemCoordinator]):
     """Diagnostic entity attached directly to the existing controller device."""
 
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
-        self, ipx: IPX800, coordinator: DataUpdateCoordinator, key: str
+        self, ipx: IPX800, coordinator: IpxSystemCoordinator, key: str
     ) -> None:
         """Initialize a controller diagnostic."""
         super().__init__(coordinator)
         self._key = key
         self._attr_translation_key = key
         self._attr_unique_id = f"{DOMAIN}_{ipx.host}_diagnostic_{key}"
-        self._attr_device_info = {"identifiers": {(DOMAIN, ipx.host)}}
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, ipx.host)})
 
     @property
     def available(self) -> bool:

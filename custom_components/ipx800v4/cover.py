@@ -5,28 +5,23 @@ from typing import Any
 
 from pypx800 import IPX800, X4VR, Ipx800CannotConnectError, Ipx800RequestError
 
-
 from homeassistant.components.cover import (
     ATTR_POSITION,
     CoverDeviceClass,
     CoverEntity,
     CoverEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .commands import error_details
-from .coordinator import IpxDataUpdateCoordinator
 from .const import (
-    CONF_DEVICES,
     CONF_TYPE,
-    CONTROLLER,
-    COORDINATOR,
-    DOMAIN,
     GLOBAL_PARALLEL_UPDATES,
     TYPE_X4VR_BSO,
 )
+from .coordinator import IpxConfigEntry, IpxDataUpdateCoordinator
 from .entity import IpxEntity
 
 PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
@@ -34,18 +29,19 @@ PARALLEL_UPDATES = GLOBAL_PARALLEL_UPDATES
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    entry: IpxConfigEntry,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the IPX800 covers."""
-    controller = hass.data[DOMAIN][entry.entry_id][CONTROLLER]
-    coordinator = hass.data[DOMAIN][entry.entry_id][COORDINATOR]
-    devices = hass.data[DOMAIN][entry.entry_id][CONF_DEVICES]["cover"]
+    data = entry.runtime_data
+    controller = data.controller
+    coordinator = data.coordinator
+    devices = data.devices[Platform.COVER]
 
     entities: list[CoverEntity] = []
 
     for device in devices:
-        entities.append(X4VRCover(device, controller, coordinator))  # noqa: PERF401
+        entities.append(X4VRCover(device, controller, coordinator))
 
     async_add_entities(entities, True)
 
