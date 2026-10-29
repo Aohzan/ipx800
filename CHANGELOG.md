@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.18.0](https://github.com/Aohzan/ipx800/compare/3.17.0...3.18.0) (2026-10-29)
+
+### Features
+
+* modernize the integration for Home Assistant 2026.10 ([47a01aa](https://github.com/Aohzan/ipx800/commit/47a01aa587fe03e28ec829e4654d7d4f9afda719))
+* ship the brand images with the integration ([7c13eb5](https://github.com/Aohzan/ipx800/commit/7c13eb52db636998a591281cb801eb1c2dd27635))
+
+### Bug Fixes
+
+* delete the authentication repair issue after a reload ([8deb1e9](https://github.com/Aohzan/ipx800/commit/8deb1e9dbd8433c94e0209fe2674df65b9049089))
+* **deps:** bump pypx800 to 2.6.1 ([33750ba](https://github.com/Aohzan/ipx800/commit/33750bad15af514bdd342f5fcaeef60dd160a1d4))
+* **number:** read and set counters configured as numbers ([798c353](https://github.com/Aohzan/ipx800/commit/798c35371134455518f17cfbdd84aab52250483c))
+* **number:** send an integer to set a counter ([016f889](https://github.com/Aohzan/ipx800/commit/016f889def98e762e3de17716b563bf0b620d312))
+* refuse a scan interval of 0 ([00d5819](https://github.com/Aohzan/ipx800/commit/00d58195a2dbf0e2abd3782dccca5ee8b027e3b8))
+* skip an X-4FP zone configured without ext_id ([cdcf647](https://github.com/Aohzan/ipx800/commit/cdcf6474b50d49cbd2e2e387c1e288da632c71d7))
+* translate the operation of the command errors ([6d9804e](https://github.com/Aohzan/ipx800/commit/6d9804e78ca832536f464dae5a022015c3e9791a))
+
 ## [3.17.0](https://github.com/Aohzan/ipx800/compare/3.16.1...3.17.0) (2026-10-13)
 
 ### Features
