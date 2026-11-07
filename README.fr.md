@@ -1,6 +1,6 @@
 # Component ipx800v4 pour Home Assistant
 
-![GitHub release (with filter)](https://img.shields.io/github/v/release/aohzan/ipx800v5) ![GitHub](https://img.shields.io/github/license/aohzan/ipx800v5) [![Donate](https://img.shields.io/badge/$-support-ff69b4.svg?style=flat)](https://github.com/sponsors/Aohzan) [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
+![GitHub release (with filter)](https://img.shields.io/github/v/release/aohzan/ipx800) ![GitHub](https://img.shields.io/github/license/aohzan/ipx800) [![Donate](https://img.shields.io/badge/$-support-ff69b4.svg?style=flat)](https://github.com/sponsors/Aohzan) [![Marketplace](https://img.shields.io/badge/Marketplace-Default-41BDF5.svg)](https://www.home-assistant.io/integrations/marketplace/)
 
 Il s'agit d'un _custom component_ pour [Home Assistant](https://www.home-assistant.io/).
 L'intégration `ipx800v4` vous permet de contrôler et d'obtenir des informations de votre [IPX800 v4 et de ses extensions](http://gce-electronics.com/).
@@ -56,14 +56,18 @@ Si les relais et les entrées fonctionnent mais que les informations du contrôl
 
 ## Installation
 
-### HACS
+### Marketplace
 
-HACS > Intégrations > Explorer et ajouter des dépôts > GCE IPX800 V4 > Installer ce dépôt dans HACS
+[![Ouvrir ce dépôt dans le Marketplace de votre Home Assistant.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Aohzan&repository=ipx800&category=integration)
 
-### Manually
+Paramètres > Marketplace > rechercher « GCE IPX800 V4 » > Installer.
 
-Copier le dossier `custom_components/ipx800` dans `config/custom_components` de votre installation Home Assistant (vous devez avoir les fichiers `*.py` dans `config/custom_components/ipx800`).
-Ajouter l'entrée `ipx800` dans votre fichier `configuration.yml` (voir l'exemple ci-dessous).
+Avant Home Assistant 2026.11, l'installation se fait de la même façon depuis HACS.
+
+### Manuellement
+
+Copier le dossier `custom_components/ipx800v4` dans `config/custom_components` de votre installation Home Assistant (vous devez avoir les fichiers `*.py` dans `config/custom_components/ipx800v4`).
+Ajouter l'entrée `ipx800v4` dans votre fichier `configuration.yml` (voir l'exemple ci-dessous).
 
 Le démarrage de l’intégration nécessite une lecture complète réussie. Si l’IPX800 est injoignable, Home Assistant retente automatiquement la configuration ; les entités ne sont pas disponibles sans données valides.
 
