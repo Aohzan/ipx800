@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.19.0](https://github.com/Aohzan/ipx800/compare/3.18.0...3.19.0) (2026-11-12)
+
+### Features
+
+* keep the push registration when an entity ID changes ([06f4415](https://github.com/Aohzan/ipx800/commit/06f441550c801ae5ec776d8a7878f37cdf5aec4d))
+* require Home Assistant 2026.11 ([11fc7e5](https://github.com/Aohzan/ipx800/commit/11fc7e5e3ec0f8d72acbcfb5d0fc6f0f2ac32001))
+
 ## [3.18.0](https://github.com/Aohzan/ipx800/compare/3.17.0...3.18.0) (2026-10-29)
 
 ### Features
