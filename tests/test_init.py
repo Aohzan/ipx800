@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 
 from pypx800 import Ipx800CannotConnectError, Ipx800InvalidAuthError
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-from pytest_homeassistant_custom_component.typing import WebSocketGenerator
+from pytest_homeassistant.common import MockConfigEntry
+from pytest_homeassistant.typing import WebSocketGenerator
 
 from custom_components.ipx800v4 import build_device_list
 from custom_components.ipx800v4.const import DOMAIN
