@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 import voluptuous as vol
 
 from custom_components.ipx800v4 import CONFIG_SCHEMA

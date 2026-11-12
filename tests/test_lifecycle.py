@@ -24,6 +24,7 @@ from custom_components.ipx800v4.push import (
     IpxRequestRefreshView,
     IpxRequestView,
 )
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.http import KEY_HASS
 
 
@@ -36,7 +37,7 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.hass = SimpleNamespace(
             data={PUSH_ENTRIES: {}},
             config_entries=SimpleNamespace(
-                async_unload_platforms=AsyncMock(return_value=True)
+                async_unload_platforms_or_raise=AsyncMock(return_value=None)
             ),
             http=SimpleNamespace(register_view=Mock()),
             states=SimpleNamespace(
@@ -231,8 +232,11 @@ class LifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.a.coordinator.async_request_refresh.assert_not_awaited()
 
     async def test_failed_unload_keeps_runtime_and_push_working(self):
-        self.hass.config_entries.async_unload_platforms.return_value = False
-        self.assertFalse(await self.unload("a"))
+        self.hass.config_entries.async_unload_platforms_or_raise.side_effect = (
+            ConfigEntryError("unload_platforms_failed")
+        )
+        with pytest.raises(ConfigEntryError):
+            await self.unload("a")
         self.assertIs(self.hass.data[PUSH_ENTRIES]["a"], self.a)
         self.a.coordinator.async_shutdown.assert_not_awaited()
         self.assertEqual(await self.get("/api/ipx800v4_refresh/A/on"), 200)
